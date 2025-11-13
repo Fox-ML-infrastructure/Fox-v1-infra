@@ -85,6 +85,7 @@ def load_sample_data(
     parquet_file = symbol_dir / f"{symbol}.parquet"
     
     if not parquet_file.exists():
+        logger.warning(f"  Symbol {symbol} not found in dataset, skipping")
         raise FileNotFoundError(f"Data not found: {parquet_file}")
     
     df = pd.read_parquet(parquet_file)
@@ -194,8 +195,10 @@ def train_and_evaluate_models(
                     **gpu_params
                 )
             elif is_multiclass:
+                n_classes = len(unique_vals)
                 model = lgb.LGBMClassifier(
                     objective='multiclass',
+                    num_class=n_classes,
                     n_estimators=200,
                     learning_rate=0.05,
                     num_leaves=31,
@@ -481,7 +484,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="Rank target predictability across model families"
     )
-    parser.add_argument("--symbols", type=str, default="AAPL,MSFT,GOOGL,TSLA,SPY",
+    parser.add_argument("--symbols", type=str, default="AAPL,MSFT,GOOGL,TSLA,JPM",
                        help="Symbols to test on (default: 5 representative stocks)")
     parser.add_argument("--data-dir", type=Path,
                        default=_REPO_ROOT / "data/data_labeled/interval=5m")
