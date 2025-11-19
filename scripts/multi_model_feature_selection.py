@@ -28,10 +28,10 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 import multiprocessing as mp
 import json
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 import warnings
 
-# Add project root to path
+# Add project root FIRST (before any scripts.* imports)
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
@@ -39,13 +39,16 @@ if str(_REPO_ROOT) not in sys.path:
 from CONFIG.config_loader import load_model_config
 import yaml
 
-# Setup logging
-logging.basicConfig(
+# Import checkpoint utility (after path is set)
+from scripts.utils.checkpoint import CheckpointManager
+
+# Setup logging with journald support (after path is set)
+from scripts.utils.logging_setup import setup_logging
+logger = setup_logging(
+    script_name="multi_model_feature_selection",
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
+    use_journald=True
 )
-logger = logging.getLogger(__name__)
 
 # Suppress warnings from SHAP/sklearn
 warnings.filterwarnings('ignore', category=FutureWarning)
@@ -859,6 +862,10 @@ def main():
                        help="Parallel workers (sequential per symbol)")
     parser.add_argument("--enable-families", type=str,
                        help="Comma-separated families to enable (e.g., lightgbm,xgboost,neural_network)")
+    parser.add_argument("--resume", action="store_true",
+                       help="Resume from checkpoint if available")
+    parser.add_argument("--clear-checkpoint", action="store_true",
+                       help="Clear existing checkpoint and start fresh")
     
     args = parser.parse_args()
     
@@ -906,16 +913,64 @@ def main():
     
     logger.info(f"📊 Processing {len(labeled_files)} symbols")
     
+    # Initialize checkpoint manager
+    checkpoint_file = args.output_dir / "checkpoint.json"
+    checkpoint = CheckpointManager(
+        checkpoint_file=checkpoint_file,
+        item_key_fn=lambda item: item if isinstance(item, str) else item[0]  # symbol name
+    )
+    
+    # Clear checkpoint if requested
+    if args.clear_checkpoint:
+        checkpoint.clear()
+        logger.info("Cleared checkpoint - starting fresh")
+    
+    # Load completed symbols
+    completed = checkpoint.load_completed()
+    logger.info(f"Found {len(completed)} completed symbols in checkpoint")
+    
     # Process symbols (sequential to avoid GPU/memory conflicts)
     all_results = []
     for i, (symbol, path) in enumerate(labeled_files, 1):
+        # Check if already completed
+        if symbol in completed:
+            if args.resume:
+                logger.info(f"\n[{i}/{len(labeled_files)}] Skipping {symbol} (already completed)")
+                symbol_results = completed[symbol]
+                if isinstance(symbol_results, list):
+                    # Reconstruct ImportanceResult objects from dicts
+                    for r_dict in symbol_results:
+                        # Convert importance_scores dict back to pd.Series
+                        if isinstance(r_dict.get('importance_scores'), dict):
+                            r_dict['importance_scores'] = pd.Series(r_dict['importance_scores'])
+                        all_results.append(ImportanceResult(**r_dict))
+                continue
+            elif not args.resume:
+                continue
+        
         logger.info(f"\n[{i}/{len(labeled_files)}] Processing {symbol}...")
-        results = process_single_symbol(
-            symbol, path, args.target_column,
-            config['model_families'],
-            config['sampling']['max_samples_per_symbol']
-        )
-        all_results.extend(results)
+        try:
+            results = process_single_symbol(
+                symbol, path, args.target_column,
+                config['model_families'],
+                config['sampling']['max_samples_per_symbol']
+            )
+            all_results.extend(results)
+            
+            # Save checkpoint after each symbol
+            # Convert results to dict for serialization (handle pd.Series)
+            results_dict = []
+            for r in results:
+                r_dict = asdict(r)
+                # Convert pd.Series to dict
+                if isinstance(r_dict.get('importance_scores'), pd.Series):
+                    r_dict['importance_scores'] = r_dict['importance_scores'].to_dict()
+                results_dict.append(r_dict)
+            checkpoint.save_item(symbol, results_dict)
+        except Exception as e:
+            logger.error(f"  Failed to process {symbol}: {e}")
+            checkpoint.mark_failed(symbol, str(e))
+            continue
     
     if not all_results:
         logger.error("❌ No results collected")

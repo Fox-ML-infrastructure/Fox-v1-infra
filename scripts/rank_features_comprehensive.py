@@ -36,7 +36,7 @@ import json
 import warnings
 from scipy import stats
 
-# Add project root to path
+# Add project root FIRST (before any scripts.* imports)
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
@@ -44,13 +44,16 @@ if str(_REPO_ROOT) not in sys.path:
 from CONFIG.config_loader import load_model_config
 import yaml
 
-# Setup logging
-logging.basicConfig(
+# Import checkpoint utility (after path is set)
+from scripts.utils.checkpoint import CheckpointManager
+
+# Setup logging with journald support
+from scripts.utils.logging_setup import setup_logging
+logger = setup_logging(
+    script_name="rank_features_comprehensive",
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
+    use_journald=True
 )
-logger = logging.getLogger(__name__)
 
 warnings.filterwarnings('ignore', category=FutureWarning)
 warnings.filterwarnings('ignore', category=UserWarning)
@@ -81,6 +84,15 @@ class FeatureEdgeMetrics:
     quality_edge: float = 0.0  # Normalized data quality
     redundancy_penalty: float = 0.0  # Penalty for high correlation
     composite_edge: float = 0.0  # Final weighted score
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for JSON serialization"""
+        return asdict(self)
+    
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> 'FeatureEdgeMetrics':
+        """Create from dictionary"""
+        return cls(**d)
 
 
 def load_sample_data(
@@ -711,19 +723,68 @@ def main():
         default=50000,
         help='Max samples per symbol'
     )
+    parser.add_argument(
+        '--resume',
+        action='store_true',
+        help='Resume from checkpoint if available'
+    )
+    parser.add_argument(
+        '--clear-checkpoint',
+        action='store_true',
+        help='Clear existing checkpoint and start fresh'
+    )
     
     args = parser.parse_args()
     
     symbols = [s.strip() for s in args.symbols.split(',')]
     
+    # Initialize checkpoint manager
+    checkpoint_file = args.output_dir / "checkpoint.json"
+    checkpoint = CheckpointManager(
+        checkpoint_file=checkpoint_file,
+        item_key_fn=lambda item: item if isinstance(item, str) else item[0]  # symbol name
+    )
+    
+    # Clear checkpoint if requested
+    if args.clear_checkpoint:
+        checkpoint.clear()
+        logger.info("Cleared checkpoint - starting fresh")
+    
+    # Load completed symbols
+    completed = checkpoint.load_completed()
+    logger.info(f"Found {len(completed)} completed symbol evaluations in checkpoint")
+    
+    # Filter symbols based on checkpoint
+    symbols_to_process = symbols
+    if args.resume and completed:
+        symbols_to_process = [s for s in symbols if s not in completed]
+        logger.info(f"Resuming: {len(symbols_to_process)} symbols remaining, {len(completed)} already completed")
+    
     # Rank features
     rankings = rank_features_comprehensive(
-        symbols=symbols,
+        symbols=symbols_to_process if not args.resume else symbols,  # Process all if resuming to merge
         data_dir=args.data_dir,
         target_column=args.target,
         model_families=args.model_families,
         max_samples=args.max_samples
     )
+    
+    # Save checkpoint after processing
+    if symbols_to_process:
+        checkpoint.save_item("_all_symbols", [r.to_dict() for r in rankings])
+    
+    # Merge with checkpoint results if resuming
+    if args.resume and completed:
+        checkpoint_rankings = []
+        for symbol, data in completed.items():
+            if symbol != "_all_symbols" and isinstance(data, list):
+                checkpoint_rankings.extend([FeatureEdgeMetrics.from_dict(d) for d in data])
+        
+        # Merge and deduplicate by feature_name
+        existing_features = {r.feature_name for r in rankings}
+        for r in checkpoint_rankings:
+            if r.feature_name not in existing_features:
+                rankings.append(r)
     
     # Save results
     save_rankings(rankings, args.output_dir, args.target)

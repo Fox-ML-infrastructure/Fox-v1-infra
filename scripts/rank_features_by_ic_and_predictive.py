@@ -29,18 +29,21 @@ import json
 import yaml
 import warnings
 
-# Add project root to path
+# Add project root FIRST (before any scripts.* imports)
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-# Setup logging
-logging.basicConfig(
+# Import checkpoint utility (after path is set)
+from scripts.utils.checkpoint import CheckpointManager
+
+# Setup logging with journald support
+from scripts.utils.logging_setup import setup_logging
+logger = setup_logging(
+    script_name="rank_features_by_ic_and_predictive",
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
+    use_journald=True
 )
-logger = logging.getLogger(__name__)
 
 warnings.filterwarnings('ignore', category=FutureWarning)
 warnings.filterwarnings('ignore', category=UserWarning)
@@ -77,6 +80,15 @@ class FeatureICScore:
     def __post_init__(self):
         if self.model_importances is None:
             self.model_importances = {}
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for JSON serialization"""
+        return asdict(self)
+    
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> 'FeatureICScore':
+        """Create from dictionary"""
+        return cls(**d)
 
 
 def load_target_rankings(rankings_path: Path) -> Dict[str, Dict[str, Any]]:
@@ -1180,6 +1192,16 @@ def main():
         default=50000,
         help='Max samples per symbol'
     )
+    parser.add_argument(
+        '--resume',
+        action='store_true',
+        help='Resume from checkpoint if available'
+    )
+    parser.add_argument(
+        '--clear-checkpoint',
+        action='store_true',
+        help='Clear existing checkpoint and start fresh'
+    )
     
     args = parser.parse_args()
     
@@ -1227,11 +1249,35 @@ def main():
             logger.error("No targets specified and no rankings found!")
             return
     
-    # Rank features
+    # Initialize checkpoint manager
+    checkpoint_file = args.output_dir / "checkpoint.json"
+    checkpoint = CheckpointManager(
+        checkpoint_file=checkpoint_file,
+        item_key_fn=lambda item: item if isinstance(item, str) else item[0]  # target name
+    )
+    
+    # Clear checkpoint if requested
+    if args.clear_checkpoint:
+        checkpoint.clear()
+        logger.info("Cleared checkpoint - starting fresh")
+    
+    # Load completed targets
+    completed = checkpoint.load_completed()
+    logger.info(f"Found {len(completed)} completed target evaluations in checkpoint")
+    
+    # Filter targets based on checkpoint
+    targets_to_process = targets
+    if args.resume and completed:
+        # Only process targets not in checkpoint
+        targets_to_process = [t for t in targets if t not in completed]
+        logger.info(f"Resuming: {len(targets_to_process)} targets remaining, {len(completed)} already completed")
+    
+    # Rank features (processes all targets, but we can checkpoint per target if needed)
+    # For now, checkpoint the entire result
     rankings = rank_features_by_ic_and_predictive(
         symbols=symbols,
         data_dir=args.data_dir,
-        targets=targets,
+        targets=targets_to_process if not args.resume else targets,  # Process all if resuming to merge
         target_rankings=target_rankings,
         model_families=model_families,
         max_samples=args.max_samples,
@@ -1239,6 +1285,23 @@ def main():
         predictive_weight=args.predictive_weight,
         multi_model_config=multi_model_config
     )
+    
+    # Save checkpoint after processing
+    if targets_to_process:
+        checkpoint.save_item("_all_targets", [r.to_dict() for r in rankings])
+    
+    # Merge with checkpoint results if resuming
+    if args.resume and completed:
+        checkpoint_rankings = []
+        for target, data in completed.items():
+            if target != "_all_targets" and isinstance(data, list):
+                checkpoint_rankings.extend([FeatureICScore.from_dict(d) for d in data])
+        
+        # Merge and deduplicate by feature_name + target_name
+        existing_keys = {(r.feature_name, r.target_name) for r in rankings}
+        for r in checkpoint_rankings:
+            if (r.feature_name, r.target_name) not in existing_keys:
+                rankings.append(r)
     
     # Save results
     save_rankings(rankings, args.output_dir)

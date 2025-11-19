@@ -37,6 +37,14 @@ import json
 from collections import defaultdict
 import warnings
 
+# Add project root FIRST (before any scripts.* imports)
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+# Import checkpoint utility (after path is set)
+from scripts.utils.checkpoint import CheckpointManager
+
 # Suppress expected warnings (harmless)
 warnings.filterwarnings('ignore', message='X does not have valid feature names')
 warnings.filterwarnings('ignore', category=UserWarning, module='sklearn')
@@ -44,16 +52,13 @@ warnings.filterwarnings('ignore', category=RuntimeWarning, module='sklearn')
 warnings.filterwarnings('ignore', message='invalid value encountered in divide')
 warnings.filterwarnings('ignore', message='invalid value encountered in true_divide')
 
-# Add project root
-_REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
-
-logging.basicConfig(
+# Setup logging with journald support
+from scripts.utils.logging_setup import setup_logging
+logger = setup_logging(
+    script_name="rank_target_predictability",
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    use_journald=True
 )
-logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -68,6 +73,27 @@ class TargetPredictabilityScore:
     n_models: int
     model_scores: Dict[str, float]
     composite_score: float = 0.0
+    leakage_flag: str = "OK"  # "OK", "SUSPICIOUS", "HIGH_R2", "INCONSISTENT"
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for JSON serialization"""
+        return {
+            'target_name': self.target_name,
+            'target_column': self.target_column,
+            'mean_r2': float(self.mean_r2),
+            'std_r2': float(self.std_r2),
+            'mean_importance': float(self.mean_importance),
+            'consistency': float(self.consistency),
+            'n_models': int(self.n_models),
+            'model_scores': {k: float(v) for k, v in self.model_scores.items()},
+            'composite_score': float(self.composite_score),
+            'leakage_flag': self.leakage_flag
+        }
+    
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> 'TargetPredictabilityScore':
+        """Create from dictionary"""
+        return cls(**d)
 
 
 def load_target_configs() -> Dict[str, Dict]:
@@ -249,6 +275,14 @@ def load_multi_model_config(config_path: Path = None) -> Dict[str, Any]:
         return None
 
 
+def get_model_config(model_name: str, multi_model_config: Dict[str, Any]) -> Dict[str, Any]:
+    """Get config for a specific model from multi_model_config"""
+    if multi_model_config is None:
+        return {}
+    
+    return multi_model_config.get('model_families', {}).get(model_name, {}).get('config', {})
+
+
 def train_and_evaluate_models(
     X: np.ndarray,
     y: np.ndarray,
@@ -266,6 +300,11 @@ def train_and_evaluate_models(
     from sklearn.model_selection import cross_val_score
     from sklearn.preprocessing import StandardScaler
     import lightgbm as lgb
+    
+    # Get CV config
+    cv_config = multi_model_config.get('cross_validation', {}) if multi_model_config else {}
+    cv_folds = cv_config.get('cv_folds', 3)
+    cv_n_jobs = cv_config.get('n_jobs', 1)
     
     if model_families is None:
         # Load from multi-model config if available
@@ -326,14 +365,15 @@ def train_and_evaluate_models(
                 except:
                     logger.info("  Using CPU for LightGBM")
             
+            # Get config values
+            lgb_config = get_model_config('lightgbm', multi_model_config)
+            # Remove objective and device from config (we set these explicitly)
+            lgb_config_clean = {k: v for k, v in lgb_config.items() if k not in ['device', 'objective', 'metric']}
+            
             if is_binary:
                 model = lgb.LGBMClassifier(
                     objective='binary',
-                    n_estimators=200,
-                    learning_rate=0.05,
-                    num_leaves=31,
-                    verbose=-1,
-                    random_state=42,
+                    **lgb_config_clean,
                     **gpu_params
                 )
             elif is_multiclass:
@@ -341,25 +381,17 @@ def train_and_evaluate_models(
                 model = lgb.LGBMClassifier(
                     objective='multiclass',
                     num_class=n_classes,
-                    n_estimators=200,
-                    learning_rate=0.05,
-                    num_leaves=31,
-                    verbose=-1,
-                    random_state=42,
+                    **lgb_config_clean,
                     **gpu_params
                 )
             else:
                 model = lgb.LGBMRegressor(
                     objective='regression',
-                    n_estimators=200,
-                    learning_rate=0.05,
-                    num_leaves=31,
-                    verbose=-1,
-                    random_state=42,
+                    **lgb_config_clean,
                     **gpu_params
                 )
             
-            scores = cross_val_score(model, X, y, cv=3, scoring=scoring, n_jobs=1, error_score=np.nan)
+            scores = cross_val_score(model, X, y, cv=cv_folds, scoring=scoring, n_jobs=cv_n_jobs, error_score=np.nan)
             valid_scores = scores[~np.isnan(scores)]
             model_scores['lightgbm'] = valid_scores.mean() if len(valid_scores) > 0 else np.nan
             
@@ -385,14 +417,15 @@ def train_and_evaluate_models(
         try:
             from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
             
-            if is_binary or is_multiclass:
-                model = RandomForestClassifier(n_estimators=100, max_depth=10, 
-                                              random_state=42, n_jobs=2)
-            else:
-                model = RandomForestRegressor(n_estimators=100, max_depth=10, 
-                                             random_state=42, n_jobs=2)
+            # Get config values
+            rf_config = get_model_config('random_forest', multi_model_config)
             
-            scores = cross_val_score(model, X, y, cv=3, scoring=scoring, n_jobs=1, error_score=np.nan)
+            if is_binary or is_multiclass:
+                model = RandomForestClassifier(**rf_config)
+            else:
+                model = RandomForestRegressor(**rf_config)
+            
+            scores = cross_val_score(model, X, y, cv=cv_folds, scoring=scoring, n_jobs=cv_n_jobs, error_score=np.nan)
             valid_scores = scores[~np.isnan(scores)]
             model_scores['random_forest'] = valid_scores.mean() if len(valid_scores) > 0 else np.nan
             
@@ -426,17 +459,18 @@ def train_and_evaluate_models(
             scaler = StandardScaler()
             X_scaled = scaler.fit_transform(X_imputed)
             
+            # Get config values
+            nn_config = get_model_config('neural_network', multi_model_config)
+            
             if is_binary or is_multiclass:
-                model = MLPClassifier(hidden_layer_sizes=(64, 32), max_iter=200,
-                                     early_stopping=True, random_state=42)
+                model = MLPClassifier(**nn_config)
             else:
-                model = MLPRegressor(hidden_layer_sizes=(64, 32), max_iter=200,
-                                    early_stopping=True, random_state=42)
+                model = MLPRegressor(**nn_config)
             
             # Neural networks need special handling for degenerate targets
             # Disable stratified split if target is imbalanced
             try:
-                scores = cross_val_score(model, X_scaled, y, cv=3, scoring=scoring, n_jobs=1, error_score=np.nan)
+                scores = cross_val_score(model, X_scaled, y, cv=cv_folds, scoring=scoring, n_jobs=cv_n_jobs, error_score=np.nan)
                 valid_scores = scores[~np.isnan(scores)]
                 model_scores['neural_network'] = valid_scores.mean() if len(valid_scores) > 0 else np.nan
             except ValueError as e:
@@ -466,36 +500,32 @@ def train_and_evaluate_models(
         try:
             import xgboost as xgb
             
+            # Get config values
+            xgb_config = get_model_config('xgboost', multi_model_config)
+            # Remove task-specific parameters (we set these explicitly based on task type)
+            xgb_config_clean = {k: v for k, v in xgb_config.items() if k not in ['objective', 'eval_metric']}
+            
             if is_binary:
                 model = xgb.XGBClassifier(
-                    n_estimators=200,
-                    max_depth=6,
                     objective='binary:logistic',
-                    verbosity=0,
-                    random_state=42
+                    **xgb_config_clean
                 )
             elif is_multiclass:
                 n_classes = len(unique_vals)
                 model = xgb.XGBClassifier(
-                    n_estimators=200,
-                    max_depth=6,
                     objective='multi:softprob',
                     num_class=n_classes,
-                    verbosity=0,
-                    random_state=42
+                    **xgb_config_clean
                 )
             else:
                 model = xgb.XGBRegressor(
-                    n_estimators=200,
-                    max_depth=6,
                     objective='reg:squarederror',
-                    verbosity=0,
-                    random_state=42
+                    **xgb_config_clean
                 )
             
             # XGBoost needs special handling for degenerate targets
             try:
-                scores = cross_val_score(model, X, y, cv=3, scoring=scoring, n_jobs=1, error_score=np.nan)
+                scores = cross_val_score(model, X, y, cv=cv_folds, scoring=scoring, n_jobs=cv_n_jobs, error_score=np.nan)
                 valid_scores = scores[~np.isnan(scores)]
                 model_scores['xgboost'] = valid_scores.mean() if len(valid_scores) > 0 else np.nan
             except ValueError as e:
@@ -527,16 +557,21 @@ def train_and_evaluate_models(
         try:
             import catboost as cb
             
+            # Get config values
+            cb_config = get_model_config('catboost', multi_model_config)
+            # Remove task-specific parameters (we set these explicitly based on task type)
+            cb_config_clean = {k: v for k, v in cb_config.items() if k not in ['loss_function']}
+            
             if is_binary:
-                model = cb.CatBoostClassifier(iterations=200, depth=6, verbose=False, random_seed=42)
+                model = cb.CatBoostClassifier(**cb_config_clean)
             elif is_multiclass:
                 n_classes = len(unique_vals)
-                model = cb.CatBoostClassifier(iterations=200, depth=6, verbose=False, random_seed=42)
+                model = cb.CatBoostClassifier(**cb_config_clean)
             else:
-                model = cb.CatBoostRegressor(iterations=200, depth=6, verbose=False, random_seed=42)
+                model = cb.CatBoostRegressor(**cb_config_clean)
             
             try:
-                scores = cross_val_score(model, X, y, cv=3, scoring=scoring, n_jobs=1, error_score=np.nan)
+                scores = cross_val_score(model, X, y, cv=cv_folds, scoring=scoring, n_jobs=cv_n_jobs, error_score=np.nan)
                 valid_scores = scores[~np.isnan(scores)]
                 model_scores['catboost'] = valid_scores.mean() if len(valid_scores) > 0 else np.nan
             except (ValueError, TypeError) as e:
@@ -574,8 +609,11 @@ def train_and_evaluate_models(
             imputer = SimpleImputer(strategy='median')
             X_imputed = imputer.fit_transform(X)
             
-            model = Lasso(alpha=0.1, max_iter=1000, random_state=42)
-            scores = cross_val_score(model, X_imputed, y, cv=3, scoring=scoring, n_jobs=1, error_score=np.nan)
+            # Get config values
+            lasso_config = get_model_config('lasso', multi_model_config)
+            
+            model = Lasso(**lasso_config)
+            scores = cross_val_score(model, X_imputed, y, cv=cv_folds, scoring=scoring, n_jobs=cv_n_jobs, error_score=np.nan)
             valid_scores = scores[~np.isnan(scores)]
             model_scores['lasso'] = valid_scores.mean() if len(valid_scores) > 0 else np.nan
             
@@ -605,13 +643,20 @@ def train_and_evaluate_models(
             imputer = SimpleImputer(strategy='median')
             X_imputed = imputer.fit_transform(X)
             
+            # Get config values
+            mi_config = get_model_config('mutual_information', multi_model_config)
+            
             # Suppress warnings for zero-variance features
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", RuntimeWarning)
                 if is_binary or is_multiclass:
-                    importance = mutual_info_classif(X_imputed, y, random_state=42, discrete_features='auto')
+                    importance = mutual_info_classif(X_imputed, y, 
+                                                    random_state=mi_config['random_state'],
+                                                    discrete_features=mi_config['discrete_features'])
                 else:
-                    importance = mutual_info_regression(X_imputed, y, random_state=42, discrete_features='auto')
+                    importance = mutual_info_regression(X_imputed, y, 
+                                                       random_state=mi_config['random_state'],
+                                                       discrete_features=mi_config['discrete_features'])
             
             # Handle NaN/inf
             importance = np.nan_to_num(importance, nan=0.0, posinf=0.0, neginf=0.0)
@@ -689,20 +734,40 @@ def train_and_evaluate_models(
             imputer = SimpleImputer(strategy='median')
             X_imputed = imputer.fit_transform(X)
             
-            n_features_to_select = min(50, X_imputed.shape[1])
+            # Get config values
+            rfe_config = get_model_config('rfe', multi_model_config)
+            n_features_to_select = min(rfe_config['n_features_to_select'], X_imputed.shape[1])
+            step = rfe_config['step']
+            
+            # Use random_forest config for RFE estimator
+            rf_config = get_model_config('random_forest', multi_model_config)
             
             if is_binary or is_multiclass:
-                estimator = RandomForestClassifier(n_estimators=100, max_depth=10, random_state=42, n_jobs=2)
+                estimator = RandomForestClassifier(**rf_config)
             else:
-                estimator = RandomForestRegressor(n_estimators=100, max_depth=10, random_state=42, n_jobs=2)
+                estimator = RandomForestRegressor(**rf_config)
             
-            selector = RFE(estimator, n_features_to_select=n_features_to_select, step=5)
+            selector = RFE(estimator, n_features_to_select=n_features_to_select, step=step)
             selector.fit(X_imputed, y)
             
-            # Get R² from the underlying estimator
-            scores = cross_val_score(selector.estimator_, X_imputed, y, cv=3, scoring=scoring, n_jobs=1, error_score=np.nan)
-            valid_scores = scores[~np.isnan(scores)]
-            model_scores['rfe'] = valid_scores.mean() if len(valid_scores) > 0 else np.nan
+            # Get R² by training a quick model on selected features (RFE already did heavy lifting)
+            selected_features = selector.support_
+            if np.any(selected_features):
+                X_selected = X_imputed[:, selected_features]
+                # Quick RF for scoring (use smaller config)
+                quick_rf_config = get_model_config('random_forest', multi_model_config).copy()
+                # Use smaller model for quick scoring
+                quick_rf_config['n_estimators'] = 50
+                quick_rf_config['max_depth'] = 8
+                
+                if is_binary or is_multiclass:
+                    quick_rf = RandomForestClassifier(**quick_rf_config)
+                else:
+                    quick_rf = RandomForestRegressor(**quick_rf_config)
+                quick_rf.fit(X_selected, y)
+                model_scores['rfe'] = quick_rf.score(X_selected, y)
+            else:
+                model_scores['rfe'] = np.nan
             
             # Convert ranking to importance
             ranking = selector.ranking_
@@ -732,18 +797,40 @@ def train_and_evaluate_models(
             imputer = SimpleImputer(strategy='median')
             X_imputed = imputer.fit_transform(X)
             
-            if is_binary or is_multiclass:
-                rf = RandomForestClassifier(n_estimators=100, max_depth=10, random_state=42, n_jobs=2)
-            else:
-                rf = RandomForestRegressor(n_estimators=100, max_depth=10, random_state=42, n_jobs=2)
+            # Get config values
+            boruta_config = get_model_config('boruta', multi_model_config)
             
-            boruta = BorutaPy(rf, n_estimators='auto', verbose=0, random_state=42, max_iter=100)
+            # Use random_forest config for Boruta estimator
+            rf_config = get_model_config('random_forest', multi_model_config)
+            
+            if is_binary or is_multiclass:
+                rf = RandomForestClassifier(**rf_config)
+            else:
+                rf = RandomForestRegressor(**rf_config)
+            
+            boruta = BorutaPy(rf, n_estimators='auto', verbose=0, 
+                            random_state=boruta_config['random_state'],
+                            max_iter=boruta_config['max_iter'])
             boruta.fit(X_imputed, y)
             
-            # Get R² from underlying RF
-            scores = cross_val_score(rf, X_imputed, y, cv=3, scoring=scoring, n_jobs=1, error_score=np.nan)
-            valid_scores = scores[~np.isnan(scores)]
-            model_scores['boruta'] = valid_scores.mean() if len(valid_scores) > 0 else np.nan
+            # Get R² by training a quick model on selected features (Boruta already did heavy lifting)
+            selected_features = boruta.support_
+            if np.any(selected_features):
+                X_selected = X_imputed[:, selected_features]
+                # Quick RF for scoring (use smaller config)
+                quick_rf_config = get_model_config('random_forest', multi_model_config).copy()
+                # Use smaller model for quick scoring
+                quick_rf_config['n_estimators'] = 50
+                quick_rf_config['max_depth'] = 8
+                
+                if is_binary or is_multiclass:
+                    quick_rf = RandomForestClassifier(**quick_rf_config)
+                else:
+                    quick_rf = RandomForestRegressor(**quick_rf_config)
+                quick_rf.fit(X_selected, y)
+                model_scores['boruta'] = quick_rf.score(X_selected, y)
+            else:
+                model_scores['boruta'] = np.nan
             
             # Convert to importance
             ranking = boruta.ranking_
@@ -775,9 +862,18 @@ def train_and_evaluate_models(
             imputer = SimpleImputer(strategy='median')
             X_imputed = imputer.fit_transform(X)
             
-            n_bootstrap = 50
+            # Get config values
+            stability_config = get_model_config('stability_selection', multi_model_config)
+            n_bootstrap = stability_config['n_bootstrap']
+            random_state = stability_config['random_state']
+            stability_cv = stability_config['cv']
+            stability_n_jobs = stability_config['n_jobs']
+            stability_cs = stability_config['Cs']
             stability_scores = np.zeros(X_imputed.shape[1])
             bootstrap_r2_scores = []
+            
+            # Use lasso config for stability selection models
+            lasso_config = get_model_config('lasso', multi_model_config)
             
             for _ in range(n_bootstrap):
                 indices = np.random.choice(len(X_imputed), size=len(X_imputed), replace=True)
@@ -785,9 +881,14 @@ def train_and_evaluate_models(
                 
                 try:
                     if is_binary or is_multiclass:
-                        model = LogisticRegressionCV(Cs=10, cv=3, random_state=42, max_iter=1000, n_jobs=1)
+                        model = LogisticRegressionCV(Cs=stability_cs, cv=stability_cv, 
+                                                    random_state=random_state,
+                                                    max_iter=lasso_config['max_iter'], 
+                                                    n_jobs=stability_n_jobs)
                     else:
-                        model = LassoCV(cv=3, random_state=42, max_iter=1000, n_jobs=1)
+                        model = LassoCV(cv=stability_cv, random_state=random_state,
+                                      max_iter=lasso_config['max_iter'], 
+                                      n_jobs=stability_n_jobs)
                     
                     model.fit(X_boot, y_boot)
                     coef = model.coef_[0] if len(model.coef_.shape) > 1 else model.coef_
@@ -826,20 +927,17 @@ def train_and_evaluate_models(
         try:
             from sklearn.ensemble import HistGradientBoostingRegressor, HistGradientBoostingClassifier
             
-            if is_binary or is_multiclass:
-                model = HistGradientBoostingClassifier(
-                    max_iter=200,
-                    max_depth=6,
-                    random_state=42
-                )
-            else:
-                model = HistGradientBoostingRegressor(
-                    max_iter=200,
-                    max_depth=6,
-                    random_state=42
-                )
+            # Get config values
+            hgb_config = get_model_config('histogram_gradient_boosting', multi_model_config)
+            # Remove task-specific parameters (loss is set automatically by classifier/regressor)
+            hgb_config_clean = {k: v for k, v in hgb_config.items() if k != 'loss'}
             
-            scores = cross_val_score(model, X, y, cv=3, scoring=scoring, n_jobs=1, error_score=np.nan)
+            if is_binary or is_multiclass:
+                model = HistGradientBoostingClassifier(**hgb_config_clean)
+            else:
+                model = HistGradientBoostingRegressor(**hgb_config_clean)
+            
+            scores = cross_val_score(model, X, y, cv=cv_folds, scoring=scoring, n_jobs=cv_n_jobs, error_score=np.nan)
             valid_scores = scores[~np.isnan(scores)]
             model_scores['histogram_gradient_boosting'] = valid_scores.mean() if len(valid_scores) > 0 else np.nan
             
@@ -863,6 +961,52 @@ def train_and_evaluate_models(
     mean_importance = np.mean(importance_magnitudes) if importance_magnitudes else 0.0
     
     return model_scores, mean_importance
+
+
+def detect_leakage(
+    mean_r2: float,
+    composite_score: float,
+    mean_importance: float
+) -> str:
+    """
+    Detect potential data leakage based on suspicious patterns.
+    
+    Returns:
+        "OK" - No signs of leakage
+        "HIGH_R2" - R² > 0.70 (suspiciously high, per leakage.md)
+        "INCONSISTENT" - Composite score too high for R² (possible leakage)
+        "SUSPICIOUS" - Multiple warning signs
+    """
+    flags = []
+    
+    # Check 1: Suspiciously high R² (per leakage.md: R² > 0.70 is suspicious)
+    if mean_r2 > 0.70:
+        flags.append("HIGH_R2")
+        logger.warning(f"LEAKAGE WARNING: R²={mean_r2:.3f} > 0.70 (suspiciously high)")
+    
+    # Check 2: Composite score inconsistent with R²
+    # If composite is very high (> 0.5) but R² is low (< 0.2), something's wrong
+    if composite_score > 0.5 and mean_r2 < 0.2:
+        flags.append("INCONSISTENT")
+        logger.warning(
+            f"LEAKAGE WARNING: Composite={composite_score:.3f} but R²={mean_r2:.3f} "
+            f"(inconsistent - possible leakage)"
+        )
+    
+    # Check 3: Very high importance with low R² (might indicate leaked features)
+    if mean_importance > 0.7 and mean_r2 < 0.1:
+        flags.append("INCONSISTENT")
+        logger.warning(
+            f"LEAKAGE WARNING: Importance={mean_importance:.2f} but R²={mean_r2:.3f} "
+            f"(high importance with low R² - check for leaked features)"
+        )
+    
+    if len(flags) > 1:
+        return "SUSPICIOUS"
+    elif len(flags) == 1:
+        return flags[0]
+    else:
+        return "OK"
 
 
 def calculate_composite_score(
@@ -1003,7 +1147,8 @@ def evaluate_target_predictability(
             mean_importance=0.0,
             consistency=0.0,
             n_models=0,
-            model_scores={}
+            model_scores={},
+            leakage_flag="OK"
         )
     
     mean_r2 = np.mean(list(model_means.values()))
@@ -1016,6 +1161,9 @@ def evaluate_target_predictability(
         mean_r2, std_r2, mean_importance, len(all_scores_by_model)
     )
     
+    # Detect potential leakage
+    leakage_flag = detect_leakage(mean_r2, composite, mean_importance)
+    
     result = TargetPredictabilityScore(
         target_name=target_name,
         target_column=target_column,
@@ -1025,11 +1173,14 @@ def evaluate_target_predictability(
         consistency=consistency,
         n_models=len(all_scores_by_model),
         model_scores=model_means,
-        composite_score=composite
+        composite_score=composite,
+        leakage_flag=leakage_flag
     )
     
+    # Log with leakage warning if needed
+    leakage_indicator = f" [{leakage_flag}]" if leakage_flag != "OK" else ""
     logger.info(f"Summary: R²={mean_r2:.3f}±{std_r2:.3f}, "
-               f"importance={mean_importance:.2f}, composite={composite:.3f}")
+               f"importance={mean_importance:.2f}, composite={composite:.3f}{leakage_indicator}")
     
     return result
 
@@ -1055,9 +1206,21 @@ def save_rankings(
         'mean_importance': r.mean_importance,
         'consistency': r.consistency,
         'n_models': r.n_models,
+        'leakage_flag': r.leakage_flag,
         **{f'{model}_r2': score for model, score in r.model_scores.items()},
         'recommendation': _get_recommendation(r)
     } for i, r in enumerate(results)])
+    
+    # Log suspicious targets
+    suspicious = df[df['leakage_flag'] != 'OK']
+    if len(suspicious) > 0:
+        logger.warning(f"\nFOUND {len(suspicious)} SUSPICIOUS TARGETS (possible leakage):")
+        for _, row in suspicious.iterrows():
+            logger.warning(
+                f"  {row['target_name']:25s} | R²={row['mean_r2']:.3f} | "
+                f"Composite={row['composite_score']:.3f} | Flag: {row['leakage_flag']}"
+            )
+        logger.warning("Review these targets - they may have leaked features or be degenerate!")
     
     # Save CSV
     df.to_csv(output_dir / "target_predictability_rankings.csv", index=False)
@@ -1067,11 +1230,12 @@ def save_rankings(
     yaml_data = {
         'target_rankings': [
             {
-                'rank': i + 1,
-                'target': r.target_name,
-                'composite_score': float(r.composite_score),
-                'mean_r2': float(r.mean_r2),
-                'recommendation': _get_recommendation(r)
+            'rank': i + 1,
+            'target': r.target_name,
+            'composite_score': float(r.composite_score),
+            'mean_r2': float(r.mean_r2),
+            'leakage_flag': r.leakage_flag,
+            'recommendation': _get_recommendation(r)
             }
             for i, r in enumerate(results)
         ]
@@ -1115,6 +1279,10 @@ def main():
     parser.add_argument("--multi-model-config", type=Path,
                        default=None,
                        help="Path to multi-model config (default: CONFIG/multi_model_feature_selection.yaml)")
+    parser.add_argument("--resume", action="store_true",
+                       help="Resume from checkpoint if available")
+    parser.add_argument("--clear-checkpoint", action="store_true",
+                       help="Clear existing checkpoint and start fresh")
     
     args = parser.parse_args()
     
@@ -1168,35 +1336,101 @@ def main():
         
         logger.info(f"Evaluating {len(targets_to_eval)} targets\n")
     
+    # Initialize checkpoint manager
+    checkpoint_file = args.output_dir / "checkpoint.json"
+    checkpoint = CheckpointManager(
+        checkpoint_file=checkpoint_file,
+        item_key_fn=lambda item: item if isinstance(item, str) else item[0]  # target_name
+    )
+    
+    # Clear checkpoint if requested
+    if args.clear_checkpoint:
+        checkpoint.clear()
+        logger.info("Cleared checkpoint - starting fresh")
+    
+    # Load completed targets
+    completed = checkpoint.load_completed()
+    logger.info(f"Found {len(completed)} completed targets in checkpoint")
+    
     # Evaluate each target
     results = []
-    for target_name, target_config in targets_to_eval.items():
-        result = evaluate_target_predictability(
-            target_name, target_config, symbols, args.data_dir, model_families, multi_model_config
-        )
-        # Skip degenerate targets (marked with mean_r2 = -999)
-        if result.mean_r2 != -999.0:
-            results.append(result)
+    total_targets = len(targets_to_eval)
+    completed_count = 0
+    skipped_count = 0
+    
+    for idx, (target_name, target_config) in enumerate(targets_to_eval.items(), 1):
+        # Check if already completed
+        if target_name in completed:
+            if args.resume:
+                logger.info(f"[{idx}/{total_targets}] Skipping {target_name} (already completed)")
+                result = TargetPredictabilityScore.from_dict(completed[target_name])
+                if result.mean_r2 != -999.0:
+                    results.append(result)
+                skipped_count += 1
+                continue
+            elif not args.resume:
+                # If not resuming, skip silently
+                skipped_count += 1
+                continue
+        
+        # Evaluate target
+        logger.info(f"[{idx}/{total_targets}] Evaluating {target_name}...")
+        try:
+            result = evaluate_target_predictability(
+                target_name, target_config, symbols, args.data_dir, model_families, multi_model_config
+            )
+            
+            # Save checkpoint after each target
+            checkpoint.save_item(target_name, result.to_dict())
+            
+            # Skip degenerate targets (marked with mean_r2 = -999)
+            if result.mean_r2 != -999.0:
+                results.append(result)
+                completed_count += 1
+            else:
+                logger.info(f"  Skipped degenerate target: {target_name}")
+        
+        except Exception as e:
+            logger.error(f"  Failed to evaluate {target_name}: {e}")
+            checkpoint.mark_failed(target_name, str(e))
+            # Continue with next target
+    
+    logger.info(f"\nCompleted: {completed_count}, Skipped: {skipped_count}, Total: {total_targets}")
+    
+    # Get all results (including from checkpoint)
+    all_results = results
+    if args.resume:
+        # Merge with checkpoint results
+        checkpoint_results = [
+            TargetPredictabilityScore.from_dict(v)
+            for k, v in completed.items()
+            if k not in [r.target_name for r in results]  # Avoid duplicates
+        ]
+        all_results = results + checkpoint_results
     
     # Save rankings
-    save_rankings(results, args.output_dir)
+    save_rankings(all_results, args.output_dir)
     
     # Print summary
     logger.info("="*80)
     logger.info("TARGET PREDICTABILITY RANKINGS")
     logger.info("="*80)
     
-    results = sorted(results, key=lambda x: x.composite_score, reverse=True)
+    all_results = sorted(all_results, key=lambda x: x.composite_score, reverse=True)
     
-    for i, result in enumerate(results, 1):
-        logger.info(f"\n{i:2d}. {result.target_name:25s} | Score: {result.composite_score:.3f}")
+    for i, result in enumerate(all_results, 1):
+        leakage_indicator = f" [{result.leakage_flag}]" if result.leakage_flag != "OK" else ""
+        logger.info(f"\n{i:2d}. {result.target_name:25s} | Score: {result.composite_score:.3f}{leakage_indicator}")
         logger.info(f"    R²: {result.mean_r2:.3f} ± {result.std_r2:.3f}")
         logger.info(f"    Importance: {result.mean_importance:.2f}")
         logger.info(f"    Recommendation: {_get_recommendation(result)}")
+        if result.leakage_flag != "OK":
+            logger.info(f"    LEAKAGE FLAG: {result.leakage_flag}")
     
     logger.info("\n" + "="*80)
-    logger.info("✅ Target ranking complete!")
+    logger.info("Target ranking complete!")
     logger.info(f"Results saved to: {args.output_dir}")
+    logger.info(f"Checkpoint saved to: {checkpoint_file}")
     logger.info("="*80)
     
     return 0
