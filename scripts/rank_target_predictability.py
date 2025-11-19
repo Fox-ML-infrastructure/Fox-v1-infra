@@ -450,6 +450,9 @@ def train_and_evaluate_models(
         try:
             from sklearn.neural_network import MLPRegressor, MLPClassifier
             from sklearn.impute import SimpleImputer
+            from sklearn.exceptions import ConvergenceWarning
+            from sklearn.compose import TransformedTargetRegressor
+            from sklearn.pipeline import Pipeline
             
             # Handle NaN values (neural networks can't handle them)
             imputer = SimpleImputer(strategy='median')
@@ -464,30 +467,44 @@ def train_and_evaluate_models(
             
             if is_binary or is_multiclass:
                 model = MLPClassifier(**nn_config)
+                # For classification, no target scaling needed
+                y_for_training = y
             else:
-                model = MLPRegressor(**nn_config)
+                # For regression: use TransformedTargetRegressor to scale target within CV folds
+                # This ensures no data leakage - scaler is fit only on training data in each fold
+                base_model = MLPRegressor(**nn_config)
+                model = TransformedTargetRegressor(
+                    regressor=base_model,
+                    transformer=StandardScaler()
+                )
+                y_for_training = y
             
             # Neural networks need special handling for degenerate targets
-            # Disable stratified split if target is imbalanced
-            try:
-                scores = cross_val_score(model, X_scaled, y, cv=cv_folds, scoring=scoring, n_jobs=cv_n_jobs, error_score=np.nan)
-                valid_scores = scores[~np.isnan(scores)]
-                model_scores['neural_network'] = valid_scores.mean() if len(valid_scores) > 0 else np.nan
-            except ValueError as e:
-                if "least populated class" in str(e) or "too few" in str(e):
-                    logger.debug(f"    Neural Network: Target too imbalanced for CV")
-                    model_scores['neural_network'] = np.nan
-                else:
-                    raise
+            # Suppress convergence warnings (they're noisy and we handle failures gracefully)
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore', category=ConvergenceWarning)
+                try:
+                    # TransformedTargetRegressor handles scaling within each CV fold (no leakage)
+                    scores = cross_val_score(model, X_scaled, y_for_training, cv=cv_folds, scoring=scoring, n_jobs=cv_n_jobs, error_score=np.nan)
+                    valid_scores = scores[~np.isnan(scores)]
+                    model_scores['neural_network'] = valid_scores.mean() if len(valid_scores) > 0 else np.nan
+                except ValueError as e:
+                    if "least populated class" in str(e) or "too few" in str(e):
+                        logger.debug(f"    Neural Network: Target too imbalanced for CV")
+                        model_scores['neural_network'] = np.nan
+                    else:
+                        raise
             
             # Permutation importance magnitude (simplified)
-            model.fit(X_scaled, y)
-            baseline_score = model.score(X_scaled, y)
+            # Fit on scaled data (TransformedTargetRegressor handles target scaling internally)
+            model.fit(X_scaled, y_for_training)
+            baseline_score = model.score(X_scaled, y_for_training)
+            
             perm_scores = []
             for i in range(min(10, X.shape[1])):  # Sample 10 features
                 X_perm = X_scaled.copy()
                 np.random.shuffle(X_perm[:, i])
-                perm_score = model.score(X_perm, y)
+                perm_score = model.score(X_perm, y_for_training)
                 perm_scores.append(abs(baseline_score - perm_score))
             
             importance_magnitudes.append(np.mean(perm_scores))
@@ -966,25 +983,60 @@ def train_and_evaluate_models(
 def detect_leakage(
     mean_r2: float,
     composite_score: float,
-    mean_importance: float
+    mean_importance: float,
+    target_name: str = "",
+    model_scores: Dict[str, float] = None
 ) -> str:
     """
     Detect potential data leakage based on suspicious patterns.
     
     Returns:
         "OK" - No signs of leakage
-        "HIGH_R2" - R² > 0.70 (suspiciously high, per leakage.md)
+        "HIGH_R2" - R² > threshold (suspiciously high)
         "INCONSISTENT" - Composite score too high for R² (possible leakage)
         "SUSPICIOUS" - Multiple warning signs
     """
     flags = []
     
-    # Check 1: Suspiciously high R² (per leakage.md: R² > 0.70 is suspicious)
-    if mean_r2 > 0.70:
-        flags.append("HIGH_R2")
-        logger.warning(f"LEAKAGE WARNING: R²={mean_r2:.3f} > 0.70 (suspiciously high)")
+    # Determine threshold based on target type
+    # Forward returns should have lower R² than barrier targets
+    is_forward_return = target_name.startswith('fwd_ret_')
     
-    # Check 2: Composite score inconsistent with R²
+    if is_forward_return:
+        # For forward returns: R² > 0.50 is suspicious (very hard to predict)
+        high_r2_threshold = 0.50
+        very_high_r2_threshold = 0.60
+    else:
+        # For barrier targets: R² > 0.70 is suspicious (per leakage.md)
+        high_r2_threshold = 0.70
+        very_high_r2_threshold = 0.80
+    
+    # Check 1: Suspiciously high mean R²
+    if mean_r2 > very_high_r2_threshold:
+        flags.append("HIGH_R2")
+        logger.warning(
+            f"LEAKAGE WARNING: R²={mean_r2:.3f} > {very_high_r2_threshold:.2f} "
+            f"(extremely high - likely leakage)"
+        )
+    elif mean_r2 > high_r2_threshold:
+        flags.append("HIGH_R2")
+        logger.warning(
+            f"LEAKAGE WARNING: R²={mean_r2:.3f} > {high_r2_threshold:.2f} "
+            f"(suspiciously high - investigate)"
+        )
+    
+    # Check 2: Individual model scores too high (even if mean is lower)
+    if model_scores:
+        high_model_count = sum(1 for score in model_scores.values() 
+                              if not np.isnan(score) and score > high_r2_threshold)
+        if high_model_count >= 3:  # 3+ models with high R²
+            flags.append("HIGH_R2")
+            logger.warning(
+                f"LEAKAGE WARNING: {high_model_count} models have R² > {high_r2_threshold:.2f} "
+                f"(models: {[k for k, v in model_scores.items() if not np.isnan(v) and v > high_r2_threshold]})"
+            )
+    
+    # Check 3: Composite score inconsistent with R²
     # If composite is very high (> 0.5) but R² is low (< 0.2), something's wrong
     if composite_score > 0.5 and mean_r2 < 0.2:
         flags.append("INCONSISTENT")
@@ -993,7 +1045,7 @@ def detect_leakage(
             f"(inconsistent - possible leakage)"
         )
     
-    # Check 3: Very high importance with low R² (might indicate leaked features)
+    # Check 4: Very high importance with low R² (might indicate leaked features)
     if mean_importance > 0.7 and mean_r2 < 0.1:
         flags.append("INCONSISTENT")
         logger.warning(
@@ -1162,7 +1214,8 @@ def evaluate_target_predictability(
     )
     
     # Detect potential leakage
-    leakage_flag = detect_leakage(mean_r2, composite, mean_importance)
+    leakage_flag = detect_leakage(mean_r2, composite, mean_importance, 
+                                  target_name=target_name, model_scores=model_means)
     
     result = TargetPredictabilityScore(
         target_name=target_name,
