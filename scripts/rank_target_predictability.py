@@ -229,16 +229,17 @@ def prepare_features_and_target(
     if df.empty:
         raise ValueError("No valid data after dropping NaN in target")
     
-    # LEAKAGE PREVENTION: Filter out leaking features
+    # LEAKAGE PREVENTION: Filter out leaking features (target-aware)
     import sys
-    sys.path.insert(0, str(_REPO_ROOT / "scripts"))
-    from filter_leaking_features import filter_features
+    sys.path.insert(0, str(_REPO_ROOT / "scripts" / "utils"))
+    from leakage_filtering import filter_features_for_target
     
     all_columns = df.columns.tolist()
-    safe_columns = filter_features(all_columns, verbose=False)
+    # Use target-aware filtering to exclude temporal overlap features
+    safe_columns = filter_features_for_target(all_columns, target_column, verbose=False)
     
     # Keep only safe features + target
-    safe_columns_with_target = [c for c in safe_columns if c != target_column] + [target_column]
+    safe_columns_with_target = safe_columns + [target_column]
     df = df[safe_columns_with_target]
     
     # Prepare features (exclude target explicitly)
@@ -767,7 +768,7 @@ def train_and_evaluate_models(
             selector = RFE(estimator, n_features_to_select=n_features_to_select, step=step)
             selector.fit(X_imputed, y)
             
-            # Get R² by training a quick model on selected features (RFE already did heavy lifting)
+            # Get R² using cross-validation on selected features (proper validation)
             selected_features = selector.support_
             if np.any(selected_features):
                 X_selected = X_imputed[:, selected_features]
@@ -781,8 +782,11 @@ def train_and_evaluate_models(
                     quick_rf = RandomForestClassifier(**quick_rf_config)
                 else:
                     quick_rf = RandomForestRegressor(**quick_rf_config)
-                quick_rf.fit(X_selected, y)
-                model_scores['rfe'] = quick_rf.score(X_selected, y)
+                
+                # Use cross-validation for proper validation (not training score)
+                scores = cross_val_score(quick_rf, X_selected, y, cv=cv_folds, scoring=scoring, n_jobs=cv_n_jobs, error_score=np.nan)
+                valid_scores = scores[~np.isnan(scores)]
+                model_scores['rfe'] = valid_scores.mean() if len(valid_scores) > 0 else np.nan
             else:
                 model_scores['rfe'] = np.nan
             
@@ -830,7 +834,7 @@ def train_and_evaluate_models(
                             max_iter=boruta_config['max_iter'])
             boruta.fit(X_imputed, y)
             
-            # Get R² by training a quick model on selected features (Boruta already did heavy lifting)
+            # Get R² using cross-validation on selected features (proper validation)
             selected_features = boruta.support_
             if np.any(selected_features):
                 X_selected = X_imputed[:, selected_features]
@@ -844,8 +848,11 @@ def train_and_evaluate_models(
                     quick_rf = RandomForestClassifier(**quick_rf_config)
                 else:
                     quick_rf = RandomForestRegressor(**quick_rf_config)
-                quick_rf.fit(X_selected, y)
-                model_scores['boruta'] = quick_rf.score(X_selected, y)
+                
+                # Use cross-validation for proper validation (not training score)
+                scores = cross_val_score(quick_rf, X_selected, y, cv=cv_folds, scoring=scoring, n_jobs=cv_n_jobs, error_score=np.nan)
+                valid_scores = scores[~np.isnan(scores)]
+                model_scores['boruta'] = valid_scores.mean() if len(valid_scores) > 0 else np.nan
             else:
                 model_scores['boruta'] = np.nan
             
@@ -911,9 +918,18 @@ def train_and_evaluate_models(
                     coef = model.coef_[0] if len(model.coef_.shape) > 1 else model.coef_
                     stability_scores += (np.abs(coef) > 1e-6).astype(int)
                     
-                    # Get R² from this bootstrap
-                    r2 = model.score(X_boot, y_boot)
-                    bootstrap_r2_scores.append(r2)
+                    # Get R² using cross-validation (proper validation, not training score)
+                    # Use a quick model for CV scoring
+                    if is_binary or is_multiclass:
+                        cv_model = LogisticRegressionCV(Cs=[1.0], cv=3, random_state=random_state, 
+                                                        max_iter=lasso_config['max_iter'], n_jobs=1)
+                    else:
+                        cv_model = LassoCV(cv=3, random_state=random_state,
+                                          max_iter=lasso_config['max_iter'], n_jobs=1)
+                    cv_scores = cross_val_score(cv_model, X_boot, y_boot, cv=3, scoring=scoring, n_jobs=1, error_score=np.nan)
+                    valid_cv_scores = cv_scores[~np.isnan(cv_scores)]
+                    if len(valid_cv_scores) > 0:
+                        bootstrap_r2_scores.append(valid_cv_scores.mean())
                 except:
                     continue
             
