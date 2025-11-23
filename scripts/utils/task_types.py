@@ -10,6 +10,9 @@ from enum import Enum, auto
 from typing import Callable, Dict, Any, Set, Optional, List
 import numpy as np
 import pandas as pd
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class TaskType(Enum):
@@ -162,7 +165,21 @@ def create_model_configs_from_yaml(
     model_configs = []
     model_families = multi_model_config.get('model_families', {})
     
+    # Defensive check: ensure model_families is a dict
+    if model_families is None or not isinstance(model_families, dict):
+        logger.warning(f"model_families in config is None or not a dict (got {type(model_families)}). Returning empty list.")
+        return []
+    
     for model_name, model_spec in model_families.items():
+        # Defensive check: skip None or non-dict model specs
+        if model_spec is None:
+            logger.warning(f"Model '{model_name}' has None config. Skipping.")
+            continue
+        
+        if not isinstance(model_spec, dict):
+            logger.warning(f"Model '{model_name}' config is not a dict (got {type(model_spec)}). Skipping.")
+            continue
+        
         if not model_spec.get('enabled', False):
             continue
         
@@ -184,17 +201,25 @@ def create_model_configs_from_yaml(
             continue
         
         # Get constructor based on model name and task type
-        constructor = _get_model_constructor(model_name, task_type, model_spec.get('config', {}))
+        # Defensive check: ensure config is not None
+        model_config = model_spec.get('config')
+        if model_config is None or not isinstance(model_config, dict):
+            model_config = {}
+        constructor = _get_model_constructor(model_name, task_type, model_config)
         
         if constructor is None:
             continue
         
         # Create ModelConfig
+        # Defensive check: ensure default_params is not None
+        default_params = model_spec.get('config')
+        if default_params is None or not isinstance(default_params, dict):
+            default_params = {}
         config = ModelConfig(
             name=model_name,
             constructor=constructor,
             supported_tasks=supported_tasks,
-            default_params=model_spec.get('config', {}),
+            default_params=default_params,
             enabled=model_spec.get('enabled', True),
             weight=model_spec.get('weight', 1.0),
             importance_method=model_spec.get('importance_method', 'native')
@@ -220,6 +245,11 @@ def _get_model_constructor(
     from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
     from sklearn.neural_network import MLPRegressor, MLPClassifier
     from sklearn.linear_model import Lasso, LogisticRegression
+    
+    # Defensive check: ensure config is a dict
+    if config is None or not isinstance(config, dict):
+        logger.warning(f"Config for {model_name} is None or not a dict (got {type(config)}), using empty config")
+        config = {}
     
     # Remove task-specific params from config (we'll set them explicitly)
     config_clean = {k: v for k, v in config.items() 

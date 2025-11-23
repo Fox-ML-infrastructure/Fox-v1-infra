@@ -230,8 +230,8 @@ def discover_all_targets(symbol: str, data_dir: Path) -> Dict[str, TargetConfig]
         )
     
     logger.info(f"  Discovered {len(valid_targets)} valid targets")
-    logger.info(f"    - y_* targets: {len([t for t in valid_targets.values() if t['target_column'].startswith('y_')])}")
-    logger.info(f"    - fwd_ret_* targets: {len([t for t in valid_targets.values() if t['target_column'].startswith('fwd_ret_')])}")
+    logger.info(f"    - y_* targets: {len([t for t in valid_targets.values() if t.target_column.startswith('y_')])}")
+    logger.info(f"    - fwd_ret_* targets: {len([t for t in valid_targets.values() if t.target_column.startswith('fwd_ret_')])}")
     logger.info(f"  Skipped {degenerate_count} degenerate targets (single class/zero variance/extreme imbalance)")
     if sparse_count > 0:
         logger.info(f"  Skipped {sparse_count} sparse targets (< 100 samples or < 1% of data)")
@@ -344,7 +344,25 @@ def get_model_config(model_name: str, multi_model_config: Dict[str, Any]) -> Dic
     if multi_model_config is None:
         return {}
     
-    return multi_model_config.get('model_families', {}).get(model_name, {}).get('config', {})
+    model_families = multi_model_config.get('model_families', {})
+    if not model_families or not isinstance(model_families, dict):
+        return {}
+    
+    model_spec = model_families.get(model_name)
+    if model_spec is None or not isinstance(model_spec, dict):
+        logger.warning(f"Model '{model_name}' not found in config or is None/empty. Using empty config.")
+        return {}
+    
+    config = model_spec.get('config', {})
+    if config is None:
+        logger.warning(f"Config for '{model_name}' is None. Using empty config.")
+        return {}
+    
+    if not isinstance(config, dict):
+        logger.warning(f"Config for '{model_name}' is not a dict (got {type(config)}). Using empty config.")
+        return {}
+    
+    return config
 
 
 def train_and_evaluate_models(
@@ -354,7 +372,7 @@ def train_and_evaluate_models(
     task_type: TaskType,
     model_families: List[str] = None,
     multi_model_config: Dict[str, Any] = None
-) -> Tuple[Dict[str, Dict[str, float]], float]:
+) -> Tuple[Dict[str, Dict[str, float]], Dict[str, float], float]:
     """
     Train multiple models and return task-aware metrics + importance magnitude
     
@@ -367,12 +385,24 @@ def train_and_evaluate_models(
         multi_model_config: Multi-model config dict
     
     Returns:
-        model_metrics: Dict of {model_name: {metric_name: value}} per model
+        model_metrics: Dict of {model_name: {metric_name: value}} per model (full metrics)
+        model_scores: Dict of {model_name: primary_score} per model (backward compat)
         mean_importance: Mean absolute feature importance
+    
+    Always returns 3 values, even on error (returns empty dicts and 0.0)
     """
-    from sklearn.model_selection import cross_val_score, TimeSeriesSplit
-    from sklearn.preprocessing import StandardScaler
-    import lightgbm as lgb
+    # Initialize return values (ensures we always return 3 values)
+    model_metrics = {}
+    model_scores = {}
+    importance_magnitudes = []
+    
+    try:
+        from sklearn.model_selection import cross_val_score, TimeSeriesSplit
+        from sklearn.preprocessing import StandardScaler
+        import lightgbm as lgb
+    except Exception as e:
+        logger.warning(f"Failed to import required libraries: {e}")
+        return {}, {}, 0.0
     
     # Get CV config
     cv_config = multi_model_config.get('cross_validation', {}) if multi_model_config else {}
@@ -387,10 +417,15 @@ def train_and_evaluate_models(
     if model_families is None:
         # Load from multi-model config if available
         if multi_model_config:
-            model_families = [
-                name for name, config in multi_model_config.get('model_families', {}).items()
-                if config.get('enabled', False)
-            ]
+            model_families_dict = multi_model_config.get('model_families', {})
+            if model_families_dict is None or not isinstance(model_families_dict, dict):
+                logger.warning("model_families in config is None or not a dict. Using defaults.")
+                model_families = ['lightgbm', 'random_forest', 'neural_network']
+            else:
+                model_families = [
+                    name for name, config in model_families_dict.items()
+                    if config is not None and isinstance(config, dict) and config.get('enabled', False)
+                ]
             logger.debug(f"Using {len(model_families)} models from config: {', '.join(model_families)}")
         else:
             model_families = ['lightgbm', 'random_forest', 'neural_network']
@@ -400,9 +435,7 @@ def train_and_evaluate_models(
     # Filter to only enabled model families
     model_configs = [mc for mc in model_configs if mc.name in model_families]
     
-    model_metrics = {}
-    model_scores = {}  # Keep for backward compatibility (primary scores)
-    importance_magnitudes = []
+    # Note: model_metrics, model_scores, importance_magnitudes already initialized at function start
     
     # Determine task characteristics
     unique_vals = np.unique(y[~np.isnan(y)])
@@ -419,7 +452,7 @@ def train_and_evaluate_models(
         scoring = 'accuracy'
     
     # Helper function to compute and store full task-aware metrics
-    def _compute_and_store_metrics(model_name: str, model, X: np.ndarray, y: np.ndarray, 
+    def _compute_and_store_metrics(model_name: str, model, X: np.ndarray, y: np.ndarray,
                                    primary_score: float, task_type: TaskType):
         """
         Compute full task-aware metrics and store in both model_metrics and model_scores.
@@ -432,6 +465,15 @@ def train_and_evaluate_models(
             primary_score: Primary score from CV (R², AUC, or accuracy)
             task_type: TaskType enum
         """
+        # Defensive check: ensure model_scores and model_metrics are dicts
+        nonlocal model_scores, model_metrics
+        if model_scores is None or not isinstance(model_scores, dict):
+            logger.warning(f"model_scores is None or not a dict in _compute_and_store_metrics, reinitializing")
+            model_scores = {}
+        if model_metrics is None or not isinstance(model_metrics, dict):
+            logger.warning(f"model_metrics is None or not a dict in _compute_and_store_metrics, reinitializing")
+            model_metrics = {}
+        
         # Store primary score for backward compatibility
         model_scores[model_name] = primary_score
         
@@ -470,18 +512,19 @@ def train_and_evaluate_models(
             else:
                 model_metrics[model_name] = {'accuracy': primary_score}
     
-    # Helper function to update both model_scores and model_metrics
-    # NOTE: This is now mainly for backward compat - full metrics computed after training
+        # Helper function to update both model_scores and model_metrics
+        # NOTE: This is now mainly for backward compat - full metrics computed after training
     def _update_model_score(model_name: str, score: float):
         """Update model_scores (backward compat) - full metrics computed separately"""
         model_scores[model_name] = score
     
+        # Check for degenerate target BEFORE training models
     # Check for degenerate target BEFORE training models
     # A target is degenerate if it has < 2 unique values or one class has < 2 samples
     unique_vals = np.unique(y[~np.isnan(y)])
     if len(unique_vals) < 2:
         logger.debug(f"    Skipping: Target has only {len(unique_vals)} unique value(s)")
-        return {}, 0.0
+        return {}, {}, 0.0  # model_metrics, model_scores, mean_importance
     
     # For classification, check class balance
     if is_binary or is_multiclass:
@@ -489,7 +532,7 @@ def train_and_evaluate_models(
         min_class_count = class_counts[class_counts > 0].min()
         if min_class_count < 2:
             logger.debug(f"    Skipping: Smallest class has only {min_class_count} sample(s)")
-            return {}, 0.0
+            return {}, {}, 0.0  # model_metrics, model_scores, mean_importance
     
     # LightGBM
     if 'lightgbm' in model_families:
@@ -514,6 +557,9 @@ def train_and_evaluate_models(
             
             # Get config values
             lgb_config = get_model_config('lightgbm', multi_model_config)
+            # Defensive check: ensure config is a dict
+            if not isinstance(lgb_config, dict):
+                lgb_config = {}
             # Remove objective and device from config (we set these explicitly)
             lgb_config_clean = {k: v for k, v in lgb_config.items() if k not in ['device', 'objective', 'metric']}
             
@@ -678,6 +724,9 @@ def train_and_evaluate_models(
             
             # Get config values
             xgb_config = get_model_config('xgboost', multi_model_config)
+            # Defensive check: ensure config is a dict
+            if not isinstance(xgb_config, dict):
+                xgb_config = {}
             # Remove task-specific parameters (we set these explicitly based on task type)
             xgb_config_clean = {k: v for k, v in xgb_config.items() if k not in ['objective', 'eval_metric']}
             
@@ -741,6 +790,9 @@ def train_and_evaluate_models(
             
             # Get config values
             cb_config = get_model_config('catboost', multi_model_config)
+            # Defensive check: ensure config is a dict
+            if not isinstance(cb_config, dict):
+                cb_config = {}
             # Remove task-specific parameters (we set these explicitly based on task type)
             cb_config_clean = {k: v for k, v in cb_config.items() if k not in ['loss_function']}
             
@@ -1140,6 +1192,9 @@ def train_and_evaluate_models(
             
             # Get config values
             hgb_config = get_model_config('histogram_gradient_boosting', multi_model_config)
+            # Defensive check: ensure config is a dict
+            if not isinstance(hgb_config, dict):
+                hgb_config = {}
             # Remove task-specific parameters (loss is set automatically by classifier/regressor)
             hgb_config_clean = {k: v for k, v in hgb_config.items() if k != 'loss'}
             
@@ -1378,19 +1433,52 @@ def evaluate_target_predictability(
                     continue
             
             # Train and evaluate (with task type)
-            model_metrics, primary_scores, importance = train_and_evaluate_models(
-                X, y, feature_names, task_type, model_families, multi_model_config
-            )
-            
-            # Convert to old format for backward compatibility
-            model_scores = primary_scores
-            
-            if model_scores:
-                all_model_scores.append(model_scores)
-                all_importances.append(importance)
+            try:
+                result = train_and_evaluate_models(
+                    X, y, feature_names, task_type, model_families, multi_model_config
+                )
+                # Ensure we got 3 values (handle case where function returns None or wrong number)
+                if result is None or len(result) != 3:
+                    logger.warning(f"train_and_evaluate_models returned unexpected value: {result}")
+                    continue
                 
-                scores_str = ", ".join([f"{k}={v:.3f}" for k, v in model_scores.items()])
-                logger.info(f"Scores: {scores_str}, importance={importance:.2f}")
+                model_metrics, primary_scores, importance = result
+                
+                # Convert to old format for backward compatibility
+                # Ensure primary_scores is a dict (handle early returns or errors)
+                if primary_scores is None:
+                    logger.warning(f"primary_scores is None for {symbol}, skipping")
+                    continue
+                if not isinstance(primary_scores, dict):
+                    logger.warning(f"primary_scores is not a dict (got {type(primary_scores)}) for {symbol}, skipping")
+                    continue
+                model_scores = primary_scores
+                
+                # Only append if we have valid scores
+                if model_scores and isinstance(model_scores, dict):
+                    all_model_scores.append(model_scores)
+                    all_importances.append(importance)
+                    
+                    scores_str = ", ".join([f"{k}={v:.3f}" for k, v in model_scores.items()])
+                    logger.info(f"Scores: {scores_str}, importance={importance:.2f}")
+            except Exception as e:
+                # Handle any errors - log full traceback to find the issue
+                import traceback
+                error_msg = str(e)
+                tb_str = traceback.format_exc()
+                logger.warning(f"Failed: {error_msg}")
+                # Always log traceback for .items() errors to find the exact location
+                if "'NoneType' object has no attribute 'items'" in error_msg or "has no attribute 'items'" in error_msg:
+                    logger.error(f"CRITICAL: .items() called on None. Full traceback:")
+                    logger.error(tb_str)
+                    logger.error(f"  Result was: {result}")
+                    logger.error(f"  Result type: {type(result)}")
+                    if result is not None:
+                        logger.error(f"  Result length: {len(result) if hasattr(result, '__len__') else 'N/A'}")
+                        if isinstance(result, (tuple, list)) and len(result) >= 2:
+                            logger.error(f"  primary_scores type: {type(result[1])}")
+                            logger.error(f"  primary_scores value: {result[1]}")
+                continue
             
         except Exception as e:
             logger.warning(f"Failed: {e}")
@@ -1412,6 +1500,10 @@ def evaluate_target_predictability(
     # Aggregate across symbols and models (skip NaN scores)
     all_scores_by_model = defaultdict(list)
     for scores_dict in all_model_scores:
+        # Defensive check: skip None or non-dict entries
+        if scores_dict is None or not isinstance(scores_dict, dict):
+            logger.warning(f"Skipping invalid scores_dict: {type(scores_dict)}")
+            continue
         for model_name, score in scores_dict.items():
             if not (np.isnan(score) if isinstance(score, (float, np.floating)) else False):
                 all_scores_by_model[model_name].append(score)
@@ -1583,10 +1675,15 @@ def main():
         model_families = [m.strip() for m in args.model_families.split(',')]
     elif multi_model_config:
         # Use enabled models from config
-        model_families = [
-            name for name, config in multi_model_config.get('model_families', {}).items()
-            if config.get('enabled', False)
-        ]
+        model_families_dict = multi_model_config.get('model_families', {})
+        if model_families_dict is None or not isinstance(model_families_dict, dict):
+            logger.warning("model_families in config is None or not a dict. Using defaults.")
+            model_families = ['lightgbm', 'random_forest', 'neural_network']
+        else:
+            model_families = [
+                name for name, config in model_families_dict.items()
+                if config is not None and isinstance(config, dict) and config.get('enabled', False)
+            ]
         logger.info(f"Using {len(model_families)} model families from config: {', '.join(model_families)}")
     else:
         # Default fallback
