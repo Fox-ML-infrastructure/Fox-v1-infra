@@ -1,3 +1,5 @@
+ill add other parts later, im crying rn
+
 # Trader: High-Frequency Trading ML System
 
 A comprehensive machine learning system for high-frequency trading, featuring temporal leakage prevention, cross-sectional feature engineering, and a model zoo with 17+ production-ready models.
