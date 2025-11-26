@@ -5,6 +5,8 @@ If I do ever add monitering with a GUI it will probably be in rust, I saw anothe
 and it looked really nice. I cant remember his name off the top of my head but hes based in the netherlands or something.
 I made this open source with this level of documentation specifically to act as a resource where people can learn to integrate, refactor, and structure things. 
 Idk if it will ever make much money because it honestly needs like a $75k compute cluster minimum to even start to be efficient. 
+Shorter intervals like daily data, or maybe even 1h, would be reasonable on consumer hardware, but I personally tried the 5m data I have, and i think it took like
+~30 hours or something to train a zoo on a single batch for one target. 
 
 # Trader: High-Frequency Trading ML System
 
