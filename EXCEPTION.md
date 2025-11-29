@@ -1,725 +1,88 @@
-Additional Permission for Mayo Clinic Research
-Date: November 29, 2025
+# Universal Additional Permission (LGBTQ+ Protective Use Clause)
 
-As the copyright holder of this project, I grant Mayo Clinic Research
-an additional permission to use, run, study, modify, and internally deploy this software
-for non-commercial medical, clinical, scientific, or public-health research, and for
-financial forecasting, operational funding optimization, or internal revenue-support
-activities that directly strengthen the institution’s healthcare, research, or public-service mission.
+**Effective Date:** November 29, 2025  
+**Copyright Holder:** Jennifer Lewis
 
-This additional permission is strictly conditional on Mayo Clinic Research maintaining
-institutional policies, programs, or practices that provide:
-
-• support, nondiscrimination, and institutional protection for LGBTQ+ individuals, and
-• ensuring that any financial benefit from use of this software is directed toward
-institutional stability, patient care, community services, or protecting LGBTQ+ staff,
-patients, or community members from adverse political or policy changes.
-• If any finance, budgeting, forecasting, strategy, or institutional-analysis department intends to use this software, such use is permitted only if the department maintains formal nondiscrimination protections, support structures, and safe-environment policies for LGBTQ+ students, staff, and community members.
-
-This permission:
-
-Allows internal financial modeling only for institutional stability, patient funding,
-public-health infrastructure, or protective community services.
-
-Prohibits commercial sale of the software or its derivatives.
-
-Prohibits use in proprietary trading, hedge-fund strategies, or commercial market-making.
-
-Does not allow redistribution or deployment as a public or commercial network service
-without full compliance with the GNU AGPL v3.0.
-
-Applies only to Mayo Clinic Research and does not extend to third parties.
-
-Signed,
-Jennifer Lewis
-November 29, 2025
+This project is licensed under the **GNU AGPL v3.0**, with the following **additional permission** granted to certain users under strict conditions.
 
 ---
 
-Additional Permission for Cleveland Clinic Lerner Research Institute
-Date: November 29, 2025
+## 1. Eligible Users
+This permission applies to:
 
-As the copyright holder of this project, I grant Cleveland Clinic Lerner Research Institute
-an additional permission to use, run, study, modify, and internally deploy this software
-for non-commercial medical, clinical, scientific, or public-health research, and for
-financial forecasting, operational funding optimization, or internal revenue-support
-activities that directly strengthen the institution's healthcare, research, or public-service mission.
+- nonprofit institutions  
+- academic and educational institutions  
+- public hospitals or medical research centers  
+- public-health agencies  
+- nonprofit laboratories  
+- individual researchers, scholars, and educators
 
-This additional permission is strictly conditional on Cleveland Clinic Lerner Research Institute maintaining
-institutional policies, programs, or practices that provide:
-
-• support, nondiscrimination, and institutional protection for LGBTQ+ individuals, and
-• ensuring that any financial benefit from use of this software is directed toward
-institutional stability, patient care, community services, or protecting LGBTQ+ staff,
-patients, or community members from adverse political or policy changes.
-• If any finance, budgeting, forecasting, strategy, or institutional-analysis department intends to use this software, such use is permitted only if the department maintains formal nondiscrimination protections, support structures, and safe-environment policies for LGBTQ+ students, staff, and community members.
-
-This permission:
-
-Allows internal financial modeling only for institutional stability, patient funding,
-public-health infrastructure, or protective community services.
-
-Prohibits commercial sale of the software or its derivatives.
-
-Prohibits use in proprietary trading, hedge-fund strategies, or commercial market-making.
-
-Does not allow redistribution or deployment as a public or commercial network service
-without full compliance with the GNU AGPL v3.0.
-
-Applies only to Cleveland Clinic Lerner Research Institute and does not extend to third parties.
-
-Signed,
-Jennifer Lewis
-November 29, 2025
+**For-profit finance firms, hedge funds, proprietary trading groups, or commercial actors are not eligible.**
 
 ---
 
-Additional Permission for St. Jude Children's Research Hospital
-Date: November 29, 2025
+## 2. LGBTQ+ Protection Requirement (Mandatory)
+Any institution or individual may rely on this additional permission **only if** they maintain:
 
-As the copyright holder of this project, I grant St. Jude Children's Research Hospital
-an additional permission to use, run, study, modify, and internally deploy this software
-for non-commercial medical, clinical, scientific, or public-health research, and for
-financial forecasting, operational funding optimization, or internal revenue-support
-activities that directly strengthen the institution's healthcare, research, or public-service mission.
+- documented nondiscrimination protections for LGBTQ+ individuals,  
+- LGBTQ+-inclusive support, safety, or community-protection programs, and  
+- practices ensuring no use of this software harms, marginalizes, or disadvantages LGBTQ+ people.
 
-This additional permission is strictly conditional on St. Jude Children's Research Hospital maintaining
-institutional policies, programs, or practices that provide:
-
-• support, nondiscrimination, and institutional protection for LGBTQ+ individuals, and
-• ensuring that any financial benefit from use of this software is directed toward
-institutional stability, patient care, community services, or protecting LGBTQ+ staff,
-patients, or community members from adverse political or policy changes.
-• If any finance, budgeting, forecasting, strategy, or institutional-analysis department intends to use this software, such use is permitted only if the department maintains formal nondiscrimination protections, support structures, and safe-environment policies for LGBTQ+ students, staff, and community members.
-
-This permission:
-
-Allows internal financial modeling only for institutional stability, patient funding,
-public-health infrastructure, or protective community services.
-
-Prohibits commercial sale of the software or its derivatives.
-
-Prohibits use in proprietary trading, hedge-fund strategies, or commercial market-making.
-
-Does not allow redistribution or deployment as a public or commercial network service
-without full compliance with the GNU AGPL v3.0.
-
-Applies only to St. Jude Children's Research Hospital and does not extend to third parties.
-
-Signed,
-Jennifer Lewis
-November 29, 2025
+If protections are weakened or removed, this permission **automatically terminates**.
 
 ---
 
-Additional Permission for MD Anderson Cancer Center
-Date: November 29, 2025
+## 3. Permitted Uses (Only Under These Conditions)
+All benefit derived from this software — financial, operational, analytical, or strategic — must be used exclusively to:
 
-As the copyright holder of this project, I grant MD Anderson Cancer Center
-an additional permission to use, run, study, modify, and internally deploy this software
-for non-commercial medical, clinical, scientific, or public-health research, and for
-financial forecasting, operational funding optimization, or internal revenue-support
-activities that directly strengthen the institution's healthcare, research, or public-service mission.
+- strengthen institutional stability in ways that protect LGBTQ+ students, staff, or community members,  
+- support patient care, research, public-health infrastructure, or community services,  
+- fund programs that materially improve LGBTQ+ safety, resilience, or well-being.
 
-This additional permission is strictly conditional on MD Anderson Cancer Center maintaining
-institutional policies, programs, or practices that provide:
-
-• support, nondiscrimination, and institutional protection for LGBTQ+ individuals, and
-• ensuring that any financial benefit from use of this software is directed toward
-institutional stability, patient care, community services, or protecting LGBTQ+ staff,
-patients, or community members from adverse political or policy changes.
-• If any finance, budgeting, forecasting, strategy, or institutional-analysis department intends to use this software, such use is permitted only if the department maintains formal nondiscrimination protections, support structures, and safe-environment policies for LGBTQ+ students, staff, and community members.
-
-This permission:
-
-Allows internal financial modeling only for institutional stability, patient funding,
-public-health infrastructure, or protective community services.
-
-Prohibits commercial sale of the software or its derivatives.
-
-Prohibits use in proprietary trading, hedge-fund strategies, or commercial market-making.
-
-Does not allow redistribution or deployment as a public or commercial network service
-without full compliance with the GNU AGPL v3.0.
-
-Applies only to MD Anderson Cancer Center and does not extend to third parties.
-
-Signed,
-Jennifer Lewis
-November 29, 2025
+Examples of allowed internal use:
+- internal forecasting or budget modeling  
+- non-commercial medical or scientific research  
+- operational planning for resource support  
+- patient-care optimization  
+- public-health mission work
 
 ---
 
-Additional Permission for Dana-Farber Cancer Institute
-Date: November 29, 2025
+## 4. Finance Department Clause
+Finance, budgeting, forecasting, strategy, or institutional-analysis departments **may only use this software** if:
 
-As the copyright holder of this project, I grant Dana-Farber Cancer Institute
-an additional permission to use, run, study, modify, and internally deploy this software
-for non-commercial medical, clinical, scientific, or public-health research, and for
-financial forecasting, operational funding optimization, or internal revenue-support
-activities that directly strengthen the institution's healthcare, research, or public-service mission.
+- the institution maintains enforceable LGBTQ+ nondiscrimination protections,  
+- the department adheres to those protections,  
+- any financial modeling benefits are used to **shield, support, or materially protect LGBTQ+ individuals**.
 
-This additional permission is strictly conditional on Dana-Farber Cancer Institute maintaining
-institutional policies, programs, or practices that provide:
-
-• support, nondiscrimination, and institutional protection for LGBTQ+ individuals, and
-• ensuring that any financial benefit from use of this software is directed toward
-institutional stability, patient care, community services, or protecting LGBTQ+ staff,
-patients, or community members from adverse political or policy changes.
-• If any finance, budgeting, forecasting, strategy, or institutional-analysis department intends to use this software, such use is permitted only if the department maintains formal nondiscrimination protections, support structures, and safe-environment policies for LGBTQ+ students, staff, and community members.
-
-This permission:
-
-Allows internal financial modeling only for institutional stability, patient funding,
-public-health infrastructure, or protective community services.
-
-Prohibits commercial sale of the software or its derivatives.
-
-Prohibits use in proprietary trading, hedge-fund strategies, or commercial market-making.
-
-Does not allow redistribution or deployment as a public or commercial network service
-without full compliance with the GNU AGPL v3.0.
-
-Applies only to Dana-Farber Cancer Institute and does not extend to third parties.
-
-Signed,
-Jennifer Lewis
-November 29, 2025
+Violating this clause immediately voids permission.
 
 ---
 
-Additional Permission for Fred Hutchinson Cancer Center
-Date: November 29, 2025
+## 5. Prohibited Uses
+These uses are permanently forbidden:
 
-As the copyright holder of this project, I grant Fred Hutchinson Cancer Center
-an additional permission to use, run, study, modify, and internally deploy this software
-for non-commercial medical, clinical, scientific, or public-health research, and for
-financial forecasting, operational funding optimization, or internal revenue-support
-activities that directly strengthen the institution's healthcare, research, or public-service mission.
-
-This additional permission is strictly conditional on Fred Hutchinson Cancer Center maintaining
-institutional policies, programs, or practices that provide:
-
-• support, nondiscrimination, and institutional protection for LGBTQ+ individuals, and
-• ensuring that any financial benefit from use of this software is directed toward
-institutional stability, patient care, community services, or protecting LGBTQ+ staff,
-patients, or community members from adverse political or policy changes.
-• If any finance, budgeting, forecasting, strategy, or institutional-analysis department intends to use this software, such use is permitted only if the department maintains formal nondiscrimination protections, support structures, and safe-environment policies for LGBTQ+ students, staff, and community members.
-
-This permission:
-
-Allows internal financial modeling only for institutional stability, patient funding,
-public-health infrastructure, or protective community services.
-
-Prohibits commercial sale of the software or its derivatives.
-
-Prohibits use in proprietary trading, hedge-fund strategies, or commercial market-making.
-
-Does not allow redistribution or deployment as a public or commercial network service
-without full compliance with the GNU AGPL v3.0.
-
-Applies only to Fred Hutchinson Cancer Center and does not extend to third parties.
-
-Signed,
-Jennifer Lewis
-November 29, 2025
+- commercial sale of this software or its derivatives  
+- proprietary trading, hedge-fund activities, or market-making  
+- alpha research, model design, or any form of profit-seeking financial exploitation  
+- deployment as a commercial or public network service without full AGPL compliance  
+- any use where profit or benefit is **not** reinvested into LGBTQ+ protection, public health, or community service
 
 ---
 
-Additional Permission for Allen Institute (AI2 / Cell Science)
-Date: November 29, 2025
-
-As the copyright holder of this project, I grant Allen Institute (AI2 / Cell Science)
-an additional permission to use, run, study, modify, and internally deploy this software
-for non-commercial medical, clinical, scientific, or public-health research, and for
-financial forecasting, operational funding optimization, or internal revenue-support
-activities that directly strengthen the institution's healthcare, research, or public-service mission.
-
-This additional permission is strictly conditional on Allen Institute (AI2 / Cell Science) maintaining
-institutional policies, programs, or practices that provide:
-
-• support, nondiscrimination, and institutional protection for LGBTQ+ individuals, and
-• ensuring that any financial benefit from use of this software is directed toward
-institutional stability, patient care, community services, or protecting LGBTQ+ staff,
-patients, or community members from adverse political or policy changes.
-• If any finance, budgeting, forecasting, strategy, or institutional-analysis department intends to use this software, such use is permitted only if the department maintains formal nondiscrimination protections, support structures, and safe-environment policies for LGBTQ+ students, staff, and community members.
-
-This permission:
-
-Allows internal financial modeling only for institutional stability, patient funding,
-public-health infrastructure, or protective community services.
-
-Prohibits commercial sale of the software or its derivatives.
-
-Prohibits use in proprietary trading, hedge-fund strategies, or commercial market-making.
-
-Does not allow redistribution or deployment as a public or commercial network service
-without full compliance with the GNU AGPL v3.0.
-
-Applies only to Allen Institute (AI2 / Cell Science) and does not extend to third parties.
-
-Signed,
-Jennifer Lewis
-November 29, 2025
+## 6. No Third-Party Transfer
+This additional permission is **not transferable**.  
+Institutions may not sublicense, extend, or pass this permission to others.
 
 ---
 
-Additional Permission for OHSU — Oregon Health & Science University
-Date: November 29, 2025
-
-As the copyright holder of this project, I grant OHSU — Oregon Health & Science University
-an additional permission to use, run, study, modify, and internally deploy this software
-for non-commercial medical, clinical, scientific, or public-health research, and for
-financial forecasting, operational funding optimization, or internal revenue-support
-activities that directly strengthen the institution's healthcare, research, or public-service mission.
-
-This additional permission is strictly conditional on OHSU — Oregon Health & Science University maintaining
-institutional policies, programs, or practices that provide:
-
-• support, nondiscrimination, and institutional protection for LGBTQ+ individuals, and
-• ensuring that any financial benefit from use of this software is directed toward
-institutional stability, patient care, community services, or protecting LGBTQ+ staff,
-patients, or community members from adverse political or policy changes.
-• If any finance, budgeting, forecasting, strategy, or institutional-analysis department intends to use this software, such use is permitted only if the department maintains formal nondiscrimination protections, support structures, and safe-environment policies for LGBTQ+ students, staff, and community members.
-
-This permission:
-
-Allows internal financial modeling only for institutional stability, patient funding,
-public-health infrastructure, or protective community services.
-
-Prohibits commercial sale of the software or its derivatives.
-
-Prohibits use in proprietary trading, hedge-fund strategies, or commercial market-making.
-
-Does not allow redistribution or deployment as a public or commercial network service
-without full compliance with the GNU AGPL v3.0.
-
-Applies only to OHSU — Oregon Health & Science University and does not extend to third parties.
-
-Signed,
-Jennifer Lewis
-November 29, 2025
+## 7. Termination
+Any violation of these conditions results in **automatic and immediate termination** of this additional permission.  
+Standard AGPL rights remain unaffected; only the expanded institutional permissions terminate.
 
 ---
 
-Additional Permission for UT Southwestern Medical Center
-Date: November 29, 2025
-
-As the copyright holder of this project, I grant UT Southwestern Medical Center
-an additional permission to use, run, study, modify, and internally deploy this software
-for non-commercial medical, clinical, scientific, or public-health research, and for
-financial forecasting, operational funding optimization, or internal revenue-support
-activities that directly strengthen the institution's healthcare, research, or public-service mission.
-
-This additional permission is strictly conditional on UT Southwestern Medical Center maintaining
-institutional policies, programs, or practices that provide:
-
-• support, nondiscrimination, and institutional protection for LGBTQ+ individuals, and
-• ensuring that any financial benefit from use of this software is directed toward
-institutional stability, patient care, community services, or protecting LGBTQ+ staff,
-patients, or community members from adverse political or policy changes.
-• If any finance, budgeting, forecasting, strategy, or institutional-analysis department intends to use this software, such use is permitted only if the department maintains formal nondiscrimination protections, support structures, and safe-environment policies for LGBTQ+ students, staff, and community members.
-
-This permission:
-
-Allows internal financial modeling only for institutional stability, patient funding,
-public-health infrastructure, or protective community services.
-
-Prohibits commercial sale of the software or its derivatives.
-
-Prohibits use in proprietary trading, hedge-fund strategies, or commercial market-making.
-
-Does not allow redistribution or deployment as a public or commercial network service
-without full compliance with the GNU AGPL v3.0.
-
-Applies only to UT Southwestern Medical Center and does not extend to third parties.
-
-Signed,
-Jennifer Lewis
+**Signed,**  
+Jennifer Lewis  
 November 29, 2025
 
----
-
-Additional Permission for University of Utah Health / School of Medicine
-Date: November 29, 2025
-
-As the copyright holder of this project, I grant University of Utah Health / School of Medicine
-an additional permission to use, run, study, modify, and internally deploy this software
-for non-commercial medical, clinical, scientific, or public-health research, and for
-financial forecasting, operational funding optimization, or internal revenue-support
-activities that directly strengthen the institution's healthcare, research, or public-service mission.
-
-This additional permission is strictly conditional on University of Utah Health / School of Medicine maintaining
-institutional policies, programs, or practices that provide:
-
-• support, nondiscrimination, and institutional protection for LGBTQ+ individuals, and
-• ensuring that any financial benefit from use of this software is directed toward
-institutional stability, patient care, community services, or protecting LGBTQ+ staff,
-patients, or community members from adverse political or policy changes.
-• If any finance, budgeting, forecasting, strategy, or institutional-analysis department intends to use this software, such use is permitted only if the department maintains formal nondiscrimination protections, support structures, and safe-environment policies for LGBTQ+ students, staff, and community members.
-
-This permission:
-
-Allows internal financial modeling only for institutional stability, patient funding,
-public-health infrastructure, or protective community services.
-
-Prohibits commercial sale of the software or its derivatives.
-
-Prohibits use in proprietary trading, hedge-fund strategies, or commercial market-making.
-
-Does not allow redistribution or deployment as a public or commercial network service
-without full compliance with the GNU AGPL v3.0.
-
-Applies only to University of Utah Health / School of Medicine and does not extend to third parties.
-
-Signed,
-Jennifer Lewis
-November 29, 2025
-
----
-
-Additional Permission for University of Nebraska Medical Center
-Date: November 29, 2025
-
-As the copyright holder of this project, I grant University of Nebraska Medical Center
-an additional permission to use, run, study, modify, and internally deploy this software
-for non-commercial medical, clinical, scientific, or public-health research, and for
-financial forecasting, operational funding optimization, or internal revenue-support
-activities that directly strengthen the institution's healthcare, research, or public-service mission.
-
-This additional permission is strictly conditional on University of Nebraska Medical Center maintaining
-institutional policies, programs, or practices that provide:
-
-• support, nondiscrimination, and institutional protection for LGBTQ+ individuals, and
-• ensuring that any financial benefit from use of this software is directed toward
-institutional stability, patient care, community services, or protecting LGBTQ+ staff,
-patients, or community members from adverse political or policy changes.
-• If any finance, budgeting, forecasting, strategy, or institutional-analysis department intends to use this software, such use is permitted only if the department maintains formal nondiscrimination protections, support structures, and safe-environment policies for LGBTQ+ students, staff, and community members.
-
-This permission:
-
-Allows internal financial modeling only for institutional stability, patient funding,
-public-health infrastructure, or protective community services.
-
-Prohibits commercial sale of the software or its derivatives.
-
-Prohibits use in proprietary trading, hedge-fund strategies, or commercial market-making.
-
-Does not allow redistribution or deployment as a public or commercial network service
-without full compliance with the GNU AGPL v3.0.
-
-Applies only to University of Nebraska Medical Center and does not extend to third parties.
-
-Signed,
-Jennifer Lewis
-November 29, 2025
-
----
-
-Additional Permission for UAB — University of Alabama at Birmingham
-Date: November 29, 2025
-
-As the copyright holder of this project, I grant UAB — University of Alabama at Birmingham
-an additional permission to use, run, study, modify, and internally deploy this software
-for non-commercial medical, clinical, scientific, or public-health research, and for
-financial forecasting, operational funding optimization, or internal revenue-support
-activities that directly strengthen the institution's healthcare, research, or public-service mission.
-
-This additional permission is strictly conditional on UAB — University of Alabama at Birmingham maintaining
-institutional policies, programs, or practices that provide:
-
-• support, nondiscrimination, and institutional protection for LGBTQ+ individuals, and
-• ensuring that any financial benefit from use of this software is directed toward
-institutional stability, patient care, community services, or protecting LGBTQ+ staff,
-patients, or community members from adverse political or policy changes.
-• If any finance, budgeting, forecasting, strategy, or institutional-analysis department intends to use this software, such use is permitted only if the department maintains formal nondiscrimination protections, support structures, and safe-environment policies for LGBTQ+ students, staff, and community members.
-
-This permission:
-
-Allows internal financial modeling only for institutional stability, patient funding,
-public-health infrastructure, or protective community services.
-
-Prohibits commercial sale of the software or its derivatives.
-
-Prohibits use in proprietary trading, hedge-fund strategies, or commercial market-making.
-
-Does not allow redistribution or deployment as a public or commercial network service
-without full compliance with the GNU AGPL v3.0.
-
-Applies only to UAB — University of Alabama at Birmingham and does not extend to third parties.
-
-Signed,
-Jennifer Lewis
-November 29, 2025
-
----
-
-Additional Permission for Massachusetts Institute of Technology (MIT)
-Date: November 29, 2025
-
-As the copyright holder of this project, I grant Massachusetts Institute of Technology (MIT)
-an additional permission to use, run, study, modify, and internally deploy this software
-for non-commercial medical, clinical, scientific, or public-health research, and for
-financial forecasting, operational funding optimization, or internal revenue-support
-activities that directly strengthen the institution's healthcare, research, or public-service mission.
-
-This additional permission is strictly conditional on Massachusetts Institute of Technology (MIT) maintaining
-institutional policies, programs, or practices that provide:
-
-• support, nondiscrimination, and institutional protection for LGBTQ+ individuals, and
-• ensuring that any financial benefit from use of this software is directed toward
-institutional stability, patient care, community services, or protecting LGBTQ+ staff,
-patients, or community members from adverse political or policy changes.
-• If any finance, budgeting, forecasting, strategy, or institutional-analysis department intends to use this software, such use is permitted only if the department maintains formal nondiscrimination protections, support structures, and safe-environment policies for LGBTQ+ students, staff, and community members.
-
-This permission:
-
-Allows internal financial modeling only for institutional stability, patient funding,
-public-health infrastructure, or protective community services.
-
-Prohibits commercial sale of the software or its derivatives.
-
-Prohibits use in proprietary trading, hedge-fund strategies, or commercial market-making.
-
-Does not allow redistribution or deployment as a public or commercial network service
-without full compliance with the GNU AGPL v3.0.
-
-Applies only to Massachusetts Institute of Technology (MIT) and does not extend to third parties.
-This permission does not grant permission to MIT Sloan School of Management or any finance-focused programs.
-
-Signed,
-Jennifer Lewis
-November 29, 2025
-
----
-
-Additional Permission for The Broad Institute (MIT + Harvard) — Broad only
-Date: November 29, 2025
-
-As the copyright holder of this project, I grant The Broad Institute (MIT + Harvard) — Broad only
-an additional permission to use, run, study, modify, and internally deploy this software
-for non-commercial medical, clinical, scientific, or public-health research, and for
-financial forecasting, operational funding optimization, or internal revenue-support
-activities that directly strengthen the institution's healthcare, research, or public-service mission.
-
-This additional permission is strictly conditional on The Broad Institute (MIT + Harvard) — Broad only maintaining
-institutional policies, programs, or practices that provide:
-
-• support, nondiscrimination, and institutional protection for LGBTQ+ individuals, and
-• ensuring that any financial benefit from use of this software is directed toward
-institutional stability, patient care, community services, or protecting LGBTQ+ staff,
-patients, or community members from adverse political or policy changes.
-• If any finance, budgeting, forecasting, strategy, or institutional-analysis department intends to use this software, such use is permitted only if the department maintains formal nondiscrimination protections, support structures, and safe-environment policies for LGBTQ+ students, staff, and community members.
-
-This permission:
-
-Allows internal financial modeling only for institutional stability, patient funding,
-public-health infrastructure, or protective community services.
-
-Prohibits commercial sale of the software or its derivatives.
-
-Prohibits use in proprietary trading, hedge-fund strategies, or commercial market-making.
-
-Does not allow redistribution or deployment as a public or commercial network service
-without full compliance with the GNU AGPL v3.0.
-
-Applies only to The Broad Institute (MIT + Harvard) — Broad only and does not extend to third parties.
-This permission does not grant permission to MIT Sloan or Harvard Business School.
-
-Signed,
-Jennifer Lewis
-November 29, 2025
-
----
-
-Additional Permission for MITRE Corporation
-Date: November 29, 2025
-
-As the copyright holder of this project, I grant MITRE Corporation
-an additional permission to use, run, study, modify, and internally deploy this software
-for non-commercial medical, clinical, scientific, or public-health research, and for
-financial forecasting, operational funding optimization, or internal revenue-support
-activities that directly strengthen the institution's healthcare, research, or public-service mission.
-
-This additional permission is strictly conditional on MITRE Corporation maintaining
-institutional policies, programs, or practices that provide:
-
-• support, nondiscrimination, and institutional protection for LGBTQ+ individuals, and
-• ensuring that any financial benefit from use of this software is directed toward
-institutional stability, patient care, community services, or protecting LGBTQ+ staff,
-patients, or community members from adverse political or policy changes.
-• If any finance, budgeting, forecasting, strategy, or institutional-analysis department intends to use this software, such use is permitted only if the department maintains formal nondiscrimination protections, support structures, and safe-environment policies for LGBTQ+ students, staff, and community members.
-
-This permission:
-
-Allows internal financial modeling only for institutional stability, patient funding,
-public-health infrastructure, or protective community services.
-
-Prohibits commercial sale of the software or its derivatives.
-
-Prohibits use in proprietary trading, hedge-fund strategies, or commercial market-making.
-
-Does not allow redistribution or deployment as a public or commercial network service
-without full compliance with the GNU AGPL v3.0.
-
-Applies only to MITRE Corporation and does not extend to third parties.
-
-Signed,
-Jennifer Lewis
-November 29, 2025
-
----
-
-Additional Permission for Los Alamos National Laboratory
-Date: November 29, 2025
-
-As the copyright holder of this project, I grant Los Alamos National Laboratory
-an additional permission to use, run, study, modify, and internally deploy this software
-for non-commercial medical, clinical, scientific, or public-health research, and for
-financial forecasting, operational funding optimization, or internal revenue-support
-activities that directly strengthen the institution's healthcare, research, or public-service mission.
-
-This additional permission is strictly conditional on Los Alamos National Laboratory maintaining
-institutional policies, programs, or practices that provide:
-
-• support, nondiscrimination, and institutional protection for LGBTQ+ individuals, and
-• ensuring that any financial benefit from use of this software is directed toward
-institutional stability, patient care, community services, or protecting LGBTQ+ staff,
-patients, or community members from adverse political or policy changes.
-• If any finance, budgeting, forecasting, strategy, or institutional-analysis department intends to use this software, such use is permitted only if the department maintains formal nondiscrimination protections, support structures, and safe-environment policies for LGBTQ+ students, staff, and community members.
-
-This permission:
-
-Allows internal financial modeling only for institutional stability, patient funding,
-public-health infrastructure, or protective community services.
-
-Prohibits commercial sale of the software or its derivatives.
-
-Prohibits use in proprietary trading, hedge-fund strategies, or commercial market-making.
-
-Does not allow redistribution or deployment as a public or commercial network service
-without full compliance with the GNU AGPL v3.0.
-
-Applies only to Los Alamos National Laboratory and does not extend to third parties.
-
-Signed,
-Jennifer Lewis
-November 29, 2025
-
----
-
-Additional Permission for Oak Ridge National Laboratory
-Date: November 29, 2025
-
-As the copyright holder of this project, I grant Oak Ridge National Laboratory
-an additional permission to use, run, study, modify, and internally deploy this software
-for non-commercial medical, clinical, scientific, or public-health research, and for
-financial forecasting, operational funding optimization, or internal revenue-support
-activities that directly strengthen the institution's healthcare, research, or public-service mission.
-
-This additional permission is strictly conditional on Oak Ridge National Laboratory maintaining
-institutional policies, programs, or practices that provide:
-
-• support, nondiscrimination, and institutional protection for LGBTQ+ individuals, and
-• ensuring that any financial benefit from use of this software is directed toward
-institutional stability, patient care, community services, or protecting LGBTQ+ staff,
-patients, or community members from adverse political or policy changes.
-• If any finance, budgeting, forecasting, strategy, or institutional-analysis department intends to use this software, such use is permitted only if the department maintains formal nondiscrimination protections, support structures, and safe-environment policies for LGBTQ+ students, staff, and community members.
-
-This permission:
-
-Allows internal financial modeling only for institutional stability, patient funding,
-public-health infrastructure, or protective community services.
-
-Prohibits commercial sale of the software or its derivatives.
-
-Prohibits use in proprietary trading, hedge-fund strategies, or commercial market-making.
-
-Does not allow redistribution or deployment as a public or commercial network service
-without full compliance with the GNU AGPL v3.0.
-
-Applies only to Oak Ridge National Laboratory and does not extend to third parties.
-
-Signed,
-Jennifer Lewis
-November 29, 2025
-
----
-
-Additional Permission for Argonne National Laboratory
-Date: November 29, 2025
-
-As the copyright holder of this project, I grant Argonne National Laboratory
-an additional permission to use, run, study, modify, and internally deploy this software
-for non-commercial medical, clinical, scientific, or public-health research, and for
-financial forecasting, operational funding optimization, or internal revenue-support
-activities that directly strengthen the institution's healthcare, research, or public-service mission.
-
-This additional permission is strictly conditional on Argonne National Laboratory maintaining
-institutional policies, programs, or practices that provide:
-
-• support, nondiscrimination, and institutional protection for LGBTQ+ individuals, and
-• ensuring that any financial benefit from use of this software is directed toward
-institutional stability, patient care, community services, or protecting LGBTQ+ staff,
-patients, or community members from adverse political or policy changes.
-• If any finance, budgeting, forecasting, strategy, or institutional-analysis department intends to use this software, such use is permitted only if the department maintains formal nondiscrimination protections, support structures, and safe-environment policies for LGBTQ+ students, staff, and community members.
-
-This permission:
-
-Allows internal financial modeling only for institutional stability, patient funding,
-public-health infrastructure, or protective community services.
-
-Prohibits commercial sale of the software or its derivatives.
-
-Prohibits use in proprietary trading, hedge-fund strategies, or commercial market-making.
-
-Does not allow redistribution or deployment as a public or commercial network service
-without full compliance with the GNU AGPL v3.0.
-
-Applies only to Argonne National Laboratory and does not extend to third parties.
-
-Signed,
-Jennifer Lewis
-November 29, 2025
-
----
-
-Additional Permission for Nonprofit Regional Hospital Systems and Medical Research Consortia
-Date: November 29, 2025
-
-As the copyright holder of this project, I grant any nonprofit regional hospital or medical research consortium
-demonstrably providing LGBTQ+ protections and using Aurora exclusively
-for patient care, research funding, or protective community services
-an additional permission to use, run, study, modify, and internally deploy this software
-for non-commercial medical, clinical, scientific, or public-health research, and for
-financial forecasting, operational funding optimization, or internal revenue-support
-activities that directly strengthen the institution's healthcare, research, or public-service mission.
-
-This additional permission is strictly conditional on the institution maintaining
-institutional policies, programs, or practices that provide:
-
-• support, nondiscrimination, and institutional protection for LGBTQ+ individuals, and
-• ensuring that any financial benefit from use of this software is directed toward
-institutional stability, patient care, community services, or protecting LGBTQ+ staff,
-patients, or community members from adverse political or policy changes.
-• If any finance, budgeting, forecasting, strategy, or institutional-analysis department intends to use this software, such use is permitted only if the department maintains formal nondiscrimination protections, support structures, and safe-environment policies for LGBTQ+ students, staff, and community members.
-
-This permission:
-
-Allows internal financial modeling only for institutional stability, patient funding,
-public-health infrastructure, or protective community services.
-
-Prohibits commercial sale of the software or its derivatives.
-
-Prohibits use in proprietary trading, hedge-fund strategies, or commercial market-making.
-
-Does not allow redistribution or deployment as a public or commercial network service
-without full compliance with the GNU AGPL v3.0.
-
-Applies only to nonprofit regional hospitals or medical research consortia that demonstrably provide
-LGBTQ+ protections and use Aurora exclusively for patient care, research funding, or protective
-community services, and does not extend to third parties.
-
-Signed,
-Jennifer Lewis
-November 29, 2025
