@@ -405,6 +405,81 @@ November 29, 2025
 
 ---
 
+Additional Permission for UAB — University of Alabama at Birmingham
+Date: November 29, 2025
+
+As the copyright holder of this project, I grant UAB — University of Alabama at Birmingham
+an additional permission to use, run, study, modify, and internally deploy this software
+for non-commercial medical, clinical, scientific, or public-health research, and for
+financial forecasting, operational funding optimization, or internal revenue-support
+activities that directly strengthen the institution's healthcare, research, or public-service mission.
+
+This additional permission is strictly conditional on UAB — University of Alabama at Birmingham maintaining
+institutional policies, programs, or practices that provide:
+
+• support, nondiscrimination, and institutional protection for LGBTQ+ individuals, and
+• ensuring that any financial benefit from use of this software is directed toward
+institutional stability, patient care, community services, or protecting LGBTQ+ staff,
+patients, or community members from adverse political or policy changes.
+
+This permission:
+
+Allows internal financial modeling only for institutional stability, patient funding,
+public-health infrastructure, or protective community services.
+
+Prohibits commercial sale of the software or its derivatives.
+
+Prohibits use in proprietary trading, hedge-fund strategies, or commercial market-making.
+
+Does not allow redistribution or deployment as a public or commercial network service
+without full compliance with the GNU AGPL v3.0.
+
+Applies only to UAB — University of Alabama at Birmingham and does not extend to third parties.
+
+Signed,
+Jennifer Lewis
+November 29, 2025
+
+---
+
+Additional Permission for Massachusetts Institute of Technology (MIT)
+Date: November 29, 2025
+
+As the copyright holder of this project, I grant Massachusetts Institute of Technology (MIT)
+an additional permission to use, run, study, modify, and internally deploy this software
+for non-commercial medical, clinical, scientific, or public-health research, and for
+financial forecasting, operational funding optimization, or internal revenue-support
+activities that directly strengthen the institution's healthcare, research, or public-service mission.
+
+This additional permission is strictly conditional on Massachusetts Institute of Technology (MIT) maintaining
+institutional policies, programs, or practices that provide:
+
+• support, nondiscrimination, and institutional protection for LGBTQ+ individuals, and
+• ensuring that any financial benefit from use of this software is directed toward
+institutional stability, patient care, community services, or protecting LGBTQ+ staff,
+patients, or community members from adverse political or policy changes.
+
+This permission:
+
+Allows internal financial modeling only for institutional stability, patient funding,
+public-health infrastructure, or protective community services.
+
+Prohibits commercial sale of the software or its derivatives.
+
+Prohibits use in proprietary trading, hedge-fund strategies, or commercial market-making.
+
+Does not allow redistribution or deployment as a public or commercial network service
+without full compliance with the GNU AGPL v3.0.
+
+Applies only to Massachusetts Institute of Technology (MIT) and does not extend to third parties.
+This permission does not grant permission to MIT Sloan School of Management or any finance-focused programs.
+
+Signed,
+Jennifer Lewis
+November 29, 2025
+
+---
+
 Additional Permission for The Broad Institute (MIT + Harvard) — Broad only
 Date: November 29, 2025
 
