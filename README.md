@@ -1,5 +1,7 @@
 email: jtlewis@uab.edu
 
+Disclaimer: I’m still learning this domain, so this may not be perfect. Please review and audit before any production use.
+
 # High-Frequency Trading (HFT) Machine Learning System
 
 A comprehensive high-frequency trading machine learning platform featuring temporal leakage prevention, cross-sectional feature engineering, and a production-ready model zoo with 17+ model families optimized for HFT applications.
