@@ -38,7 +38,8 @@ Are you an institution (university, hospital, nonprofit, research lab, public-he
 
  ▼
 
-Do you maintain explicit, enforceable LGBTQ+ nondiscrimination protections?
+Do you maintain explicit, enforceable nondiscrimination protections 
+for ALL marginalized groups (not just one group)?
 
  │
 
@@ -47,6 +48,20 @@ Do you maintain explicit, enforceable LGBTQ+ nondiscrimination protections?
  │
 
  └── YES → Continue ↓
+
+ │
+
+ ▼
+
+Do you protect some minorities while discriminating against others?
+
+ │
+
+ ├── YES → STOP. Cherry-picking protections is prohibited.
+
+ │
+
+ └── NO → Continue ↓
 
  │
 
@@ -68,7 +83,7 @@ Will Aurora be used for any operational, financial, forecasting, budgeting, or a
 
 Will ALL resulting benefit be reinvested directly in:
 
-    - LGBTQ+ protection/support, OR
+    - protection/support of marginalized groups, OR
 
     - patient care, OR
 
@@ -114,7 +129,8 @@ Is this use ANY of the following?
 
 Does the finance/budgeting/strategy department using Aurora 
 
-adhere to the same LGBTQ+ protections as the institution?
+adhere to the same comprehensive minority protections as the institution 
+(protecting ALL marginalized groups, not just one)?
 
  │
 
@@ -131,5 +147,6 @@ adhere to the same LGBTQ+ protections as the institution?
 FINAL RESULT:
 
 Use is permitted under the Universal Additional Permission.
+
 
 

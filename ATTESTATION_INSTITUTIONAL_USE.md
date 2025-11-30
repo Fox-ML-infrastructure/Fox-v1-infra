@@ -1,4 +1,4 @@
-# Institutional Attestation of LGBTQ+ Protective Use
+# Institutional Attestation of Comprehensive Minority Protection
 
 This attestation must be completed and signed by any institution seeking to rely on 
 the Additional Permission in EXCEPTION.md.
@@ -27,17 +27,29 @@ Institution Type (check one):
 
 ---
 
-## LGBTQ+ Protection Confirmation
+## Comprehensive Minority Protection Confirmation
 
 By signing, the institution confirms:
 
-- It maintains written, enforceable nondiscrimination policies protecting LGBTQ+ individuals.
+- It maintains written, enforceable nondiscrimination policies protecting **ALL** marginalized groups, including but not limited to:
+  - **LGBTQ+ individuals** (lesbian, gay, bisexual, transgender, queer, intersex, asexual, non-binary, etc.)
+  - **Racial and ethnic minorities** (Black, African American, Latino/Latinx, Asian, Native American/Indigenous, Middle Eastern/North African, multiracial, and all people of color)
+  - **Religious minorities** (Muslims, Jews, Sikhs, Hindus, Buddhists, atheists, agnostics, etc.)
+  - **People with disabilities** (physical, intellectual, developmental, mental health, chronic illness, neurodivergent, etc.)
+  - **Women and gender minorities** (women, non-binary, transgender, gender non-conforming individuals)
+  - **Immigrants and refugees** (documented and undocumented immigrants, refugees, asylum seekers, temporary residents)
+  - **People experiencing poverty or housing insecurity** (low income, homelessness, economic disadvantage)
+  - **Any other historically marginalized or oppressed groups** (see EXCEPTION.md for complete definition)
 
-- It provides support, safety, and protection programs for LGBTQ+ students, staff, patients, or community members.
+- It provides support, safety, and protection programs for **ALL** marginalized students, staff, patients, or community members.
 
-- It does not engage in any discriminatory or anti-LGBTQ+ policies or practices.
+- It does not engage in any discriminatory policies or practices against **ANY** marginalized groups.
 
-- All use of Aurora materially benefits or protects LGBTQ+ people or public-interest missions.
+- It does NOT cherry-pick protections (protecting some minorities while discriminating against others).
+
+- All use of Aurora materially benefits or protects **ALL** marginalized people or public-interest missions.
+
+**Institutions must protect ALL minorities comprehensively. Selective protection is not sufficient.**
 
 Initial here to confirm: ______
 
@@ -57,7 +69,7 @@ Confirm the following:
 
 - No commercial deployment or sale will occur. (Initial: ____)
 
-- No benefit will be used to harm LGBTQ+ individuals. (Initial: ____)
+- No benefit will be used to harm **ANY** marginalized individuals. (Initial: ____)
 
 - All financial or operational benefit is reinvested into public-interest goals. (Initial: ____)
 
@@ -76,5 +88,6 @@ Institution: _____________________
 Date: __________________________  
 
 Signature: ______________________
+
 
 

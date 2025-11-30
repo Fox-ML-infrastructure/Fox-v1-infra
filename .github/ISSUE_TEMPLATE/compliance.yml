@@ -1,6 +1,6 @@
 name: License Compliance Acknowledgment
 
-description: You must confirm you understand the LGBTQ+ Protective Use Clause.
+description: You must confirm you understand the Comprehensive Minority Protection Clause.
 
 body:
   - type: markdown
@@ -10,9 +10,11 @@ body:
 
         By opening an issue, you acknowledge:
 
-        - This project uses AGPL v3 + a Universal LGBTQ+ Protective Use Clause.
+        - This project uses AGPL v3 + a Universal Comprehensive Minority Protection Clause.
 
         - Institutional, financial, and operational use is strictly conditional.
+
+        - Institutions must protect ALL minorities comprehensively (cannot cherry-pick protections).
 
         - Commercial finance and profit-seeking use are prohibited.
 
@@ -22,7 +24,9 @@ body:
       description: You must agree to proceed.
       options:
         - label: I understand that this project forbids commercial/profit-seeking financial use.
-        - label: I understand that institutional use requires LGBTQ+ protection compliance.
-        - label: I agree not to use this project in any way that harms LGBTQ+ people.
+        - label: I understand that institutional use requires comprehensive protection of ALL marginalized groups.
+        - label: I understand that institutions cannot cherry-pick protections (must protect all minorities).
+        - label: I agree not to use this project in any way that harms ANY marginalized people.
+
 
 

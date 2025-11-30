@@ -25,13 +25,15 @@ The copyright holder (Jennifer Lewis) retains full authority to:
 
 The copyright holder may request reasonable documentation confirming:
 
-- LGBTQ+ nondiscrimination protections,
+- comprehensive nondiscrimination protections for **ALL** marginalized groups (not just one group),
 
 - the institution's public-interest mission,
 
 - the non-commercial nature of use,
 
-- how financial or operational benefits are reinvested into LGBTQ+ protection or public service.
+- how financial or operational benefits are reinvested into protection of marginalized groups or public service.
+
+**Institutions must demonstrate protection for ALL minorities, not selective protection.**
 
 Institutions must supply documentation within **14 days** of request.
 
@@ -43,19 +45,21 @@ Failure to respond = automatic termination.
 
 The Additional Permission terminates **immediately and without notice** if:
 
-- protections for LGBTQ+ individuals are weakened, removed, or not enforced,
+- protections for **ANY** marginalized group are weakened, removed, or not enforced,
+
+- the institution protects some minorities while discriminating against others (cherry-picking protections),
 
 - the software is used for any financial profit-seeking activity,
 
 - the software is used for proprietary trading, alpha research, market-making, or speculative activity,
 
-- any benefit is used to harm, surveil, suppress, or disadvantage LGBTQ+ people,
+- any benefit is used to harm, surveil, suppress, or disadvantage **ANY** marginalized people,
 
 - the institution denies verification or fails to provide documentation,
 
 - the institution or its representatives have engaged in harassment, discrimination, professional sabotage, or abuse toward the creator,
 
-- the institution has a documented record of discrimination against LGBTQ+ individuals,
+- the institution has a documented record of discrimination against **ANY** marginalized groups,
 
 - the institution uses the software in systems that harass, target, discriminate, surveil, or harm marginalized groups.
 
@@ -81,7 +85,7 @@ Upon termination, the institution must:
 
 The Additional Permission must be interpreted according to its core intent:
 
-**To ensure that all institutional benefit produced from this software protects LGBTQ+ people 
+**To ensure that all institutional benefit produced from this software protects ALL marginalized people 
 and strengthens public-interest missions.**
 
 Any interpretation that weakens, bypasses, or strategically reframes this intent is invalid.

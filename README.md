@@ -1,7 +1,7 @@
 email: jtlewis@uab.edu
 
 Any use-case that involves money, forecasting, modeling, optimization, or strategy is prohibited 
-unless the resulting benefit is directly reinvested into LGBTQ+ protection or public service. 
+unless the resulting benefit is directly reinvested into protection of marginalized groups or public service. 
 There are no exceptions, reinterpretations, or edge-case allowances.
 
 ---
@@ -28,38 +28,62 @@ Disclaimer: I'm still learning this domain, so this may not be perfect. Please r
 
 ## Licensing Summary
 
-![LGBTQ+ Protective Use Only](https://img.shields.io/badge/Use-LGBTQ%2B%20Protective%20Only-purple?style=for-the-badge)
+![Minority Protective Use Only](https://img.shields.io/badge/Use-Minority%20Protective%20Only-purple?style=for-the-badge)
 
 This project is licensed under the **GNU AGPL v3.0**.  
 In addition to the AGPL, this project includes a **Universal Additional Permission**
 (see `EXCEPTION.md`) granting expanded rights ONLY to nonprofit, academic, medical, public-health, 
-and community-service organizations that maintain enforceable protections for LGBTQ+ individuals.
+and community-service organizations that maintain **comprehensive, enforceable protections for ALL marginalized groups**.
+
+**Institutions cannot cherry-pick protections. They must protect ALL minorities, including but not limited to:**
+
+**Sexual Orientation and Gender Identity:** LGBTQ+ individuals, non-binary, transgender, and gender-diverse people
+
+**Race and Ethnicity:** Black, Latino/Latinx, Asian, Native American/Indigenous, Middle Eastern/North African, multiracial, and all people of color
+
+**Religion:** Religious minorities (Muslims, Jews, Sikhs, Hindus, Buddhists, atheists, etc.)
+
+**Disability:** Physical, intellectual, developmental, mental health, chronic illness, and neurodivergent individuals
+
+**Gender:** Women, non-binary, transgender, and gender non-conforming individuals
+
+**Immigration Status:** Immigrants, refugees, asylum seekers, and temporary residents
+
+**Socioeconomic Status:** People experiencing poverty, homelessness, housing insecurity, or economic disadvantage
+
+**Other Marginalized Groups:** People with criminal records, limited English proficiency, older adults facing discrimination, people with HIV/AIDS, sex workers, rural communities, and any other group facing systemic discrimination
+
+**See EXCEPTION.md for the complete definition of marginalized groups.**
 
 All institutional use of this software must:
-1. materially benefit LGBTQ+ people,  
-2. materially protect LGBTQ+ people, or  
+1. materially benefit **ALL** marginalized people,  
+2. materially protect **ALL** marginalized people, or  
 3. directly support public-health, patient care, or community-service missions.
 
-Institutions that do NOT maintain LGBTQ+ protections are **not permitted** to use this software 
+Institutions that do NOT maintain **comprehensive protections for ALL marginalized groups** are **not permitted** to use this software 
 for any internal, operational, analytical, financial, forecasting, or strategic purpose.
+
+**Protecting some minorities while discriminating against others is prohibited.**
 
 Commercial entities, hedge funds, trading firms, for-profit finance groups, or any actor seeking 
 commercial profit or financial advantage are **explicitly prohibited** from using this software 
 beyond the baseline rights guaranteed by the AGPL. Financial modeling, forecasting, allocation, 
-alpha research, market analysis, or strategic decision-making use by commercial or anti-LGBTQ 
+alpha research, market analysis, or strategic decision-making use by commercial or discriminatory 
 organizations is strictly forbidden.
 
-This project may not be used to harm, disadvantage, surveil, target, or restrict LGBTQ+ people 
+This project may not be used to harm, disadvantage, surveil, target, or restrict **ANY** marginalized people 
 under ANY circumstances. No interpretive loopholes exist: if a use-case does not clearly support 
-public good and LGBTQ+ protection, it is prohibited.
+public good and comprehensive protection of ALL marginalized groups, it is prohibited.
 
 ## Warning Against Bad-Faith or Strategic Misuse
 
 Any attempt to exploit, reinterpret, or narrow the meaning of this Additional Permission 
-for purposes of bypassing LGBTQ+ protections or enabling financial profit-seeking is 
+for purposes of bypassing protections for marginalized groups or enabling financial profit-seeking is 
 considered a violation. 
 
-If a use-case is not clearly and unambiguously aligned with LGBTQ+ protection or public-good 
+**Institutions cannot cherry-pick protections. Protecting one group while discriminating against others is prohibited.**
+
+If a use-case is not clearly and unambiguously aligned with comprehensive protection of **ALL** marginalized groups or public-good 
 missions, it is prohibited.
 
 ## License Documentation & Compliance Tools

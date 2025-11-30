@@ -22,19 +22,23 @@ the creator or marginalized communities are not welcome to use this software.
 
 ## Protection of Marginalized Communities
 
-This project was built to protect and support LGBTQ+ people and other marginalized communities. 
+This project was built to protect and support **ALL** marginalized communities. 
 Any use that contradicts this purpose is prohibited.
 
+**Institutions must protect ALL minorities comprehensively. They cannot cherry-pick protections.**
+
 The license explicitly forbids:
-- Use in systems that harm, surveil, or discriminate against marginalized groups
-- Use by institutions with documented records of discrimination
+- Use in systems that harm, surveil, or discriminate against **ANY** marginalized groups
+- Use by institutions with documented records of discrimination against **ANY** marginalized groups
+- Use by institutions that protect some minorities while discriminating against others
 - Use that benefits entities that participate in targeted harassment
 
 ## No Hostile Actors
 
 This project is not available for use by individuals or institutions that:
 - Contributed to marginalization, discouragement, or harm toward its creator
-- Have policies or practices that harm LGBTQ+ people
+- Have policies or practices that harm **ANY** marginalized people
+- Protect some minorities while discriminating against others (cherry-picking protections)
 - Participate in targeted harassment of marginalized communities
 - Use their power to suppress or disadvantage vulnerable groups
 
@@ -55,5 +59,6 @@ This is a boundary. It is clear. It is enforceable. It is non-negotiable.
 ---
 
 **This is not just code. This is protection. This is resistance. This is care.**
+
 
 
