@@ -4,7 +4,7 @@
 
 I build ML research pipelines, quantitative modeling systems, and HPC workflows for institutions that need high-performance engineering without hiring a full-time team.
 
-🔗 **Aurora-v2** (50k+ LOC Quant/ML System): This repository demonstrates production-ready ML pipelines, quantitative research frameworks, and high-performance trading systems.
+🔗 **Aurora-v2** (50k+ LOC Quant/ML System): This repository demonstrates research-grade ML pipelines, quantitative research frameworks, and high-performance trading infrastructure. It is a reference system for internal research and engineering—not a plug-and-play trading bot.
 
 ---
 
@@ -53,6 +53,7 @@ All other services extend from these core competencies.
 - **Remote contract work** — All engagements conducted remotely
 - **Defined deliverables** — Every project includes a formal Statement of Work (SOW)
 - **Flexible engagement** — Hourly, project-based, or retainer arrangements
+- **Rates** — Standard consulting starts at **$300/hr**, with higher rates for latency-critical, 24/7, or high-urgency work (see [`CONSULTING_POLICY.md`](CONSULTING_POLICY.md) for details)
 - **Organizational focus** — Specialized support for institutions, research organizations, and enterprises
 
 ---

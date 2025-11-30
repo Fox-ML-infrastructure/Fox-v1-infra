@@ -20,6 +20,7 @@ Aurora_v2_Whitepaper.pdf
 MASTER_TEMPLATE.md
 VOLTAGE_PARK/
 VOLTAGE_PARK
+.gitignore
 # random junk
 __pycahce__/
 *.pay[cod]
