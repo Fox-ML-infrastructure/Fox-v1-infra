@@ -18,16 +18,27 @@
 !STATEMENT_OF_WORK.md
 
 # Keep core source code directories (must un-ignore directories before files)
+# Use ** to recursively un-ignore all subdirectories and files within
 !ALPACA_trading/
+!ALPACA_trading/**
 !IBKR_trading/
+!IBKR_trading/**
 !DATA_PROCESSING/
+!DATA_PROCESSING/**
 !TRAINING/
+!TRAINING/**
 !CONFIG/
+!CONFIG/**
 !scripts/
+!scripts/**
 !SETUP/
+!SETUP/**
 !INFORMATION/
+!INFORMATION/**
 !NOTES/
+!NOTES/**
 !docs/
+!docs/**
 
 # Within kept directories, keep all Python, config, and markdown files
 !**/*.py

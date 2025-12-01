@@ -1,0 +1,219 @@
+# Family Configuration - Thread Policies and Runtime Behavior
+#
+# thread_policy options:
+#   - omp_heavy: High OpenMP threads (LightGBM, XGBoost, etc.)
+#   - cpu_blas_only: Single-threaded BLAS to avoid MKL segfaults (Ridge-based families)
+#   - tf_cpu: TensorFlow on CPU only (no GPU warnings)
+#   - tf_gpu: TensorFlow with GPU support (when available)
+#   - torch_gpu: PyTorch with GPU support (when available)
+
+families:
+  # ---- CPU-only families (tree-based, boosting) ----
+  LightGBM:
+    module: model_fun.lightgbm_trainer
+    class: LightGBMTrainer
+    thread_policy: omp_heavy
+    needs_tf: false
+    needs_torch: false
+    ridge_solver: auto
+
+  QuantileLightGBM:
+    module: model_fun.quantile_lightgbm_trainer
+    class: QuantileLightGBMTrainer
+    thread_policy: omp_heavy
+    needs_tf: false
+    needs_torch: false
+    ridge_solver: auto
+
+  XGBoost:
+    module: model_fun.xgboost_trainer
+    class: XGBoostTrainer
+    thread_policy: omp_heavy
+    needs_tf: false
+    needs_torch: false
+    ridge_solver: auto
+
+  NGBoost:
+    module: model_fun.ngboost_trainer
+    class: NGBoostTrainer
+    thread_policy: omp_heavy
+    needs_tf: false
+    needs_torch: false
+    ridge_solver: auto
+
+  Ensemble:
+    module: model_fun.ensemble_trainer
+    class: EnsembleTrainer
+    thread_policy: omp_heavy
+    needs_tf: false
+    needs_torch: false
+    ridge_solver: auto
+
+  # ---- BLAS-heavy families (prone to MKL segfaults) ----
+  # These use Ridge/Lasso internally via scipy.linalg.solve
+  # Single-threaded BLAS + LSQR solver prevents segfaults
+  RewardBased:
+    module: model_fun.reward_based_trainer
+    class: RewardBasedTrainer
+    thread_policy: cpu_blas_only
+    needs_tf: false
+    needs_torch: false
+    ridge_solver: lsqr  # Safer than auto/cholesky
+
+  ChangePoint:
+    module: model_fun.change_point_trainer
+    class: ChangePointTrainer
+    thread_policy: cpu_blas_only
+    needs_tf: false
+    needs_torch: false
+    ridge_solver: lsqr  # Avoids scipy.linalg.solve segfaults
+
+  GMMRegime:
+    module: model_fun.gmm_regime_trainer
+    class: GMMRegimeTrainer
+    thread_policy: cpu_blas_only
+    needs_tf: false
+    needs_torch: false
+    ridge_solver: lsqr  # Avoids MKL threading issues
+
+  FTRLProximal:
+    module: model_fun.ftrl_proximal_trainer
+    class: FTRLProximalTrainer
+    thread_policy: cpu_blas_only
+    needs_tf: false
+    needs_torch: false
+    ridge_solver: lsqr
+
+  # ---- TensorFlow families (GPU enabled - must run in-process, not isolated) ----
+  # To use GPU: set TRAINER_NO_ISOLATION=1 and add crash-prone families to TRAINER_FORCE_ISOLATION_FOR
+  MLP:
+    module: model_fun.mlp_trainer
+    class: MLPTrainer
+    thread_policy: tf_gpu  # Enable GPU (requires in-process training)
+    needs_tf: true
+    needs_torch: false
+    ridge_solver: auto
+
+  VAE:
+    module: model_fun.vae_trainer
+    class: VAETrainer
+    thread_policy: tf_gpu  # Enable GPU (requires in-process training)
+    needs_tf: true
+    needs_torch: false
+    ridge_solver: auto
+
+  GAN:
+    module: model_fun.gan_trainer
+    class: GANTrainer
+    thread_policy: tf_gpu  # Enable GPU (requires in-process training)
+    needs_tf: true
+    needs_torch: false
+    ridge_solver: auto
+
+  MetaLearning:
+    module: model_fun.meta_learning_trainer
+    class: MetaLearningTrainer
+    thread_policy: omp_heavy  # CPU-only (sklearn StackingRegressor)
+    needs_tf: false
+    needs_torch: false
+    ridge_solver: auto
+
+  MultiTask:
+    module: model_fun.multi_task_trainer
+    class: MultiTaskTrainer
+    thread_policy: tf_gpu  # Enable GPU (requires in-process training)
+    needs_tf: true
+    needs_torch: false
+    ridge_solver: auto
+
+  # ---- PyTorch families (GPU when available) ----
+  CNN1D:
+    module: model_fun.cnn1d_trainer
+    class: CNN1DTrainer
+    thread_policy: torch_gpu
+    needs_tf: false
+    needs_torch: true
+    ridge_solver: auto
+
+  LSTM:
+    module: model_fun.lstm_trainer
+    class: LSTMTrainer
+    thread_policy: torch_gpu
+    needs_tf: false
+    needs_torch: true
+    ridge_solver: auto
+
+  Transformer:
+    module: model_fun.transformer_trainer
+    class: TransformerTrainer
+    thread_policy: torch_gpu
+    needs_tf: false
+    needs_torch: true
+    ridge_solver: auto
+
+  TabCNN:
+    module: model_fun.tabcnn_trainer
+    class: TabCNNTrainer
+    thread_policy: torch_gpu
+    needs_tf: false
+    needs_torch: true
+    ridge_solver: auto
+
+  TabLSTM:
+    module: model_fun.tablstm_trainer
+    class: TabLSTMTrainer
+    thread_policy: torch_gpu
+    needs_tf: false
+    needs_torch: true
+    ridge_solver: auto
+
+  TabTransformer:
+    module: model_fun.tabtransformer_trainer
+    class: TabTransformerTrainer
+    thread_policy: torch_gpu
+    needs_tf: false
+    needs_torch: true
+    ridge_solver: auto
+
+# Thread policy definitions
+thread_policies:
+  omp_heavy:
+    description: "High OpenMP parallelism for tree-based models"
+    # OMP and MKL set dynamically based on available cores
+    
+  cpu_blas_only:
+    description: "Single-threaded BLAS to avoid MKL segfaults"
+    OMP_NUM_THREADS: 1
+    MKL_NUM_THREADS: 1
+    OPENBLAS_NUM_THREADS: 1
+    NUMEXPR_NUM_THREADS: 1
+    MKL_THREADING_LAYER: SEQUENTIAL
+    KMP_AFFINITY: disabled
+    KMP_INIT_AT_FORK: "FALSE"
+    
+  tf_cpu:
+    description: "TensorFlow CPU-only (no GPU warnings)"
+    CUDA_VISIBLE_DEVICES: "-1"
+    OMP_NUM_THREADS: 1
+    MKL_NUM_THREADS: 1
+    OPENBLAS_NUM_THREADS: 1
+    NUMEXPR_NUM_THREADS: 1
+    TF_CPP_MIN_LOG_LEVEL: "2"  # Suppress GPU warnings
+    
+  tf_gpu:
+    description: "TensorFlow with GPU support"
+    # CUDA_VISIBLE_DEVICES set from TRAINER_GPU_IDS
+    OMP_NUM_THREADS: 1
+    MKL_NUM_THREADS: 1
+    OPENBLAS_NUM_THREADS: 1
+    NUMEXPR_NUM_THREADS: 1
+    TF_FORCE_GPU_ALLOW_GROWTH: "true"
+    TF_CPP_MIN_LOG_LEVEL: "1"  # Show warnings for diagnostics
+    
+  torch_gpu:
+    description: "PyTorch with GPU support"
+    # CUDA_VISIBLE_DEVICES set from TRAINER_GPU_IDS
+    OMP_NUM_THREADS: 2
+    MKL_NUM_THREADS: 1
+    OPENBLAS_NUM_THREADS: 1
+    NUMEXPR_NUM_THREADS: 1

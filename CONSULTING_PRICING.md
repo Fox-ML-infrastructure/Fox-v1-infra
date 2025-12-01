@@ -137,14 +137,3 @@ For questions or to begin an engagement:
 
 **Subject:** Consulting Inquiry — [Your Organization Name]
 
----
-
-If you want, I can generate:
-
-* a PDF version
-* a more formal enterprise whitepaper style
-* a linkable table for your README
-* a “How to Choose the Right Tier” guide
-* or a project scoping questionnaire to pre-filter clients.
-
-

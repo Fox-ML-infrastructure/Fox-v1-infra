@@ -1,0 +1,38 @@
+# LSTM Model Configuration
+# Long Short-Term Memory for sequential data
+
+model_family: "LSTM"
+description: "LSTM model for time-series prediction"
+
+hyperparameters:
+  # Training
+  epochs: 50
+  batch_size: 512
+  patience: 10
+  learning_rate: 0.001
+  
+  # Architecture
+  lstm_units: 128
+  dropout: 0.2
+  recurrent_dropout: 0.1
+  
+  # Sequence
+  sequence_length: null  # Auto-detected from input
+
+# Variants
+variants:
+  small:
+    lstm_units: 64
+    dropout: 0.1
+    recurrent_dropout: 0.05
+    
+  medium:
+    lstm_units: 128
+    dropout: 0.2
+    recurrent_dropout: 0.1
+    
+  large:
+    lstm_units: 256
+    dropout: 0.3
+    recurrent_dropout: 0.2
+

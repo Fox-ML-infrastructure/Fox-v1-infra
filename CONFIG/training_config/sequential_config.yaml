@@ -1,0 +1,101 @@
+# Sequential Mode Configuration
+# ===========================
+# Configuration for sequence-based models (CNN1D, LSTM, Transformer, etc.)
+
+sequential:
+  # Enable sequential mode
+  enabled: true
+  
+  # Sequence parameters
+  lookback_T: 60          # Number of lookback bars for sequences
+  stride: 1               # Step between samples (1 = every bar, 2 = every other bar)
+  
+  # Model families that require sequences
+  families:
+    - "CNN1D"
+    - "LSTM" 
+    - "Transformer"
+    - "TabLSTM"
+    - "TabTransformer"
+    - "VAE"
+    - "MultiTask"
+  
+  # Horizon mapping for different targets
+  horizon_map:
+    fwd_ret_1m: 1
+    fwd_ret_5m: 5
+    fwd_ret_10m: 10
+    fwd_ret_15m: 15
+    fwd_ret_30m: 30
+    fwd_ret_60m: 60
+    fwd_ret_1h: 60
+    fwd_ret_4h: 240
+    fwd_ret_1d: 1440
+  
+  # Live inference settings
+  live:
+    ttl_seconds: 300      # Time-to-live for buffer data (5 minutes)
+    max_buffers: 100      # Maximum number of symbol buffers
+    cleanup_interval: 60  # Buffer cleanup interval (seconds)
+  
+  # Model-specific settings
+  models:
+    CNN1D:
+      hidden_dims: [128, 64]
+      dropout: 0.3
+      kernel_size: 5
+    
+    LSTM:
+      hidden_dim: 128
+      num_layers: 2
+      dropout: 0.3
+      bidirectional: false
+    
+    Transformer:
+      d_model: 128
+      nhead: 8
+      num_layers: 3
+      dropout: 0.1
+    
+    TabLSTM:
+      tabular_dim: 32     # Number of tabular features
+      lstm_hidden: 128
+      dropout: 0.3
+    
+    TabTransformer:
+      tabular_dim: 32     # Number of tabular features
+      d_model: 128
+      nhead: 8
+      num_layers: 3
+      dropout: 0.1
+    
+    VAE:
+      latent_dim: 32
+      hidden_dims: [128, 64]
+      dropout: 0.3
+    
+    MultiTask:
+      shared_hidden: 128
+      task_hidden: 64
+      dropout: 0.3
+  
+  # Data validation
+  validation:
+    check_nan: true
+    check_inf: true
+    check_leakage: true
+    max_sequence_gap: 300  # Maximum gap between timestamps (seconds)
+  
+  # Performance settings
+  performance:
+    batch_size: 32
+    num_workers: 0        # 0 for deterministic behavior
+    pin_memory: true
+    prefetch_factor: 2
+    
+  # Logging
+  logging:
+    level: "INFO"
+    log_sequences: false  # Whether to log sequence data (can be verbose)
+    log_predictions: true
+    log_buffer_status: true

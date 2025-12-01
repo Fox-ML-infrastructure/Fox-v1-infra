@@ -1,0 +1,150 @@
+# First Batch Training Specifications
+# ===================================
+# Recommended configurations for "1st batch" model training
+# Based on Spec 1 (MTL), Spec 2 (High Regularization), and Spec 3 (Stacking)
+
+# Spec 1: Multitask Learning (MTL) - MultiTask Trainer
+# For correlated targets (TTH, MDD, MFE, etc.)
+multitask:
+  # Architecture
+  hidden_dim: 256              # Shared hidden layer size
+  dropout: 0.2                 # Dropout rate
+  learning_rate: 3e-4          # 1e-4 to 5e-4 range (using middle)
+  
+  # Training
+  epochs: 50
+  batch_size: 512
+  patience: 10                 # Early stopping patience
+  
+  # Multi-head configuration
+  use_multi_head: true         # Enable multi-head mode for correlated targets
+  target_names:                # List of target names (auto-detected if not provided)
+    - "tth"                     # Time to horizon
+    - "mdd"                     # Maximum drawdown
+    - "mfe"                     # Maximum favorable excursion
+  loss_weights:                # Loss weights per target (default: all 1.0)
+    tth: 1.0
+    mdd: 0.5                    # Example: de-emphasize MDD if needed
+    mfe: 1.0
+
+# Spec 2: High Regularization - LightGBM & XGBoost
+# Fixes overfitting while maintaining high complexity
+
+lightgbm:
+  # Tree structure
+  num_leaves: 96               # 64-128 range (using middle)
+  max_depth: 8                 # 7-9 range (using 8)
+  min_data_in_leaf: 200        # Minimum samples in leaf
+  min_child_weight: 0.5         # 0.1-1.0 range
+  
+  # Regularization
+  feature_fraction: 0.75       # 0.7-0.8 range (colsample_bytree)
+  bagging_fraction: 0.75       # 0.7-0.8 range (subsample)
+  bagging_freq: 1              # Enable bagging every iteration
+  lambda_l1: 0.1               # L1 regularization (0.1-1.0 range)
+  lambda_l2: 0.1               # L2 regularization (0.1-1.0 range)
+  
+  # Training
+  learning_rate: 0.03          # 0.01-0.05 range (using middle)
+  n_estimators: 1000           # Use early stopping instead of high n_estimators
+  early_stopping_rounds: 50    # Early stopping patience
+
+xgboost:
+  # Tree structure
+  max_depth: 7                 # 5-8 range (using 7)
+  min_child_weight: 0.5        # 0.1-1.0 range (reduced from 10)
+  gamma: 0.3                   # min_split_gain: 0.1-0.5 range
+  
+  # Regularization
+  subsample: 0.75              # 0.7-0.8 range
+  colsample_bytree: 0.75        # 0.7-0.8 range
+  reg_alpha: 0.1               # L1 reg: 0.1-1.0 range (reduced from 1.0)
+  reg_lambda: 0.1              # L2 reg: 0.1-1.0 range (reduced from 2.0)
+  
+  # Training
+  eta: 0.03                    # learning_rate: 0.01-0.05 range (using middle)
+  n_estimators: 1000            # Use early stopping instead
+  early_stopping_rounds: 50    # Early stopping patience
+
+# Spec 3: Stacking Regressor - Ensemble Trainer
+# Robust ensemble with proper CV to prevent data leakage
+
+ensemble:
+  # Use StackingRegressor (Spec 3) vs weighted blend (legacy)
+  use_stacking: true            # Enable StackingRegressor with CV
+  stacking_cv: 5                # K=5 or K=10 for cross-validation
+  
+  # Base estimators
+  hgb:
+    max_iter: 300
+    max_depth: 8
+    learning_rate: 0.05
+    max_bins: 255
+    l2_regularization: 1e-4
+    early_stop: true
+  
+  rf:
+    n_estimators: 300
+    max_depth: 15               # Spec 3: 15 (was 18)
+    max_features: "sqrt"        # Spec 3: sqrt
+    max_samples: 0.7
+  
+  # Final estimator (Ridge)
+  final_estimator_alpha: 1.0    # 1.0-10.0 range, tune with CV
+  ridge_alpha: 1.0              # Legacy: for weighted blend mode
+
+# Specialized Boosters - Probabilistic Prediction
+
+quantile_lightgbm:
+  # Use Spec 2 regularization + quantile objective
+  alpha: 0.5                    # Quantile level (train two models: 0.05 and 0.95 for range)
+  learning_rate: 0.05
+  n_estimators: 2000
+  num_leaves: 64
+  max_depth: -1
+  min_data_in_leaf: 2048        # Stabilizes quantile
+  feature_fraction: 0.7
+  bagging_fraction: 0.7
+  lambda_l1: 0.0
+  lambda_l2: 2.0
+  early_stopping_rounds: 100
+  max_bin: 63
+  time_budget_sec: 1800         # 30 min default
+
+ngboost:
+  # Probabilistic prediction with distribution
+  n_estimators: 700
+  learning_rate: 0.03
+  early_stopping_rounds: 50
+  clip: 10.0
+  # Base learner: DecisionTreeRegressor with low max_depth (3-5)
+  base_max_depth: 4             # Very low depth for base learner
+  col_sample: 0.6
+  minibatch_frac: 0.2
+  # Distribution: Normal or LogNormal for trading returns
+  dist: "Normal"                # Options: "Normal", "LogNormal"
+
+# Time Series / Regime Models - Feature Engineering
+
+gmm_regime:
+  # Gaussian Mixture Model for regime detection
+  n_components: 3               # Start with 3-4 regimes (low-vol, bull, bear, high-vol)
+  covariance_type: "full"
+  max_iter: 100
+  random_state: 42
+
+change_point:
+  # Structural break detection
+  n_bkps: 5                     # Number of breakpoints
+  pen: 10.0                      # Penalty parameter
+  # Output: features like "days_since_last_changepoint"
+
+# Notes
+# =====
+# 1. LightGBM/XGBoost: Train separate models for each target (TTH, MDD, MFE)
+# 2. MultiTask: Train ONE model with multiple output heads for correlated targets
+# 3. QuantileLightGBM: Train TWO models (alpha=0.05 and alpha=0.95) to get prediction range
+# 4. Ensemble: Use StackingRegressor with CV (Spec 3) for robust predictions
+# 5. All models use early stopping to prevent overfitting
+# 6. Regularization parameters are tuned to fix overfitting while maintaining complexity
+
