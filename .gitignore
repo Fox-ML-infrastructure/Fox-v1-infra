@@ -107,6 +107,8 @@
 # Environment files
 .env
 .env.local
+**/paper-trading.env
+**/*.env
 .venv/
 venv/
 ENV/
