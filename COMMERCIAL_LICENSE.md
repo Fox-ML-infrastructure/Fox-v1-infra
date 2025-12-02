@@ -84,4 +84,4 @@ For commercial licensing, enterprise use, or SOW negotiation:
 
     Jennifer Lewis
     Aurora Project
-    Email: [your contact]
+    Email: jenn.lewis5789@gmail.com
