@@ -73,8 +73,6 @@ Commercial licensing fees are determined based on:
     • additional deliverables,
     • criticality of deployment.
 
-Base consulting rates start at $300/hr unless otherwise agreed.
-
 8. GOVERNING LAW
 This License is governed by the laws of the United States and the State of Alabama,
 without regard to conflicts of law.
