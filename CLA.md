@@ -75,9 +75,9 @@ Licensee agrees to pay the annual commercial license fee corresponding to organi
 
 Annual Commercial License Fees
 
-Starter (<20 engineers): $10,000 per year
+Starter (<20 engineers): $18,000 per year
 
-Professional (20–100 engineers): $25,000 per year
+Professional (20–100 engineers): $45,000 per year
 
 Enterprise (>100 engineers): $150,000 per year
 
