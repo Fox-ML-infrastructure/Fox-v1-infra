@@ -351,6 +351,9 @@ def child_env_for_family(family: str, threads: int, gpu_ok: bool = True) -> dict
         # Don't set OMP_PLACES or KMP_AFFINITY - they can cause 2-core binding issues
         "GOMP_CPU_AFFINITY": gomp_affinity,  # Tell libgomp which CPUs to use
         "KMP_BLOCKTIME": "0",
+        # Force MKL to use GNU OpenMP (libgomp) instead of Intel OpenMP (libiomp5)
+        # This prevents conflicts with LightGBM/XGBoost which use libgomp
+        "MKL_THREADING_LAYER": "GNU",
 
         # TF/JAX/XLA hygiene
         "CUDA_VISIBLE_DEVICES": cvd,

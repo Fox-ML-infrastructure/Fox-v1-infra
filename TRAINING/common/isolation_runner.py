@@ -218,8 +218,24 @@ def _bootstrap_family_runtime(family: str, logger_inst):
         if "tf" in policy.backends and not no_tf:
             # Ensure TF memory growth is enabled before import
             _os.environ.setdefault("TF_FORCE_GPU_ALLOW_GROWTH", "true")
+            # Suppress harmless version compatibility warnings (use_unbounded_threadpool)
+            # These occur when graphs are created with newer TF than runtime - harmless
+            import warnings
+            warnings.filterwarnings("ignore", message=".*use_unbounded_threadpool.*", category=UserWarning)
             # Import TensorFlow - show warnings so user knows if GPU isn't working
             import tensorflow as tf
+            # Suppress TensorFlow's own version compatibility warnings
+            import logging
+            tf_logger = logging.getLogger("tensorflow")
+            # Filter out the specific NodeDef attribute warnings (harmless version mismatch)
+            class _TFFilter(logging.Filter):
+                def filter(self, record):
+                    if "use_unbounded_threadpool" in record.getMessage():
+                        return False
+                    if "Unknown attributes will be ignored" in record.getMessage():
+                        return False
+                    return True
+            tf_logger.addFilter(_TFFilter())
             
             # Set TF threading (read from env vars set by child_env_for_family)
             intra = int(_os.getenv("TF_NUM_INTRAOP_THREADS", "1"))
