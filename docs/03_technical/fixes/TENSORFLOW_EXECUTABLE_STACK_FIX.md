@@ -16,7 +16,7 @@ This is a system-level security issue. The TensorFlow library (`libtensorflow_cc
 
 ### Option 1: Fix TensorFlow Libraries (Recommended)
 
-Use `execstack` to mark the TensorFlow libraries as requiring an executable stack:
+Use `execstack -c` to **CLEAR** the executable stack flag (the library is marked as requiring it, but your system blocks it):
 
 ```bash
 # Install execstack if not available
@@ -24,15 +24,31 @@ sudo pacman -S execstack  # Arch Linux
 # or
 sudo apt-get install execstack  # Debian/Ubuntu
 
-# Find all TensorFlow libraries
-find ~/miniconda3/envs/trader_env/lib/python*/site-packages/tensorflow -name "*.so*" -type f
+# Step 1: Find the main TensorFlow library
+python3 << 'EOF'
+import os, tensorflow as tf
+tf_dir = os.path.dirname(tf.__file__)
+lib_path = os.path.join(tf_dir, "libtensorflow_cc.so.2")
+print(lib_path)
+EOF
 
-# Fix all TensorFlow shared libraries
+# Step 2: Check current flag (should show 'X' = requires executable stack)
+execstack -q /path/to/libtensorflow_cc.so.2
+
+# Step 3: CLEAR the flag (use -c to clear, not set)
+execstack -c /path/to/libtensorflow_cc.so.2
+
+# Step 4: Verify (should show '-' = does NOT require executable stack)
+execstack -q /path/to/libtensorflow_cc.so.2
+
+# Step 5: Fix ALL TensorFlow libraries
 find ~/miniconda3/envs/trader_env/lib/python*/site-packages/tensorflow -name "*.so*" -type f -exec execstack -c {} \;
 
-# Verify the fix
-find ~/miniconda3/envs/trader_env/lib/python*/site-packages/tensorflow -name "*.so*" -type f -exec scanelf -qe {} \; | grep -i "rwx"
+# Step 6: Test TensorFlow import
+python3 -c "import tensorflow as tf; print('✅ TensorFlow works!'); print('GPUs:', len(tf.config.list_physical_devices('GPU')))"
 ```
+
+**Important**: Use `execstack -c` to **CLEAR** the flag (make it `-`), not set it. The library comes with `X` (requires executable stack) which your system blocks, so we clear it to `-` (does not require).
 
 ### Option 2: Use CPU-Only TensorFlow (Workaround)
 
