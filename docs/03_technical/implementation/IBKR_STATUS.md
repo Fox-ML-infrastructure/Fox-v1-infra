@@ -51,7 +51,7 @@ System uses `IBKR_trading/config/ibkr_enhanced.yaml` for all configuration.
 
 ## Next Steps
 
-See [ROADMAP](../../../ROADMAP.md) for 2026 Q1 testing and validation goals.
+See [ROADMAP](../../../ROADMAP.md) for testing and validation priorities.
 
 ## See Also
 

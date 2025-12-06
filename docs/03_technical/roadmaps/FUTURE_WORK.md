@@ -1,23 +1,25 @@
 # Future Work
 
-Planned features and enhancements.
+Planned features and enhancements. These are aspirational goals, not hard deadlines.
 
-## 2026 Goals
+## Near-term Priorities
 
-### Q1 2026: Testing & Validation
+### Testing & Validation
 
 - Comprehensive testing for Alpaca and IBKR modules
 - Performance validation and optimization
 - Bug fixes and stability improvements
 
-### Q2 2026: Production Readiness
+### Production Readiness
 
 - Complete test coverage
 - Enhanced monitoring
 - Production deployment guides
 - Disaster recovery procedures
 
-### Q3-Q4 2026: Advanced Features
+## Future Enhancements
+
+### Advanced Features
 
 - Enhanced model ensemble strategies
 - Advanced risk management

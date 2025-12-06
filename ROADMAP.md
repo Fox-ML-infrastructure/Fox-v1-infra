@@ -1,6 +1,6 @@
-# Fox ML Infrastructure — Roadmap (Winter 2025 → 2026)
+# Fox ML Infrastructure — Roadmap
 
-Stability now. Feature development resumes January 2026.
+Direction and priorities for ongoing development. Timelines are aspirational and subject to change.
 
 ## Phase 0 — Winter 2025 (Right Now)
 
@@ -27,7 +27,7 @@ Documentation restructuring and creation completed:
 
 Goal: Deliver a stable, understandable release for early evaluators and commercial inquiries. **✅ ACHIEVED**
 
-## Phase 1 — January 2026 Development Cycle
+## Phase 1 — Next Development Cycle
 
 This phase addresses the highest-impact improvements to onboarding, reliability, and developer experience.
 
@@ -46,7 +46,7 @@ Impact: Makes the system easier to deploy, audit, and reason about.
 
 Impact: A smoother experience for both open-source users and enterprise clients.
 
-### 3. Testing & Validation (Q1 2026)
+### 3. Testing & Validation
 
 **Alpaca Trading Module**
 - Comprehensive testing suite for paper trading system
@@ -76,7 +76,7 @@ This phase turns it into a seamless, professional customer journey.
 
 Impact: Makes Fox ML Infrastructure feel like a complete, production-ready product.
 
-## Phase 3 — Production Readiness (Q2 2026)
+## Phase 3 — Production Readiness
 
 - Complete test coverage for all trading modules
 - Performance optimization across all components
@@ -95,7 +95,7 @@ Focused on expanding capabilities while keeping the core stable.
 
 Impact: Controlled innovation without destabilizing the core system.
 
-## Phase 5 — High-Performance Rewrite Track (Q3-Q4 2026)
+## Phase 5 — High-Performance Rewrite Track
 
 Long-term improvements targeting performance at the systems level.
 
@@ -113,15 +113,19 @@ Impact: Positions Fox ML Infrastructure as a high-performance, HPC-aligned ML st
 - Real-time performance analytics
 - Advanced execution algorithms
 
-## Summary Timeline
+## Development Priorities
 
-- **Winter 2025**: ✅ Documentation hardening **COMPLETE** (55 new files, 50+ rewritten)
-- **January 2026**: Config system + logging/output overhaul.
-- **Q1 2026**: Testing & validation for Alpaca and IBKR modules.
-- **Early 2026**: Website + integrated Stripe checkout.
-- **Q2 2026**: Production readiness and deployment guides.
-- **Mid 2026**: Exploratory modules and enhancements.
-- **Late 2026**: Lower-level performance rewrites and advanced features.
+Current focus areas (in rough order, subject to change):
+
+- ✅ **Completed**: Documentation hardening (55 new files, 50+ rewritten)
+- **Next**: Config system + logging/output overhaul
+- **Ongoing**: Testing & validation for Alpaca and IBKR modules
+- **Future**: Website + integrated Stripe checkout
+- **Future**: Production readiness and deployment guides
+- **Future**: Exploratory modules and enhancements
+- **Long-term**: Lower-level performance rewrites and advanced features
+
+*Note: As a solo developer, timelines are flexible and priorities may shift based on user feedback and project needs.*
 
 ## Long-term Vision
 
