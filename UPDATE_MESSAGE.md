@@ -6,6 +6,7 @@ Thank you for your patience while I worked through the documentation restructuri
 
 **Current Development Focus:**
 - **TRAINING pipeline** - Primary focus is on updating and fixing the TRAINING pipeline
+- **Deeper refactors** - Planned for more intelligent training capabilities
 - **Target ranking scripts** - Will be confirmed working after TRAINING pipeline updates
 - **Integration** - Target ranking functionality will eventually be rolled into the TRAINING pipeline for easier use
 

@@ -8,6 +8,7 @@ As issues are discovered, they will be fixed immediately as time allows. Getting
 
 **Current Development Focus:**
 - **TRAINING pipeline** - Primary focus is on updating and fixing the TRAINING pipeline
+- **Deeper refactors** - Planned for more intelligent training capabilities
 - **Target ranking scripts** - Will be confirmed working after TRAINING pipeline updates
 - **Integration** - Target ranking functionality will eventually be rolled into the TRAINING pipeline for easier use
 
@@ -39,6 +40,23 @@ Goal: Deliver a stable, understandable release for early evaluators and commerci
 ## Phase 1 — Next Development Cycle
 
 This phase addresses the highest-impact improvements to onboarding, reliability, and developer experience.
+
+### TRAINING Pipeline Refactoring
+
+**Current Focus:**
+- Update and fix existing TRAINING pipeline functionality
+- Address immediate bugs and stability issues
+- Ensure all model families work correctly
+
+**Planned Deeper Refactors:**
+- More intelligent training capabilities
+- Enhanced model selection and ensemble strategies
+- Improved feature engineering integration
+- Smarter hyperparameter optimization
+- Better handling of cross-sectional and time-series data
+- Advanced training workflows and automation
+
+Impact: Transforms TRAINING from a functional system into an intelligent, adaptive training framework.
 
 ### Centralized Configuration System
 - Move scattered config values into structured YAML.
