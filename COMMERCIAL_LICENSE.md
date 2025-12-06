@@ -37,7 +37,9 @@ Non-commercial use of the Software remains available under the AGPL-3.0 license.
 
 The Software is licensed, not sold. As between Licensor and Licensee, Licensor retains all right, title, and interest in and to the Software and all related intellectual property rights, whether registered or unregistered.
 
-**Licensee Developments.** Licensee retains ownership of its own internal configurations, scripts, and integrations created to interface with the Software ("Licensee Developments"), provided that such items do not include source code from the Software other than code allowed to be modified under this License. Licensee grants Licensor a non-exclusive, non-transferable license to use feedback and error reports to improve the Software.
+**Licensee Developments.** Licensee retains ownership of its own internal configurations, scripts, and integrations created to interface with the Software ("Licensee Developments"), provided that such items do not include source code from the Software other than code allowed to be modified under this License.
+
+**Feedback License.** Licensee grants Licensor a non-exclusive, perpetual, irrevocable, worldwide, royalty-free license to use, modify, and incorporate any feedback, suggestions, error reports, or improvements provided by Licensee regarding the Software, without any obligation to Licensee and without giving Licensee ownership of any improvements or modifications made by Licensor.
 
 ## 4. RESTRICTIONS
 
@@ -49,6 +51,7 @@ Unless explicitly permitted in writing by the Licensor, the Licensee may NOT:
 - Remove or alter copyright notices
 - Claim authorship of the Software or its architectural design
 - Use the Software in violation of US export controls or applicable law
+- Use the Software in high-risk environments including but not limited to: medical diagnosis, critical infrastructure, weapons systems, life support systems, nuclear systems, or any environment where failure could result in death, serious injury, or significant property damage
 
 ## 5. TERM AND TERMINATION
 
@@ -85,11 +88,25 @@ require separate consulting agreements or Statements of Work (SOWs).
 
 Support is NOT included unless explicitly contracted.
 
-## 9. FEES
+**No Service Level Guarantees.** Licensor provides no uptime guarantee, no obligation of maintenance, and no guaranteed update schedule. The Software is provided "as is" and Licensee assumes all risk of use, including in production environments.
+
+## 9. UPDATES AND UPGRADES
+
+**Version Definition.** "Version" refers to a release of the Software with a distinct version number (e.g., v1.0, v1.1, v2.0).
+
+**Updates and Upgrades.** Unless explicitly included in a separate agreement:
+- Minor updates, patches, and hotfixes are NOT automatically included
+- Major version upgrades are NOT automatically included
+- New modules, features, or components are NOT automatically included
+- Licensee must purchase separate licenses or upgrade agreements for new versions
+
+**No Obligation.** Licensor has no obligation to provide updates, upgrades, or new versions of the Software.
+
+## 10. FEES
 
 Commercial licensing fees are determined based on organization size, usage tier, integration complexity, required support level, additional deliverables, and criticality of deployment.
 
-## 10. AUDIT RIGHTS
+## 11. AUDIT RIGHTS
 
 Licensor reserves the right to audit Licensee's use of the Software to verify compliance with this License.
 
@@ -104,7 +121,27 @@ Licensor reserves the right to audit Licensee's use of the Software to verify co
 
 **Confidentiality:** All audit information shall be treated as confidential and used solely for compliance verification.
 
-## 11. ASSIGNMENT
+## 12. EXPORT CONTROL COMPLIANCE
+
+Licensee acknowledges that the Software may be subject to export control laws and regulations, including but not limited to:
+- United States Export Administration Regulations (EAR)
+- European Union export control regulations
+- United Kingdom export control regulations
+
+Licensee agrees to comply with all applicable export control laws and regulations. Licensee represents and warrants that:
+- Licensee is not located in, under the control of, or a national or resident of any country subject to comprehensive sanctions
+- Licensee will not export, re-export, or transfer the Software to any prohibited destination or end-user
+- Licensee will not use the Software for any purpose prohibited by applicable export control laws
+
+## 13. INDEPENDENT DEVELOPMENT
+
+Licensor may continue to develop, market, and provide software, products, or services that are similar to or competitive with the Software, regardless of any suggestions, feedback, or feature requests provided by Licensee. This License does not restrict Licensor's right to develop or provide such products or services independently.
+
+## 14. PUBLICITY
+
+Unless otherwise agreed in writing, Licensor may not use Licensee's name, logo, or trademarks in any publicity, marketing materials, or customer lists without Licensee's prior written consent.
+
+## 15. ASSIGNMENT
 
 **Licensee Assignment:**
 Licensee may not assign, transfer, or delegate this License or any rights hereunder without Licensor's prior written consent, except that Licensee may assign this License to an affiliate or in connection with a merger, acquisition, or sale of all or substantially all of Licensee's assets, provided that:
@@ -117,7 +154,7 @@ Licensor may freely assign this License, including in connection with a merger, 
 
 Any attempted assignment in violation of this section is void.
 
-## 12. DISPUTE RESOLUTION
+## 16. DISPUTE RESOLUTION
 
 **Informal Resolution:**
 The parties agree to attempt to resolve disputes through good faith negotiation for at least 30 days before initiating formal proceedings.
@@ -131,11 +168,15 @@ For claims of $250,000 or more, disputes shall be resolved in the state or feder
 **Class Action Waiver:**
 Both parties waive any right to participate in class actions, collective actions, or representative proceedings.
 
-## 13. GOVERNING LAW
+## 17. GOVERNING LAW
 
 This License is governed by the laws of the State of Delaware, United States, without regard to conflicts of law principles. The United Nations Convention on Contracts for the International Sale of Goods does not apply.
 
-## 14. DATA HANDLING AND CONFIDENTIALITY
+## 18. FORCE MAJEURE
+
+Neither party shall be liable for any failure or delay in performance under this License due to circumstances beyond its reasonable control, including but not limited to: acts of God, war, terrorism, riots, embargoes, acts of civil or military authorities, fire, floods, accidents, network or infrastructure failures, strikes, or shortages of transportation facilities, fuel, energy, labor, or materials.
+
+## 19. DATA HANDLING AND CONFIDENTIALITY
 
 **Licensee Confidentiality Obligations:**
 Licensee agrees to maintain the confidentiality of:
@@ -151,11 +192,19 @@ Licensee must implement reasonable technical and administrative safeguards to pr
 **Breach Notification:**
 Licensee must notify Licensor immediately upon discovery of any unauthorized use, disclosure, or breach of security related to the Software.
 
-## 15. SURVIVAL
+## 20. SEVERABILITY
 
-Sections 4 (Restrictions), 6 (No Warranty / Limitation of Liability), 7 (Indemnity), 10 (Audit Rights), 12 (Dispute Resolution), 13 (Governing Law), 14 (Data Handling and Confidentiality), and this Section 15 (Survival) will survive termination or expiration of this License.
+If any provision of this License is held to be invalid, illegal, or unenforceable by a court of competent jurisdiction, the remaining provisions shall remain in full force and effect. The invalid, illegal, or unenforceable provision shall be replaced with a valid, legal, and enforceable provision that comes closest to the intent of the original provision.
 
-## 16. CONTACT
+## 21. ENTIRE AGREEMENT
+
+This License, together with any separate signed commercial agreement or Statement of Work, constitutes the entire agreement between the parties regarding the subject matter hereof and supersedes all prior or contemporaneous agreements, understandings, negotiations, and discussions, whether oral or written, relating to the Software. No modification, amendment, or waiver of any provision of this License shall be effective unless in writing and signed by both parties.
+
+## 22. SURVIVAL
+
+Sections 4 (Restrictions), 6 (No Warranty / Limitation of Liability), 7 (Indemnity), 11 (Audit Rights), 12 (Export Control Compliance), 16 (Dispute Resolution), 17 (Governing Law), 19 (Data Handling and Confidentiality), 20 (Severability), 21 (Entire Agreement), and this Section 22 (Survival) will survive termination or expiration of this License.
+
+## 23. CONTACT
 
 For commercial licensing, enterprise usage, or SOW negotiation, contact:
 
