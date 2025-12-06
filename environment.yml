@@ -132,12 +132,17 @@ dependencies:
 # 2. Activate environment:
 #    conda activate trader_env
 #
-# 3. Build LightGBM with CUDA (RTX 3080):
+# 3. Set MKL threading layer to avoid OpenMP conflicts:
+#    export MKL_THREADING_LAYER=GNU
+#    (This prevents Intel OpenMP conflicts with LightGBM/XGBoost)
+#    (Or add to ~/.bashrc/.zshrc for persistence)
+#
+# 4. Build LightGBM with CUDA (RTX 3080):
 #    bash scripts/build_lightgbm_cuda.sh
 #
-# 4. Verify GPU setup:
+# 5. Verify GPU setup:
 #    python scripts/check_gpu_setup.py
 #
-# 5. Test feature selection:
+# 6. Test feature selection:
 #    python scripts/select_features.py --symbols AAPL
 

@@ -108,6 +108,9 @@ def set_global_determinism(
         "MKL_NUM_THREADS": str(threads),
         "VECLIB_MAXIMUM_THREADS": str(threads),
         "NUMEXPR_NUM_THREADS": str(threads),
+        # Force MKL to use GNU OpenMP (libgomp) instead of Intel OpenMP (libiomp5)
+        # This prevents conflicts with LightGBM/XGBoost which use libgomp
+        "MKL_THREADING_LAYER": "GNU",
         # Intel MKL bitwise compatibility (helps cross-run stability on CPU)
         "MKL_CBWR": "COMPATIBLE",
         "MKL_CBWR_CONDITIONAL": "1",
