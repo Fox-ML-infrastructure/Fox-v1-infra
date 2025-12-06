@@ -12,6 +12,8 @@ This Privacy Policy describes how Fox ML Infrastructure LLC ("we," "our," or "us
 
 Our software is **client-hosted**, meaning it runs entirely on your infrastructure. We have no access to your data, no ability to collect your data, and no infrastructure that could store your data.
 
+**We will never sell user data.** This is a fundamental commitment to protecting client privacy. User data, if any is collected (limited to licensing and support communications), will never be sold, rented, traded, or monetized in any way.
+
 This Privacy Policy covers:
 - **Website usage** (if applicable)
 - **Software licensing** (no data collection)
@@ -121,14 +123,25 @@ This Privacy Policy covers:
 - **Communication** — Responding to inquiries and providing information
 - **Legal compliance** — Complying with legal obligations and responding to legal requests
 
-### 5.2 No Sharing or Selling
+### 5.2 No Sharing or Selling — Permanent Commitment
+
+**We will NEVER sell user data. This is a permanent, non-negotiable commitment to protecting client privacy.**
 
 **We do NOT:**
 
-- ❌ **Sell data** — We do not sell, rent, or trade any information
+- ❌ **Sell data** — We do not sell, rent, trade, or monetize any user data, now or in the future
 - ❌ **Share with third parties** — We do not share information with third parties (except as required by law)
-- ❌ **Use for marketing** — We do not use information for marketing purposes without consent
+- ❌ **Use for marketing** — We do not use information for marketing purposes without explicit consent
 - ❌ **Create profiles** — We do not create user profiles or behavioral tracking
+- ❌ **Monetize data** — We do not monetize, license, or derive revenue from user data in any form
+
+**This commitment applies to:**
+- All software usage data (which we do not collect)
+- All licensing and support communications
+- All consulting engagement data (NDA-protected)
+- Any information collected through website interactions
+
+**This policy will not change.** Even if our business model evolves, we will never sell user data. This is a core privacy principle that protects our clients' confidentiality and trust.
 
 ---
 

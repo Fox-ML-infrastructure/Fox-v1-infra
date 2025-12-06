@@ -20,6 +20,18 @@ The platform runs entirely within the client's infrastructure and environment.
 
 ## 2. Data Handling & Privacy
 
+### 2.0 Permanent Commitment: We Will Never Sell User Data
+
+**Fox ML Infrastructure makes a permanent, non-negotiable commitment: we will never sell user data.**
+
+This commitment applies to:
+- All software usage data (which we do not collect)
+- All licensing and support communications
+- All consulting engagement data
+- Any information collected through website interactions
+
+**This policy will not change.** Even if our business model evolves, we will never sell, rent, trade, or monetize user data in any form. This is a core privacy principle that protects our clients' confidentiality and trust.
+
 ### 2.1 No Data Collection
 
 **Fox ML Infrastructure does not collect client data.**

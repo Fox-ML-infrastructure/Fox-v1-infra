@@ -11,6 +11,8 @@ This document is designed for enterprise legal teams and procurement departments
 
 The platform is **client-hosted software** that runs entirely within the client's infrastructure. Fox ML Infrastructure LLC has no access to client data, no ability to process client data, and no infrastructure that could store or transmit client data.
 
+**We will never sell client data.** This is a permanent commitment to protecting client privacy. Even in the event that any data is collected (limited to licensing and support communications), it will never be sold, rented, traded, or monetized in any way.
+
 ---
 
 ## 2. Data Processing Status
@@ -120,9 +122,12 @@ The platform is **client-hosted software** that runs entirely within the client'
 **Fox ML Infrastructure adheres to CCPA principles:**
 
 - **No data collection** — No personal information is collected
-- **No data sale** — No data is sold or shared with third parties
+- **No data sale** — No data is sold, rented, traded, or monetized — now or ever
+- **Permanent commitment** — We will never sell client data, regardless of business model changes
 - **Client control** — All data remains under client control
 - **Transparency** — Clear documentation of data handling practices
+
+**This is a permanent, non-negotiable commitment to client privacy protection.**
 
 ---
 
