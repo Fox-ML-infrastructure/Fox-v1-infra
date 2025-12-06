@@ -18,11 +18,11 @@ With this foundation in place, **active development has now resumed**, and focus
 
   GPU acceleration works. Some environment-specific warnings (version checks, plugin registration) are being investigated for cleanup.
 
-* **GPU models — mostly functional**
+* **GPU models — functional**
 
-  MLP, GAN, MetaLearning, and MultiTask families run correctly and produce artifacts.
+  TensorFlow GPU families are operational and producing artifacts.
 
-  VAE has a serialization issue currently being fixed.
+  Continued GPU testing and validation underway.
 
 * **Target ranking & selection — testing**
 
@@ -34,7 +34,7 @@ With this foundation in place, **active development has now resumed**, and focus
 
 ## Next Steps
 
-* Finalize VAE fixes
+* Continue GPU model testing and validation
 * Validate ranking/selection scripts
 * Begin configuration system and logging modernization
 * Reduce environment noise and streamline GPU warnings
