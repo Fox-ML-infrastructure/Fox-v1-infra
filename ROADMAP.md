@@ -35,14 +35,14 @@ Goal: Deliver a stable, understandable release for early evaluators and commerci
 
 This phase addresses the highest-impact improvements to onboarding, reliability, and developer experience.
 
-### 1. Centralized Configuration System
+### Centralized Configuration System
 - Move scattered config values into structured YAML.
 - Introduce a documented configuration schema.
 - Add validation + example templates to simplify onboarding.
 
 Impact: Makes the system easier to deploy, audit, and reason about.
 
-### 2. Logging, Output & Developer UX Modernization
+### Logging, Output & Developer UX Modernization
 - Standardize log formatting across all modules.
 - Improve readability and consistency of pipeline output.
 - Add optional LLM-friendly output modes for automated parsing.
@@ -50,7 +50,7 @@ Impact: Makes the system easier to deploy, audit, and reason about.
 
 Impact: A smoother experience for both open-source users and enterprise clients.
 
-### 3. Automated Memory Batching & Control
+### Automated Memory Batching & Control
 - Fix and improve automated memory batching system
 - Implement reliable memory control mechanisms
 - Address current "wonky" behavior in memory management module
@@ -59,7 +59,7 @@ Impact: A smoother experience for both open-source users and enterprise clients.
 
 Impact: Prevents OOM errors and enables training on larger datasets reliably.
 
-### 4. Polars Cross-Sectional DataFrame Optimization
+### Polars Cross-Sectional DataFrame Optimization
 - Optimize Polars cross-sectional dataframe building to avoid huge RAM spikes
 - Create cleaner, more manageable memory usage patterns
 - Implement streaming/chunked processing for large cross-sectional datasets
@@ -68,7 +68,7 @@ Impact: Prevents OOM errors and enables training on larger datasets reliably.
 
 Impact: Enables processing of larger symbol universes without memory exhaustion, improves stability during training.
 
-### 5. Testing & Validation
+### Testing & Validation
 
 **Current Status:**
 - **Alpaca Trading Module**: Broken due to minor errors - needs fixes
@@ -116,7 +116,7 @@ Impact: Makes Fox ML Infrastructure feel like a complete, production-ready produ
 
 Focused on expanding capabilities while keeping the core stable.
 
-### 5. Exploratory Modules & Internal Enhancements
+### Exploratory Modules & Internal Enhancements
 - Explore toon-like or related module implementations.
 - Review user feedback and prioritize expansions accordingly.
 - Refine internal architecture based on evaluator insights.
@@ -127,14 +127,14 @@ Impact: Controlled innovation without destabilizing the core system.
 
 Long-term improvements targeting performance at the systems level.
 
-### 6. Lower-Level Rewrites (C/C++/Rust)
+### Lower-Level Rewrites (C/C++/Rust)
 - Reimplement performance-critical paths in lower-level languages.
 - Boost throughput, memory efficiency, and integration with HPC tooling.
 - Build the foundation for future high-throughput variants of Fox-v1.
 
 Impact: Positions Fox ML Infrastructure as a high-performance, HPC-aligned ML stack.
 
-### 7. Advanced Features
+### Advanced Features
 - Enhanced model ensemble strategies
 - Advanced risk management features
 - Multi-asset class support
