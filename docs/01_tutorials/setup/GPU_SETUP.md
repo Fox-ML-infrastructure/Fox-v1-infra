@@ -8,10 +8,12 @@ GPU acceleration provides 10-50x speedup for feature selection and training, esp
 
 ## Prerequisites
 
-- NVIDIA GPU with CUDA support
+- NVIDIA GPU with CUDA support (current)
 - CUDA toolkit installed
 - OpenCL drivers (for LightGBM GPU)
 - 7GB+ VRAM recommended
+
+**Note**: ROCm (AMD GPU) support is planned for the future once the major architecture is solidified. The current implementation focuses on NVIDIA CUDA.
 
 ## Quick Start
 
@@ -94,8 +96,20 @@ Reduce `max_bin` to 63 or 31, or reduce `num_leaves`.
 
 If GPU fails, the system automatically falls back to CPU. Check logs for error messages.
 
+## Future: ROCm Support
+
+ROCm (AMD GPU) support is planned for future development once the major architecture is solidified. This will enable:
+
+- TensorFlow GPU acceleration on AMD hardware
+- XGBoost GPU support via ROCm
+- LightGBM GPU support on AMD GPUs
+- Same abstraction layer as CUDA for seamless switching
+
+The implementation will follow the same patterns as CUDA support but use the ROCm backend. This expansion will increase accessibility and deployment options for users with AMD hardware.
+
 ## See Also
 
 - [GPU Feature Selection Guide](../../../dep/GPU_FEATURE_SELECTION_GUIDE.md) - Detailed guide
 - [Quick Start GPU](../../../dep/QUICK_START_GPU.md) - Quick reference
+- [Roadmap](../../../ROADMAP.md) - See Phase 5 for ROCm support timeline
 

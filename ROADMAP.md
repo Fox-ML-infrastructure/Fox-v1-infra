@@ -171,6 +171,15 @@ Impact: Positions Fox ML Infrastructure as a high-performance, HPC-aligned ML st
 - Real-time performance analytics
 - Advanced execution algorithms
 
+### ROCm Support (Future)
+- **Status**: Planned for post-architecture-solidification phase
+- Add AMD GPU support via ROCm once major architecture is solidified
+- Enable TensorFlow/XGBoost/LightGBM GPU acceleration on AMD hardware
+- Requires stable CUDA abstraction layer and framework compatibility
+- Will follow same patterns as CUDA support but with ROCm backend
+
+Impact: Expands GPU acceleration support to AMD hardware, increasing accessibility and deployment options.
+
 ## Development Priorities
 
 Current focus areas (in rough order, subject to change):
