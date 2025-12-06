@@ -86,8 +86,13 @@ class XGBoostTrainer(BaseModelTrainer):
         cpu_only = kwargs.get("cpu_only", False)
         use_gpu = not cpu_only and self._check_gpu_available()
         
+        # Force CPU if GPU check failed (even if cpu_only wasn't explicitly set)
+        if not use_gpu:
+            cpu_only = True
+            logger.info("[XGBoost] Forcing CPU mode (GPU not available)")
+        
         # 4) Build model with memory-efficient settings
-        model = self._build_model(cpu_only=not use_gpu)
+        model = self._build_model(cpu_only=cpu_only)
         
         # 5) Train with early stopping (thread_guard already applied by in-process runner)
         logger.info(f"[XGBoost] num_threads={self.num_threads} | OMP={os.getenv('OMP_NUM_THREADS')} | GPU={use_gpu}")
@@ -284,7 +289,15 @@ class XGBoostTrainer(BaseModelTrainer):
     
     def _build_model(self, cpu_only: bool = False):
         """Build XGBoost model with safe defaults"""
+        # Always use CPU if explicitly requested or if GPU isn't available
         tree_method = "hist" if cpu_only else "gpu_hist"
+        
+        # Double-check: if gpu_hist was selected but GPU isn't actually available, fall back to hist
+        if tree_method == "gpu_hist":
+            if not self._check_gpu_available():
+                logger.warning("[XGBoost] GPU check failed during model build, forcing CPU (hist)")
+                tree_method = "hist"
+                cpu_only = True
         
         # Memory-efficient settings for GPU
         extra_params = {}
