@@ -34,6 +34,7 @@ This directory is organized into the following structure:
 - **`CLA.md`** — Commercial License Agreement (CLA) for organizational use
 - **`SUBSCRIPTIONS.md`** — Licensing request process and pricing information
 - **`TOS.md`** — Terms of Service
+- **`ENTERPRISE_DELIVERY.md`** — Enterprise delivery model: repository structure, IP rules, git workflow, and pricing alignment
 - **`Comprehensive overview.md`** — Comprehensive overview of services and capabilities
 
 ### 📁 `consulting/` — Consulting & Custom Development Documents

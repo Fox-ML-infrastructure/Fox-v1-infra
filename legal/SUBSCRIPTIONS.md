@@ -22,3 +22,9 @@ Please include:
 - Any special requirements (optional)
 
 Once received, I will review your information and reply with the appropriate licensing option, pricing confirmation, and the Stripe payment link for your organization.
+
+---
+
+## Delivery Model
+
+Commercial licenses include access to the enterprise base repository. Custom client repositories with specific configurations and integrations are available for additional customization needs. See `ENTERPRISE_DELIVERY.md` for details on the repository structure, IP ownership, and delivery tiers.
