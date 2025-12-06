@@ -337,6 +337,22 @@ def _run_family_isolated(family: str, X, y, timeout_s: int = 7200,
             )
     
     try:
+        # CRITICAL: Import custom Keras layers before loading models
+        # This ensures registered classes (like VAE's Sampling layer) are available
+        if family in ("VAE", "GAN", "MetaLearning", "MultiTask"):
+            try:
+                if family == "VAE":
+                    from model_fun.vae_trainer import Sampling, KLLossLayer  # noqa: F401
+                elif family == "GAN":
+                    from model_fun.gan_trainer import Generator, Discriminator  # noqa: F401
+                # MetaLearning and MultiTask use standard layers, but import to be safe
+                elif family == "MetaLearning":
+                    from model_fun.meta_learning_trainer import MetaLearningTrainer  # noqa: F401
+                elif family == "MultiTask":
+                    from model_fun.multi_task_trainer import MultiTaskTrainer  # noqa: F401
+            except ImportError as e:
+                logger.warning(f"Could not import custom layers for {family}: {e}. Model loading may fail.")
+        
         payload = joblib.load(payload_path)
         if "error" in payload:
             raise RuntimeError(f"{family} child error:\n{payload['error']}")
