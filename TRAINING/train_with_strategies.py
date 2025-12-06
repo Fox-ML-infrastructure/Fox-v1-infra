@@ -241,7 +241,17 @@ def _run_family_isolated(family: str, X, y, timeout_s: int = 7200,
         "MultiTask":          ("model_fun.multi_task_trainer",       "MultiTaskTrainer"),
     }
 
-    mod_name, cls_name = MODMAP[family]
+    # Get module mapping - check both MODMAP dictionaries
+    if family not in MODMAP:
+        # Fallback to TRAINER_MODULE_MAP from isolation_runner if not in local MODMAP
+        from common.isolation_runner import TRAINER_MODULE_MAP
+        if family in TRAINER_MODULE_MAP:
+            mod_name, cls_name = TRAINER_MODULE_MAP[family]
+        else:
+            raise KeyError(f"Family '{family}' not found in MODMAP or TRAINER_MODULE_MAP")
+    else:
+        mod_name, cls_name = MODMAP[family]
+    
     tmpdir = tempfile.mkdtemp(prefix=f"{family}_", dir=os.getenv("TRAINER_TMP", os.getenv("TRAINING_TMPDIR", "/tmp")))
     os.makedirs(tmpdir, exist_ok=True)
     payload_path = os.path.join(tmpdir, "payload.joblib")
