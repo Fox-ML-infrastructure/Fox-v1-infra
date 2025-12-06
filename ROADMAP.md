@@ -67,7 +67,7 @@ Fox-v1 is maintained with an **enterprise reliability mindset**:
 
 ---
 
-# Phase 2 — Centralized Configuration & UX Modernization
+# Phase 2 — Centralized Configuration & UX Modernization 🚧
 
 **Goals:**
 * YAML-based config schema (single source of truth)
