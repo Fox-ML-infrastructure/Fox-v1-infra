@@ -46,7 +46,16 @@ Impact: Makes the system easier to deploy, audit, and reason about.
 
 Impact: A smoother experience for both open-source users and enterprise clients.
 
-### 3. Testing & Validation
+### 3. Automated Memory Batching & Control
+- Fix and improve automated memory batching system
+- Implement reliable memory control mechanisms
+- Address current "wonky" behavior in memory management module
+- Ensure stable memory usage during large-scale training runs
+- Add proper memory monitoring and automatic batching adjustments
+
+Impact: Prevents OOM errors and enables training on larger datasets reliably.
+
+### 4. Testing & Validation
 
 **Alpaca Trading Module**
 - Comprehensive testing suite for paper trading system
@@ -119,6 +128,7 @@ Current focus areas (in rough order, subject to change):
 
 - ✅ **Completed**: Documentation hardening (55 new files, 50+ rewritten)
 - **Next**: Config system + logging/output overhaul
+- **Next**: Fix automated memory batching and control
 - **Ongoing**: Testing & validation for Alpaca and IBKR modules
 - **Future**: Website + integrated Stripe checkout
 - **Future**: Production readiness and deployment guides
