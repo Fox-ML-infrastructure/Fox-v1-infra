@@ -2,6 +2,16 @@
 
 This guide explains how to add proprietary or custom models to the TRAINING pipeline using the `BaseModelTrainer` class.
 
+> **Note:** This example uses the standard AGPL header. If you are implementing a truly proprietary model outside of the AGPL'd Fox-v1-infra codebase (e.g., in a private extension layer), you should use your own license header consistent with your organization's policies.
+
+## TL;DR
+
+To add a custom/proprietary model:
+
+1. Implement a trainer subclassing `BaseModelTrainer`.
+2. Register it in `TRAINING/model_fun/__init__.py` and the runner maps.
+3. Point your config's `model_family` to the new family name.
+
 ## Overview
 
 The TRAINING pipeline uses a factory pattern where all model trainers inherit from `BaseModelTrainer`. This provides:
@@ -39,6 +49,11 @@ Create a new file in `TRAINING/model_fun/` (e.g., `my_proprietary_trainer.py`):
 
 ```python
 """
+PSEUDOCODE EXAMPLE – DO NOT USE AS-IS
+
+This is a template showing the structure. Replace all commented sections
+with your actual implementation.
+
 Copyright (c) 2025 Fox ML Infrastructure
 
 This program is free software: you can redistribute it and/or modify
@@ -53,6 +68,8 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+Note: If implementing outside the AGPL'd codebase, use your own license header.
 """
 
 import numpy as np
@@ -145,16 +162,15 @@ class MyProprietaryTrainer(BaseModelTrainer):
         X_processed, _ = self.preprocess_data(X_tr, y=None)
         
         # Predict using predict_with_threads for proper threading
-        # predictions = self.predict_with_threads(self.model, X_processed)
+        predictions = self.predict_with_threads(self.model, X_processed)
         
         # For models that don't follow sklearn interface:
         # from TRAINING.common.threads import thread_guard
         # with thread_guard(self.family_name, self._threads()):
         #     predictions = self.model.predict(X_processed)
         
-        # Return predictions
-        # return predictions
-        pass  # Replace with actual prediction logic
+        # Return predictions from your proprietary model
+        return predictions  # <-- implement this with your model
 ```
 
 ### 2. Register in model_fun/__init__.py
@@ -191,7 +207,7 @@ TRAINER_MODULE_MAP = {
 }
 ```
 
-**Important**: The key in `TRAINER_MODULE_MAP` should match the family name (class name without "Trainer" suffix).
+**Important**: The key in `TRAINER_MODULE_MAP` should match the family name (class name without "Trainer" suffix). This string must also match the `model_family` / `family_name` you pass in your config when calling the TRAINING pipeline.
 
 ### 4. Register in In-Process Runner (Optional)
 
@@ -216,6 +232,8 @@ MyProprietary:
   needs_gpu: false  # or true if GPU required
   backends: []  # or ["tf"], ["torch"], etc.
 ```
+
+> **Note:** If `backends` is non-empty, the runner will ensure the corresponding framework is available before selecting this family. This prevents runtime errors when GPU frameworks aren't installed.
 
 ## Key Methods to Override
 
@@ -382,8 +400,9 @@ If GPU models don't work:
 
 ## See Also
 
-- [BaseModelTrainer Source](../TRAINING/model_fun/base_trainer.py) - Full implementation
+- [BaseModelTrainer Source](../../../TRAINING/model_fun/base_trainer.py) - Full implementation
 - [Model Training Guide](../../01_tutorials/training/MODEL_TRAINING_GUIDE.md) - Training workflow
-- [Model Catalog](../../02_reference/models/MODEL_CATALOG.md) - Existing models
-- [Threading System](THREADING_SYSTEM.md) - Threading details (if exists)
+- [Model Catalog](../../02_reference/models/MODEL_CATALOG.md) - All available models
+- [Model Config Reference](../../02_reference/models/MODEL_CONFIG_REFERENCE.md) - Model configurations
+- [Training Parameters](../../02_reference/models/TRAINING_PARAMETERS.md) - Training settings
 
