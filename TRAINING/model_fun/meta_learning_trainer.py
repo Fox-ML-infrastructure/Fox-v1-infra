@@ -18,10 +18,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import numpy as np, logging, sys
 from typing import Any, Dict, List, Optional
 from pathlib import Path
-from sklearn.ensemble import StackingRegressor, RandomForestRegressor
-from sklearn.linear_model import Ridge, LinearRegression
 from sklearn.model_selection import train_test_split
+import keras
+from keras import layers, ops, optimizers, callbacks
+from keras import Model
 from .base_trainer import BaseModelTrainer
+from TRAINING.common.safety import configure_tf
 logger = logging.getLogger(__name__)
 
 # Add CONFIG directory to path for centralized config loading
