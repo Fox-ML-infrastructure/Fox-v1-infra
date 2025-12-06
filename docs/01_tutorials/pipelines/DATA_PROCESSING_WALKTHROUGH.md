@@ -52,29 +52,24 @@ assert_bars_per_day(df_clean, interval="5m", min_full_day_frac=0.90)
 
 ### Available Feature Builders
 
-**SimpleFeatureBuilder** - Basic technical indicators (50+ features)
+**SimpleFeatureComputer** - Basic technical indicators (50+ features)
 ```python
-from DATA_PROCESSING.features import SimpleFeatureBuilder
+from DATA_PROCESSING.features import SimpleFeatureComputer
 
-builder = SimpleFeatureBuilder()
-features = builder.build(df_clean)
+computer = SimpleFeatureComputer()
+features = computer.compute(df_clean)
 ```
 
 **ComprehensiveFeatureBuilder** - Extended feature set (200+ features)
 ```python
 from DATA_PROCESSING.features import ComprehensiveFeatureBuilder
 
-builder = ComprehensiveFeatureBuilder()
-features = builder.build(df_clean)
+builder = ComprehensiveFeatureBuilder(config_path="config/features.yaml")
+# Note: build_features() processes files in batch
+features = builder.build_features(input_paths, output_dir, universe_config)
 ```
 
-**StreamingFeatureBuilder** - Real-time feature computation
-```python
-from DATA_PROCESSING.features import StreamingFeatureBuilder
-
-builder = StreamingFeatureBuilder()
-features = builder.build(df_clean)
-```
+**Note**: `StreamingFeatureBuilder` is not available as a class. Use functions from `DATA_PROCESSING.features.streaming_builder` for streaming processing.
 
 ### Feature Categories
 
@@ -88,36 +83,39 @@ features = builder.build(df_clean)
 ### Barrier Targets
 
 ```python
-from DATA_PROCESSING.targets import BarrierTargetBuilder
+from DATA_PROCESSING.targets import add_barrier_targets_to_dataframe
 
-builder = BarrierTargetBuilder()
-targets = builder.build(df_clean, horizon="5m", barrier=0.001)
+# Functions, not classes
+df_clean = add_barrier_targets_to_dataframe(
+    df_clean, horizon_minutes=15, barrier_size=0.5
+)
 ```
 
 ### Excess Returns
 
 ```python
-from DATA_PROCESSING.targets import ExcessReturnsBuilder
+from DATA_PROCESSING.targets import compute_neutral_band, classify_excess_return
 
-builder = ExcessReturnsBuilder()
-targets = builder.build(df_clean, horizon="5m")
+# Functions, not classes
+df_clean = compute_neutral_band(df_clean, horizon="5m")
+df_clean = classify_excess_return(df_clean, horizon="5m")
 ```
 
 ### HFT Forward Returns
 
 ```python
-from DATA_PROCESSING.targets import HFTForwardReturnsBuilder
+from DATA_PROCESSING.targets.hft_forward import add_hft_targets
 
-builder = HFTForwardReturnsBuilder()
-targets = builder.build(df_clean, horizon="1m")
+# Function for batch processing
+add_hft_targets(data_dir="data/raw", output_dir="data/labeled")
 ```
 
 ## Complete Pipeline Example
 
 ```python
 from DATA_PROCESSING.pipeline import normalize_interval
-from DATA_PROCESSING.features import ComprehensiveFeatureBuilder
-from DATA_PROCESSING.targets import BarrierTargetBuilder
+from DATA_PROCESSING.features import SimpleFeatureComputer
+from DATA_PROCESSING.targets import add_barrier_targets_to_dataframe
 import pandas as pd
 
 # Load raw data

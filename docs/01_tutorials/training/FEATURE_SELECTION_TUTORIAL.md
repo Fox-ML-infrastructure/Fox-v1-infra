@@ -16,20 +16,25 @@ Feature selection reduces dimensionality and improves model performance by:
 
 ```python
 from TRAINING.strategies.single_task import SingleTaskStrategy
-from scripts.feature_selection import select_top_features
 
 # Train on all features
 config = load_model_config("lightgbm", variant="conservative")
 strategy = SingleTaskStrategy(config)
 strategy.train(X, {'fwd_ret_5m': y}, feature_names)
 
+# Get feature importance from trained model
+importances = strategy.get_feature_importance()
+
 # Select top 50 features
-selected_features = select_top_features(strategy, n_features=50)
+top_50 = sorted(importances.items(), key=lambda x: x[1], reverse=True)[:50]
+selected_features = [f[0] for f in top_50]
 
 # Retrain with selected features
 X_selected = X[selected_features]
 strategy.train(X_selected, {'fwd_ret_5m': y}, selected_features)
 ```
+
+> **Note**: `scripts.feature_selection` module does not exist. Use the strategy's `get_feature_importance()` method instead.
 
 ### Multi-Target Selection
 
@@ -46,7 +51,9 @@ strategy = MultiTaskStrategy(config)
 strategy.train(X, targets, feature_names)
 
 # Get aggregated importance
-selected_features = select_top_features(strategy, n_features=50)
+importances = strategy.get_feature_importance()
+top_50 = sorted(importances.items(), key=lambda x: x[1], reverse=True)[:50]
+selected_features = [f[0] for f in top_50]
 ```
 
 ## Feature Selection Methods
@@ -56,27 +63,31 @@ selected_features = select_top_features(strategy, n_features=50)
 Uses model feature importance (LightGBM/XGBoost):
 
 ```python
-from scripts.feature_selection import importance_based_selection
+from TRAINING.strategies.single_task import SingleTaskStrategy
+from CONFIG.config_loader import load_model_config
 
-selected = importance_based_selection(
-    X, y,
-    n_features=50,
-    model_type='lightgbm'
-)
+config = load_model_config("lightgbm", variant="conservative")
+strategy = SingleTaskStrategy(config)
+strategy.train(X, {'target': y}, feature_names)
+
+# Get importance and select top features
+importances = strategy.get_feature_importance()
+top_50 = sorted(importances.items(), key=lambda x: x[1], reverse=True)[:50]
+selected = [f[0] for f in top_50]
 ```
 
 ### Recursive Feature Elimination
 
-Iteratively removes least important features:
+> **Note**: RFE functionality is not available in `scripts.feature_selection`. Use sklearn's RFE with your trainer:
 
 ```python
-from scripts.feature_selection import rfe_selection
+from sklearn.feature_selection import RFE
+from TRAINING.model_fun import LightGBMTrainer
 
-selected = rfe_selection(
-    X, y,
-    n_features=50,
-    model_type='lightgbm'
-)
+trainer = LightGBMTrainer(config)
+selector = RFE(trainer, n_features_to_select=50)
+X_selected = selector.fit_transform(X, y)
+selected = [feature_names[i] for i in range(len(feature_names)) if selector.support_[i]]
 ```
 
 ## Comprehensive Ranking

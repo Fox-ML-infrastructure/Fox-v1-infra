@@ -242,24 +242,23 @@ bash TRAINING/train_all_symbols.sh \
 
 ## Walk-Forward Validation
 
-Simulates real trading conditions by training on past data and testing on future data.
+> **Note**: Walk-forward validation is currently planned but not yet implemented. The `TRAINING.walkforward` module does not exist. Configuration is available in `ALPACA_trading/config/base.yaml`.
+
+For temporal validation, use time-series aware cross-validation:
 
 ```python
-from TRAINING.walkforward import WalkForwardEngine
+from TRAINING.unified_training_interface import UnifiedTrainingInterface
+from scripts.utils.purged_time_series_split import PurgedTimeSeriesSplit
+from sklearn.model_selection import cross_val_score
 
-engine = WalkForwardEngine(
-    data=df_labeled,
-    train_days=252,      # 1 year training
-    test_days=63,        # 1 quarter testing
-    step_days=21,        # Roll forward monthly
-    min_train_samples=1000
-)
+# Use purged time-series split to prevent temporal leakage
+interface = UnifiedTrainingInterface()
+purged_cv = PurgedTimeSeriesSplit(n_splits=5, purge_overlap=17)
 
-results = engine.run(
-    model_name="lightgbm",
-    config=load_model_config("lightgbm", variant="conservative"),
-    metrics=["sharpe", "max_drawdown", "hit_rate"]
-)
+# Train with temporal validation
+trainer = LightGBMTrainer()
+config = load_model_config("lightgbm", variant="conservative")
+cv_scores = cross_val_score(trainer, X, y, cv=purged_cv)
 ```
 
 ### Metrics Tracked

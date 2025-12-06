@@ -11,34 +11,40 @@ Walk-forward validation prevents look-ahead bias by:
 
 ## Basic Walk-Forward
 
+> **Note**: Walk-forward validation is currently planned but not yet implemented. The configuration exists in `ALPACA_trading/config/base.yaml`, but the `TRAINING.walkforward` module does not exist yet.
+
+The walkforward configuration is available in the config:
+
+```yaml
+# ALPACA_trading/config/base.yaml
+walkforward:
+  fold_length: 252
+  step_size: 63
+  allow_truncated_final_fold: false
+```
+
+For now, use time-series aware validation methods available in the codebase:
+
 ```python
-from TRAINING.walkforward import WalkForwardValidator
+from TRAINING.unified_training_interface import UnifiedTrainingInterface
+from scripts.utils.purged_time_series_split import PurgedTimeSeriesSplit
 
-validator = WalkForwardValidator(
-    fold_length=252,  # 1 year of trading days
-    step_size=63      # 1 quarter step forward
-)
-
-results = validator.validate(
-    X, y,
-    trainer_class=LightGBMTrainer,
-    config=config
+# Use PurgedTimeSeriesSplit for temporal validation
+interface = UnifiedTrainingInterface()
+model, cv_results = interface.train_with_cross_validation(
+    trainer, X, y, timestamps=timestamps, n_splits=5
 )
 ```
 
 ## Configuration
 
-```python
-from TRAINING.walkforward import WalkForwardConfig
+Walk-forward configuration is defined in YAML:
 
-config = WalkForwardConfig(
-    fold_length=252,           # Training window size
-    step_size=63,              # Step forward size
-    min_train_size=120,        # Minimum training data
-    allow_truncated_final=True  # Allow shorter final fold
-)
-
-validator = WalkForwardValidator(config)
+```yaml
+walkforward:
+  fold_length: 252           # Training window size
+  step_size: 63              # Step forward size
+  allow_truncated_final_fold: false  # Allow shorter final fold
 ```
 
 ## Results
@@ -71,26 +77,32 @@ results = {
 
 ## Example
 
+> **Note**: This example shows the planned API. The `TRAINING.walkforward` module is not yet implemented.
+
+For now, use temporal validation with `PurgedTimeSeriesSplit`:
+
 ```python
-from TRAINING.walkforward import WalkForwardValidator
+from TRAINING.unified_training_interface import UnifiedTrainingInterface
 from TRAINING.model_fun import LightGBMTrainer
 from CONFIG.config_loader import load_model_config
+from scripts.utils.purged_time_series_split import PurgedTimeSeriesSplit
+from sklearn.model_selection import cross_val_score
 
 # Load data
 labeled_data = pd.read_parquet("data/labeled/AAPL_labeled.parquet")
 X = labeled_data[feature_cols]
 y = labeled_data["target_fwd_ret_5m"]
+timestamps = labeled_data.index.values
 
-# Configure walk-forward
-validator = WalkForwardValidator(fold_length=252, step_size=63)
-
-# Train and validate
+# Use temporal cross-validation
+purged_cv = PurgedTimeSeriesSplit(n_splits=5, purge_overlap=17)
+trainer = LightGBMTrainer()
 config = load_model_config("lightgbm", variant="conservative")
-results = validator.validate(X, y, LightGBMTrainer, config)
 
-# Analyze results
-print(f"Average R²: {results['aggregate_metrics']['r2']}")
-print(f"Number of folds: {len(results['folds'])}")
+# Train with temporal validation
+cv_scores = cross_val_score(trainer, X, y, cv=purged_cv)
+print(f"Average R²: {cv_scores.mean():.4f}")
+print(f"Number of folds: {len(cv_scores)}")
 ```
 
 ## Next Steps

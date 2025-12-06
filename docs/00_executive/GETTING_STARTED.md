@@ -152,7 +152,9 @@ See [Model Training Guide](../01_tutorials/training/MODEL_TRAINING_GUIDE.md) for
 Walk-forward validation trains on past data and tests on future data, rolling forward in time. Prevents look-ahead bias and provides realistic performance estimates.
 
 ```python
-from TRAINING.walkforward import WalkForwardEngine
+# Note: TRAINING.walkforward is not yet implemented
+# Use PurgedTimeSeriesSplit for temporal validation instead
+from scripts.utils.purged_time_series_split import PurgedTimeSeriesSplit
 import polars as pl
 
 # Load data

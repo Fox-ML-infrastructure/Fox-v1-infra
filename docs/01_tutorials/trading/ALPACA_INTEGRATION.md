@@ -75,7 +75,7 @@ python ALPACA_trading/scripts/paper_runner.py
 ### Basic Trading
 
 ```python
-from ALPACA_trading.core.engine.paper import PaperTradingEngine
+from ALPACA_trading.core.paper import PaperTradingEngine
 from ALPACA_trading.brokers.paper import PaperBroker
 
 broker = PaperBroker()

@@ -17,13 +17,17 @@ Simulate real trading conditions by:
 
 ### Configuration
 
-```python
-from TRAINING.walkforward import WalkForwardValidator
+> **Note**: Walk-forward validation is currently planned but not yet implemented. The `TRAINING.walkforward` module does not exist. Configuration is available in `ALPACA_trading/config/base.yaml`.
 
-validator = WalkForwardValidator(
-    fold_length=252,  # 1 year training
-    step_size=63      # 1 quarter step
-)
+For temporal validation, use `PurgedTimeSeriesSplit`:
+
+```python
+from scripts.utils.purged_time_series_split import PurgedTimeSeriesSplit
+from sklearn.model_selection import cross_val_score
+
+# Use purged time-series split to prevent temporal leakage
+purged_cv = PurgedTimeSeriesSplit(n_splits=5, purge_overlap=17)
+cv_scores = cross_val_score(trainer, X, y, cv=purged_cv)
 ```
 
 ### Benefits

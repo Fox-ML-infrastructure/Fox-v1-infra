@@ -36,54 +36,55 @@ df_clean = normalize_interval(df, interval="5m")
 
 ### Feature Builders
 
-**SimpleFeatureBuilder**: 50+ basic features
+**SimpleFeatureComputer**: 50+ basic features
 ```python
-from DATA_PROCESSING.features import SimpleFeatureBuilder
-builder = SimpleFeatureBuilder()
-features = builder.build(df)
+from DATA_PROCESSING.features import SimpleFeatureComputer
+
+computer = SimpleFeatureComputer()
+features = computer.compute(df)
 ```
 
 **ComprehensiveFeatureBuilder**: 200+ extended features
 ```python
 from DATA_PROCESSING.features import ComprehensiveFeatureBuilder
-builder = ComprehensiveFeatureBuilder()
-features = builder.build(df)
+
+builder = ComprehensiveFeatureBuilder(config_path="config/features.yaml")
+# Note: build_features() processes files, not single DataFrames
+features = builder.build_features(input_paths, output_dir, universe_config)
 ```
 
-**StreamingFeatureBuilder**: Real-time computation
-```python
-from DATA_PROCESSING.features import StreamingFeatureBuilder
-builder = StreamingFeatureBuilder()
-features = builder.build(df)
-```
+**Note**: `StreamingFeatureBuilder` is not available as a class. Use `DATA_PROCESSING.features.streaming_builder` functions for streaming processing.
 
 ## Target Generation
 
 ### Barrier Targets
 
 ```python
-from DATA_PROCESSING.targets import BarrierTargetBuilder
+from DATA_PROCESSING.targets import add_barrier_targets_to_dataframe
 
-builder = BarrierTargetBuilder()
-targets = builder.build(df, horizon="5m", barrier=0.001)
+# Functions, not classes
+df = add_barrier_targets_to_dataframe(
+    df, horizon_minutes=15, barrier_size=0.5
+)
 ```
 
 ### Excess Returns
 
 ```python
-from DATA_PROCESSING.targets import ExcessReturnsBuilder
+from DATA_PROCESSING.targets import compute_neutral_band, classify_excess_return
 
-builder = ExcessReturnsBuilder()
-targets = builder.build(df, horizon="5m")
+# Functions, not classes
+df = compute_neutral_band(df, horizon="5m")
+df = classify_excess_return(df, horizon="5m")
 ```
 
 ### HFT Forward Returns
 
 ```python
-from DATA_PROCESSING.targets import HFTForwardReturnsBuilder
+from DATA_PROCESSING.targets.hft_forward import add_hft_targets
 
-builder = HFTForwardReturnsBuilder()
-targets = builder.build(df, horizon="1m")
+# Function for batch processing
+add_hft_targets(data_dir="data/raw", output_dir="data/labeled")
 ```
 
 ## Batch Processing

@@ -45,10 +45,10 @@ df_clean.to_parquet("data/data_labeled/interval=5m/AAPL_normalized.parquet")
 ### 3. Build Features
 
 ```python
-from DATA_PROCESSING.features import SimpleFeatureBuilder
+from DATA_PROCESSING.features import SimpleFeatureComputer
 
-builder = SimpleFeatureBuilder()
-features = builder.build(df_clean)
+computer = SimpleFeatureComputer()
+features = computer.compute(df_clean)
 
 # Save features
 features.to_parquet("data/features/AAPL_features.parquet")
@@ -57,13 +57,15 @@ features.to_parquet("data/features/AAPL_features.parquet")
 ### 4. Generate Targets
 
 ```python
-from DATA_PROCESSING.targets import BarrierTargetBuilder
+from DATA_PROCESSING.targets import add_barrier_targets_to_dataframe
 
-target_builder = BarrierTargetBuilder()
-targets = target_builder.build(df_clean, horizon="5m")
+# Functions, not classes
+df_with_targets = add_barrier_targets_to_dataframe(
+    df_clean, horizon_minutes=15, barrier_size=0.5
+)
 
-# Save targets
-targets.to_parquet("data/targets/AAPL_targets.parquet")
+# Save targets (targets are added as columns to the dataframe)
+df_with_targets.to_parquet("data/targets/AAPL_targets.parquet")
 ```
 
 ### 5. Combine Features and Targets
@@ -78,8 +80,8 @@ labeled_data.to_parquet("data/labeled/AAPL_labeled.parquet")
 
 ```python
 from DATA_PROCESSING.pipeline import normalize_interval
-from DATA_PROCESSING.features import SimpleFeatureBuilder
-from DATA_PROCESSING.targets import BarrierTargetBuilder
+from DATA_PROCESSING.features import SimpleFeatureComputer
+from DATA_PROCESSING.targets import add_barrier_targets_to_dataframe
 import pandas as pd
 
 # Load and normalize
@@ -87,15 +89,16 @@ df = pd.read_parquet("data/data_labeled/interval=5m/AAPL.parquet")
 df_clean = normalize_interval(df, interval="5m")
 
 # Build features
-feature_builder = SimpleFeatureBuilder()
-features = feature_builder.build(df_clean)
+feature_computer = SimpleFeatureComputer()
+features = feature_computer.compute(df_clean)
 
-# Generate targets
-target_builder = BarrierTargetBuilder()
-targets = target_builder.build(df_clean, horizon="5m")
+# Generate targets (functions add columns to dataframe)
+df_with_targets = add_barrier_targets_to_dataframe(
+    df_clean, horizon_minutes=15, barrier_size=0.5
+)
 
-# Combine
-labeled_data = pd.concat([features, targets], axis=1)
+# Combine features and targets
+labeled_data = pd.concat([features, df_with_targets.filter(regex='target|will_')], axis=1)
 labeled_data.to_parquet("data/labeled/AAPL_labeled.parquet")
 
 print(f"Created labeled dataset with {len(labeled_data)} rows and {len(labeled_data.columns)} columns")

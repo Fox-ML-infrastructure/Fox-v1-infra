@@ -41,26 +41,36 @@ assert_bars_per_day(df_clean, interval="5m", min_full_day_frac=0.90)
 
 ```python
 from DATA_PROCESSING.features import (
-    SimpleFeatureBuilder,
-    ComprehensiveFeatureBuilder,
-    StreamingFeatureBuilder
+    SimpleFeatureComputer,
+    ComprehensiveFeatureBuilder
 )
 
-builder = ComprehensiveFeatureBuilder()
-features = builder.build(df)
+# Simple features
+computer = SimpleFeatureComputer()
+features = computer.compute(df)
+
+# Comprehensive features (200+ features)
+builder = ComprehensiveFeatureBuilder(config_path="config/features.yaml")
+features = builder.build_features(input_paths, output_dir, universe_config)
 ```
 
-### Target Builders
+### Target Functions
 
 ```python
 from DATA_PROCESSING.targets import (
-    BarrierTargetBuilder,
-    ExcessReturnsBuilder,
-    HFTForwardReturnsBuilder
+    add_barrier_targets_to_dataframe,
+    compute_neutral_band,
+    classify_excess_return
 )
 
-builder = BarrierTargetBuilder()
-targets = builder.build(df, horizon="5m", barrier=0.001)
+# Barrier targets (functions, not classes)
+df = add_barrier_targets_to_dataframe(
+    df, horizon_minutes=15, barrier_size=0.5
+)
+
+# Excess returns
+df = compute_neutral_band(df, horizon="5m")
+df = classify_excess_return(df, horizon="5m")
 ```
 
 ## Training
@@ -106,7 +116,7 @@ strategy.train(X, {
 ### Alpaca
 
 ```python
-from ALPACA_trading.core.engine.paper import PaperTradingEngine
+from ALPACA_trading.core.paper import PaperTradingEngine
 from ALPACA_trading.brokers.paper import PaperBroker
 
 broker = PaperBroker()
