@@ -74,6 +74,8 @@ Impact: Makes the system easier to deploy, audit, and reason about.
 Impact: A smoother experience for both open-source users and enterprise clients.
 
 ### Automated Memory Batching & Control
+- ✅ **Auto memory cleanup working** - Memory cleanup between model families is functioning correctly
+- ⚠️ **Auto memory management and batching still problematic** - The automated memory batching system has "wonky" behavior
 - Fix and improve automated memory batching system
 - Implement reliable memory control mechanisms
 - Address current "wonky" behavior in memory management module
