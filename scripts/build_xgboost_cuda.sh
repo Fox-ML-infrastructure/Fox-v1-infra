@@ -31,21 +31,36 @@ mkdir -p build
 cd build
 
 # Find CUDA paths in conda environment
-CUDA_INCLUDE="$CONDA_PREFIX/targets/x86_64-linux/include"
-CUDA_LIB="$CONDA_PREFIX/targets/x86_64-linux/lib"
+# Conda CUDA is typically in targets/x86_64-linux/
+CUDA_TARGETS="$CONDA_PREFIX/targets/x86_64-linux"
+CUDA_INCLUDE="$CUDA_TARGETS/include"
+CUDA_LIB="$CUDA_TARGETS/lib"
 
-if [ ! -d "$CUDA_INCLUDE" ]; then
-    # Try alternative location
+# Check if targets directory exists, if not try root
+if [ ! -d "$CUDA_INCLUDE" ] || [ ! -f "$CUDA_INCLUDE/cuda_runtime.h" ]; then
     CUDA_INCLUDE="$CONDA_PREFIX/include"
     CUDA_LIB="$CONDA_PREFIX/lib"
 fi
 
+# Verify CUDA headers exist
+if [ ! -f "$CUDA_INCLUDE/cuda_runtime.h" ]; then
+    echo "❌ ERROR: Could not find cuda_runtime.h"
+    echo "   Searched in: $CUDA_INCLUDE"
+    echo "   Please ensure CUDA toolkit is installed in conda environment"
+    echo "   Try: conda install -c conda-forge cuda-toolkit"
+    exit 1
+fi
+
 echo "📁 CUDA include: $CUDA_INCLUDE"
 echo "📁 CUDA lib: $CUDA_LIB"
+echo "📁 CUDA compiler: $CONDA_PREFIX/bin/nvcc"
 
-# Set CUDA paths for CMake
+# Set environment variables for CMake
 export CUDA_TOOLKIT_ROOT_DIR="$CONDA_PREFIX"
 export CUDA_PATH="$CONDA_PREFIX"
+export CUDA_HOME="$CONDA_PREFIX"
+export PATH="$CONDA_PREFIX/bin:$PATH"
+export LD_LIBRARY_PATH="$CUDA_LIB:$LD_LIBRARY_PATH"
 
 cmake .. \
     -DUSE_CUDA=ON \
@@ -55,7 +70,8 @@ cmake .. \
     -DCUDA_TOOLKIT_ROOT_DIR="$CONDA_PREFIX" \
     -DCUDA_INCLUDE_DIRS="$CUDA_INCLUDE" \
     -DCUDA_CUDART_LIBRARY="$CUDA_LIB/libcudart.so" \
-    -DCMAKE_CUDA_COMPILER="$CONDA_PREFIX/bin/nvcc"
+    -DCMAKE_CUDA_COMPILER="$CONDA_PREFIX/bin/nvcc" \
+    -DCMAKE_CUDA_HOST_COMPILER="$(which g++)"
 
 make -j$(nproc)
 
