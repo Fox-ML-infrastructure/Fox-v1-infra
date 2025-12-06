@@ -54,7 +54,7 @@ This phase addresses the highest-impact improvements to onboarding, reliability,
 - ✅ Fixed readline symbol lookup errors in child processes
 - ✅ All model families can now be imported and trained correctly
 - ⚠️ TensorFlow warnings - TensorFlow is working correctly with GPU support. Some warnings (version compatibility, plugin registration) are just noise - investigating further to clean up output. **Note:** These warnings may be computer-specific; waiting on feedback if others experience similar issues.
-- ✅ **GPU models working** - GPU models are functional and producing artifacts. Working on reducing noise and warning messages in output.
+- ✅ **GPU models mostly working** - Most GPU models (MLP, GAN, MetaLearning, MultiTask) are functional and producing artifacts. VAE has a serialization issue being fixed. Working on reducing noise and warning messages in output.
 - 🔄 Testing target ranking and selection scripts today
 
 **Planned Deeper Refactors:**
