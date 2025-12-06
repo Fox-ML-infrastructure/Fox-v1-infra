@@ -89,6 +89,8 @@ Fox-v1 is maintained with an **enterprise reliability mindset**:
 * Optional LLM-friendly structured logs for automation
 * Naming and terminology cleanup across modules
 
+**Note:** Centralized configuration work is likely to be completed sooner than originally expected.
+
 **Outcome:** Faster onboarding, easier enterprise deployment, more predictable behavior.
 
 ---
@@ -184,7 +186,7 @@ Fox-v1 is maintained with an **enterprise reliability mindset**:
 # Development Priorities (Live List)
 
 1. **Testing GPU models + ranking system**
-2. Configuration system & logging revamp
+2. Configuration system & logging revamp (likely sooner than expected)
 3. Memory batching + Polars optimizations
 4. Alpaca module fixes
 5. IBKR validation

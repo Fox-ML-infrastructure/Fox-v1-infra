@@ -36,7 +36,7 @@ With this foundation in place, **active development has now resumed**, and focus
 
 * Continue GPU model testing and validation
 * Validate ranking/selection scripts
-* Begin configuration system and logging modernization
+* Begin configuration system and logging modernization (likely sooner than expected)
 * Reduce environment noise and streamline GPU warnings
 
 Thank you again for your understanding during this infrastructure-heavy cycle. The system is now **clearer, more maintainable, legally compliant, and ready for continued development**.
