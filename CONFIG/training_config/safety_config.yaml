@@ -1,0 +1,46 @@
+# Safety and Numerical Stability Configuration
+# Settings for numerical guards, clipping, and safety thresholds
+
+safety:
+  # Feature Clipping
+  feature_clipping:
+    enabled: true
+    clip_value: 1000.0  # Clip features to [-1000, 1000]
+    log_clipped: false  # Log when features are clipped
+  
+  # Target Capping
+  target_capping:
+    enabled: true
+    cap_sigma: 15.0  # Cap targets using 15 MAD (median absolute deviation)
+    log_capped: false  # Log when targets are capped
+  
+  # Numerical Stability
+  numerical:
+    safe_exp_bounds:
+      lo: -40.0  # Lower bound for safe exponential
+      hi: 40.0  # Upper bound for safe exponential
+    
+    numpy_error_handling:
+      over: "warn"  # Overflow handling: "warn", "raise", "ignore"
+      invalid: "warn"  # Invalid value handling
+      divide: "warn"  # Division by zero handling
+      under: "ignore"  # Underflow handling
+  
+  # Gradient Clipping
+  gradient_clipping:
+    enabled: true
+    clipnorm: 1.0  # Gradient norm clipping (TensorFlow/Keras)
+    max_norm: 1.0  # Maximum gradient norm (PyTorch)
+  
+  # Model Output Validation
+  validation:
+    check_predictions: true  # Check predictions for NaN/Inf
+    check_gradients: false  # Check gradients for NaN/Inf (expensive)
+    log_anomalies: true  # Log when anomalies are detected
+  
+  # Safety Guards
+  guards:
+    min_history_bars: 120  # Minimum history bars before feature use
+    max_na_fraction: 0.05  # Maximum NaN fraction (5%)
+    hold_on_nan: true  # Return HOLD action on NaN in predictions
+

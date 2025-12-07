@@ -1,0 +1,83 @@
+# Training Pipeline Configuration
+# Main settings for the training pipeline orchestration
+
+pipeline:
+  # Timeouts
+  isolation_timeout_seconds: 7200  # 2 hours default for isolated child processes
+  
+  # Data Processing Limits
+  data_limits:
+    max_samples_per_symbol: null  # None = no limit, or set to integer (e.g., 20 for testing)
+    min_cross_sectional_samples: 10  # Minimum cross-sectional samples required
+    max_cross_sectional_samples: null  # None = no limit, falls back to 1000 if not specified
+    max_rows_train: null  # Maximum training rows (None = no limit)
+    min_cs: 1  # Minimum cross-sectional samples
+  
+  # Sequential Model Settings
+  sequential:
+    default_lookback: 64  # Default lookback window for sequential models
+    backend: "torch"  # "torch" or "tf" for sequential models
+  
+  # Test Configuration
+  test:
+    max_samples_per_symbol: 20  # Reduced for testing
+    epochs: 10  # Reduced for testing
+    targets:  # Test targets
+      - "fwd_ret_5m"
+      - "fwd_ret_15m"
+      - "mdd_5m_0.001"
+      - "will_peak_5m"
+  
+  # Production Defaults
+  production:
+    epochs: 50  # Default epochs (can be overridden via CLI)
+    max_samples_per_symbol: null  # No limit in production
+  
+  # Paths
+  paths:
+    data_dir: "data/data_labeled/interval=5m"  # Default data directory
+    output_dir_pattern: "test_output_*"  # Output directory pattern
+    joblib_temp: null  # null = use default (~/trainer_tmp/joblib), or set custom path
+  
+  # Polars Settings
+  polars:
+    enabled: true  # Use Polars for data processing
+    max_threads: null  # null = use DEFAULT_THREADS, or set custom value
+    cross_sectional_align_mode: "union"  # "union" or "intersection"
+  
+  # Determinism
+  determinism:
+    python_hash_seed: "42"
+    tf_deterministic_ops: "1"
+    base_seed: 42  # Base random seed
+    random_state: 42  # Default random_state for train_test_split
+  
+  # Model Family Lists
+  families:
+    sequential:
+      - "CNN1D"
+      - "LSTM"
+      - "Transformer"
+      - "TabCNN"
+      - "TabLSTM"
+      - "TabTransformer"
+    
+    cross_sectional:
+      - "LightGBM"
+      - "QuantileLightGBM"
+      - "XGBoost"
+      - "NGBoost"
+      - "Ensemble"
+      - "MLP"
+      - "VAE"
+      - "GAN"
+      - "MetaLearning"
+      - "MultiTask"
+      - "RewardBased"
+      - "ChangePoint"
+      - "GMMRegime"
+      - "FTRLProximal"
+  
+  # Family Capabilities (for reference, may remain code-based)
+  # See train_with_strategies.py for full FAMILY_CAPS dictionary
+
