@@ -28,16 +28,20 @@ With this foundation in place, **active development has now resumed**, and focus
   * ✅ Backward compatibility maintained with hardcoded defaults
   * ✅ Reproducibility and deterministic behavior verified — same outputs pre-config rework vs after
   * ✅ Other models testing good so far — no regressions observed
+  * ✅ **No breaking changes introduced during this phase**
   * 🔄 Validation layer and logging modernization in progress
 
 * **Commercial license pricing — updated** 💰
 
   Pricing structure recalibrated to align with enterprise market norms and traction metrics:
-  * 1-10 employees: $25,200/year
-  * 11-50 employees: $60,000/year
-  * 51-250 employees: $165,000/year
-  * 251-1000 employees: $252,000/year
-  * Enterprise (1000+ employees): Pricing starts at $500,000/year (custom quote)
+
+  | Organization Size | Annual License Fee |
+  |-------------------|-------------------|
+  | 1–10 employees | $25,200 |
+  | 11–50 employees | $60,000 |
+  | 51–250 employees | $165,000 |
+  | 251–1000 employees | $252,000 |
+  | 1000+ employees | Starts at $500,000 (custom quote) |
 
 * **Upcoming refactors**
 
@@ -51,7 +55,7 @@ With this foundation in place, **active development has now resumed**, and focus
 * More core work will begin after testing completes
 * Validate ranking/selection scripts
 * Complete configuration system validation and logging modernization
-* Inquiring about potential hospital compliance and other regulatory requirements — exploring stricter legal frameworks for healthcare, medical, and other highly regulated use cases
+* Inquiring about potential healthcare compliance and regulatory requirements — exploring stricter legal frameworks relevant to regulated industries (healthcare, finance, defense, and research)
 
 Thank you again for your understanding during this infrastructure-heavy cycle. The system is now **clearer, more maintainable, legally compliant, and ready for continued development**.
 
