@@ -41,7 +41,7 @@ With this foundation in place, **active development has now resumed**, and focus
   * 11-50 employees: $50,400/year
   * 51-250 employees: $126,000/year
   * 251-1000 employees: $252,000/year
-  * 1000+ employees: starts at $500,000/year (custom quote)
+  * Enterprise (1000+ employees): Pricing starts at $500,000/year (custom quote)
 
 * **Upcoming refactors**
 
