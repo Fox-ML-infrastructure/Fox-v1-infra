@@ -1,6 +1,6 @@
 # Environment Setup
 
-Configure your Python environment for Fox-v1-infra.
+Configure your Python environment for FoxML Core.
 
 ## Virtual Environment
 

@@ -1,6 +1,6 @@
 # CLI Reference
 
-Command-line interface reference for Fox-v1-infra.
+Command-line interface reference for FoxML Core.
 
 ## Feature Selection
 

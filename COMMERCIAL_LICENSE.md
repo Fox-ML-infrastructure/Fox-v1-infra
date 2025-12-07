@@ -5,7 +5,7 @@ Copyright (c) 2025-2026 Jennifer Lewis
 
 ## 1. DEFINITIONS
 
-"Software" refers to the Fox-v1-infra codebase, modules, configurations, models, documentation, and all included assets, excluding third-party components governed by their own licenses.
+"Software" refers to the FoxML Core codebase, modules, configurations, models, documentation, and all included assets, excluding third-party components governed by their own licenses.
 
 "Licensee" refers to the individual or organization obtaining rights under this License.
 

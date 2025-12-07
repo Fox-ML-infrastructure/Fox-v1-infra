@@ -9,7 +9,7 @@ This is essential for hedge funds, quantitative firms, and enterprises concerned
 
 **Clear IP boundaries prevent disputes and protect both parties:**
 
-- **Fox ML Infrastructure LLC** retains ownership of all original Fox-v1-infra code and core platform IP
+- **Fox ML Infrastructure LLC** retains ownership of all original FoxML Core code and core platform IP
 - **Clients** own their additions, configurations, strategies, and proprietary data
 - **Custom features** developed under contract belong to the party specified in the Statement of Work (SOW)
 - **General patterns** and non-specific code may be reused by Fox ML Infrastructure
@@ -22,7 +22,7 @@ This is essential for hedge funds, quantitative firms, and enterprises concerned
 
 **Fox ML Infrastructure LLC retains ownership of:**
 
-- **Core codebase** — All original Fox-v1-infra source code, modules, and components
+- **Core codebase** — All original FoxML Core source code, modules, and components
 - **Architecture and design** — System architecture, design patterns, and structural decisions
 - **Framework components** — Training frameworks, validation systems, pipeline orchestration
 - **Generic features** — Features that are not client-specific

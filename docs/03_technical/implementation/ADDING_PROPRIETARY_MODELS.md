@@ -2,7 +2,7 @@
 
 This guide explains how to add proprietary or custom models to the TRAINING pipeline using the `BaseModelTrainer` class.
 
-> **Note:** This example uses the standard AGPL header. If you are implementing a truly proprietary model outside of the AGPL'd Fox-v1-infra codebase (e.g., in a private extension layer), you should use your own license header consistent with your organization's policies.
+> **Note:** This example uses the standard AGPL header. If you are implementing a truly proprietary model outside of the AGPL'd FoxML Core codebase (e.g., in a private extension layer), you should use your own license header consistent with your organization's policies.
 
 ## TL;DR
 

@@ -1,6 +1,6 @@
 ## Licensing & Access Requests
 
-Fox-v1-infra is available under annual commercial licensing for organizations.
+FoxML Core is available under annual commercial licensing for organizations.
 To request access or begin the licensing process, please email the details below to:
 
 📧 jenn.lewis5789@gmail.com

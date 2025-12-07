@@ -1,6 +1,6 @@
 # Documentation Index
 
-Complete navigation guide for Fox-v1-infra documentation.
+Complete navigation guide for FoxML Core documentation.
 
 ## Quick Navigation
 

@@ -6,7 +6,7 @@ Direction and priorities for ongoing development. Timelines are aspirational and
 
 ## Development Philosophy
 
-Fox-v1 is maintained with an **enterprise reliability mindset**:
+FoxML Core is maintained with an **enterprise reliability mindset**:
 * Critical issues are fixed immediately.
 * Documentation and legal compliance are treated as first-class deliverables.
 * Stability always precedes new features.
@@ -36,7 +36,7 @@ Fox-v1 is maintained with an **enterprise reliability mindset**:
 * ✅ Consistent formatting, naming, and structure
 * ✅ Stable release for evaluators and enterprise inquiries
 
-**Outcome:** Established Fox-v1 as an evaluable, commercial-grade product.
+**Outcome:** Established FoxML Core as an evaluable, commercial-grade product.
 
 ---
 
@@ -159,7 +159,7 @@ Fox-v1 is maintained with an **enterprise reliability mindset**:
 * TensorFlow/XGBoost/LightGBM support via ROCm
 * Parity with CUDA workflows
 
-**Outcome:** Fox-v1 becomes an HPC-aligned, cross-platform ML stack.
+**Outcome:** FoxML Core becomes an HPC-aligned, cross-platform ML stack.
 
 ---
 
@@ -185,7 +185,7 @@ Fox ML Infrastructure is evolving into:
 * Well-documented, configurable, and production-grade
 * A foundation for future HPC and cross-platform ML systems
 
-This roadmap reflects the maturation of Fox-v1 from a high-powered solo project into a **commercially viable, enterprise-class ML platform.**
+This roadmap reflects the maturation of FoxML Core from a high-powered solo project into a **commercially viable, enterprise-class ML platform.**
 
 ---
 

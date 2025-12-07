@@ -1,10 +1,10 @@
 # Architecture Overview
 
-System architecture for Fox-v1-infra.
+System architecture for FoxML Core.
 
 ## System Purpose
 
-Fox-v1-infra is a research infrastructure system for ML pipelines, quantitative workflows, and reproducible experiments. Provides:
+FoxML Core is a research infrastructure system for ML pipelines, quantitative workflows, and reproducible experiments. Provides:
 
 - Scalable ML workflow design
 - Leakage-safe research architecture

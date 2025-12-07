@@ -4,7 +4,7 @@ Create and customize technical features for machine learning models.
 
 ## Overview
 
-Feature engineering transforms raw market data into predictive features. Fox-v1-infra provides three feature builders with increasing complexity.
+Feature engineering transforms raw market data into predictive features. FoxML Core provides three feature builders with increasing complexity.
 
 ## Feature Builders
 

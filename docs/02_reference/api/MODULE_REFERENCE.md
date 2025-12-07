@@ -1,6 +1,6 @@
 # Module Reference
 
-Python API reference for Fox-v1-infra modules.
+Python API reference for FoxML Core modules.
 
 ## Configuration
 

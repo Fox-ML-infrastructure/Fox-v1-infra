@@ -1,6 +1,6 @@
 # Installation Guide
 
-System installation and setup for Fox-v1-infra.
+System installation and setup for FoxML Core.
 
 ## Prerequisites
 
@@ -15,8 +15,8 @@ System installation and setup for Fox-v1-infra.
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/Fox-ML-infrastructure/Fox-v1-infra.git
-cd Fox-v1-infra
+git clone https://github.com/Fox-ML-infrastructure/FoxML_Core.git
+cd FoxML_Core
 ```
 
 ### 2. Create Virtual Environment

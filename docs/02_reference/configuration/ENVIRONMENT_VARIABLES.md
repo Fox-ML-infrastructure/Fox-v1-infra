@@ -1,6 +1,6 @@
 # Environment Variables
 
-Complete reference for environment variables used in Fox-v1-infra.
+Complete reference for environment variables used in FoxML Core.
 
 ## Configuration Variables
 

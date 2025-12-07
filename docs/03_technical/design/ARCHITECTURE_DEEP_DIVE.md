@@ -4,7 +4,7 @@ Detailed system architecture and design decisions.
 
 ## System Overview
 
-Fox-v1-infra is a multi-layered trading infrastructure with:
+FoxML Core is a multi-layered trading infrastructure with:
 
 1. **Data Processing Layer**: Raw data → Features → Targets
 2. **Model Training Layer**: 17+ model types with centralized configs

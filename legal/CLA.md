@@ -1,14 +1,14 @@
-Fox-v1-infra — Commercial License Agreement (CLA v1.3)
+FoxML Core — Commercial License Agreement (CLA v1.3)
 
 Fox ML Infrastructure LLC
 © 2025 Jennifer Lewis. All rights reserved.
 
-This Commercial License Agreement (“Agreement”) is entered into between Fox ML Infrastructure LLC (“Licensor”) and the purchasing organization (“Licensee”). This Agreement governs commercial use of the software known as Fox-v1-infra (“Software”).
+This Commercial License Agreement ("Agreement") is entered into between Fox ML Infrastructure LLC ("Licensor") and the purchasing organization ("Licensee"). This Agreement governs commercial use of the software known as FoxML Core ("Software").
 
 1. Definitions
 Software
 
-The Fox-v1-infra codebase, modules, pipelines, configurations, documentation, and all updates provided under this Agreement.
+The FoxML Core codebase, modules, pipelines, configurations, documentation, and all updates provided under this Agreement.
 
 Internal Use
 

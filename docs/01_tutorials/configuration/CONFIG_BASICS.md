@@ -1,10 +1,10 @@
 # Configuration Basics
 
-Learn the fundamentals of Fox-v1-infra configuration.
+Learn the fundamentals of FoxML Core configuration.
 
 ## Overview
 
-Fox-v1-infra uses centralized YAML configuration files for all models and training workflows. All 17 production trainers auto-load configs from `CONFIG/model_config/`.
+FoxML Core uses centralized YAML configuration files for all models and training workflows. All 17 production trainers auto-load configs from `CONFIG/model_config/`.
 
 ## Basic Usage
 

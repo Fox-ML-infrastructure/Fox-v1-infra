@@ -1,8 +1,8 @@
-# Fox-v1-infra — ML & Quantitative Systems Infrastructure
+# FoxML Core — ML & Quantitative Systems Infrastructure
 
 > **📋 See [ROADMAP.md](ROADMAP.md) for most recent updates, current development focus, and status of modules (including known broken/untested components).**
 
-Fox-v1-infra is a high-performance research and machine learning infrastructure stack.  
+FoxML Core is a high-performance research and machine learning infrastructure stack.  
 It provides a reference-grade architecture for ML pipelines, quantitative workflows, reproducible experiments, and HPC-optimized engineering without exposing proprietary signals or production-ready trading systems.
 
 Developed and maintained by **Jennifer Lewis**  
@@ -12,7 +12,7 @@ Independent Contractor • ML Engineering • Quantitative Research • Systems 
 
 ## Overview
 
-Fox-v1-infra demonstrates:
+FoxML Core demonstrates:
 
 - scalable ML workflow design  
 - leakage-safe research architecture  
@@ -40,13 +40,13 @@ This is a **research infrastructure system**, not a trading bot or financial pro
 - Commercial use without a license  
 - Unmodified production HFT or revenue-generating systems  
 
-Fox-v1-infra provides **architecture**, not alpha.
+FoxML Core provides **architecture**, not alpha.
 
 ---------------------------------------------------------------------
 
 ## Licensing (Dual-License Model)
 
-Fox-v1-infra is distributed under a dual licensing system.
+FoxML Core is distributed under a dual licensing system.
 
 ### AGPL-3.0 (Open Source)
 Permitted for:
@@ -146,7 +146,7 @@ For full policies and contracting information:
 
 ## Repository Structure
 
-fox-v1-infra/
+FoxML_Core/
 ├── trading/               (Paper trading integrations, if applicable)
 ├── data_processing/       (Pipelines & feature engineering)
 ├── training/              (Model training & research workflows)

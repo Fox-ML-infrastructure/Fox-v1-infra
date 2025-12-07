@@ -1,6 +1,6 @@
 # Documentation Architecture
 
-This document defines the 4-tier documentation hierarchy for Fox-v1-infra.
+This document defines the 4-tier documentation hierarchy for FoxML Core.
 
 ## Tier A: Executive / High-Level
 

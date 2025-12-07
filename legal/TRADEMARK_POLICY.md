@@ -9,7 +9,7 @@ This policy defines how the "Fox ML Infrastructure" trademark and brand may be u
 **Fox ML Infrastructure LLC** owns the following trademarks and brand elements:
 
 - **"Fox ML Infrastructure"** — Trademark name
-- **"Fox-v1-infra"** — Product name
+- **"FoxML Core"** — Product name
 - **"Fox ML Infrastructure LLC"** — Company name
 - **Associated logos and branding** (if applicable)
 

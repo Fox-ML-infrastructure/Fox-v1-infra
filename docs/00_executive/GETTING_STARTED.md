@@ -29,7 +29,7 @@ See [Installation Guide](../01_tutorials/setup/INSTALLATION.md) for details.
 
 ## System Overview
 
-Fox-v1-infra provides:
+FoxML Core provides:
 - ML pipeline infrastructure
 - Multi-model training systems
 - Walk-forward validation

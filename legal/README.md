@@ -14,7 +14,7 @@ These materials are provided to help prospective clients evaluate professionalis
 As of now:
 
 - **Fox ML Infrastructure LLC is officially formed and active.** ✓  
-- Primary ML/infra engineering product line: **Fox-v1-infra**.  
+- Primary ML/infra engineering product line: **FoxML Core**.  
 - **EIN has been issued.** ✓  
 - **Business bank account is open and active.** ✓  
 - **Business insurance (General Liability + E&O)** — Will be obtained if a client requires it. Until then, it is not feasible to maintain insurance without active client requirements.
@@ -82,7 +82,7 @@ Core documents for consulting engagements:
 
 - **`MASTER_CONSULTING_AGREEMENT.md`** — Framework agreement covering payment terms, IP rights, confidentiality, warranties, and termination clauses
 - **`STATEMENT_OF_WORK_TEMPLATE.md`** — Template outlining scope, deliverables, milestones, and timelines (customized for each project)
-- **`IP_TERMS_ADDENDUM.md`** — Defines IP boundaries between pre-existing tools (Fox-v1-infra stack) and client-specific deliverables
+- **`IP_TERMS_ADDENDUM.md`** — Defines IP boundaries between pre-existing tools (FoxML Core stack) and client-specific deliverables
 - **`CONSULTING_POLICY.md`** — Defines expectations, communication protocols, client responsibilities, and confidentiality standards
 - **`CONSULTING_PRICING.md`** — Details pricing tiers, deliverable-based rates, and engagement structures
 - **`CONSULTING_OVERVIEW.md`** — High-level overview of consulting methodology, engagement format, and workflow
@@ -109,7 +109,7 @@ Internal documents and client-facing forms:
 The repository below demonstrates the structure, quality, and engineering rigor of ML/quant research infrastructure.  
 It represents the current evolution of the Fox ML Infrastructure system.
 
-### Fox-v1-infra
+### FoxML Core
 
 A production-structured ML/quant research infrastructure featuring:
 
@@ -122,7 +122,7 @@ A production-structured ML/quant research infrastructure featuring:
 - professional-grade project layout and documentation  
 
 Repository:  
-https://github.com/Fox-ML-infrastructure/Fox-v1-infra
+https://github.com/Fox-ML-infrastructure/FoxML_Core
 
 ### Additional Public Work
 
@@ -159,4 +159,4 @@ Clients are encouraged to use the **Intake Form** (`internal/INTAKE_FORM.md`) wh
 
 ## Document Versions
 
-All documents in this repository have been fully rewritten, branded, and unified under **Fox ML Infrastructure (Fox-v1-infra)** with consistent, enterprise-grade voice. All references to previous branding have been removed and replaced.
+All documents in this repository have been fully rewritten, branded, and unified under **Fox ML Infrastructure (FoxML Core)** with consistent, enterprise-grade voice. All references to previous branding have been removed and replaced.
