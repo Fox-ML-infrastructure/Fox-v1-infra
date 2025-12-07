@@ -22,6 +22,16 @@ With this foundation in place, **active development has now resumed**, and focus
 
   Validation under way before integrating directly into the TRAINING pipeline.
 
+* **Centralized configuration system — underway and mostly complete** 🔄
+
+  Phase 2 centralized configuration work is in progress and mostly complete:
+  * ✅ 9 training config YAML files created (pipeline, GPU, memory, preprocessing, threading, safety, callbacks, optimizer, system)
+  * ✅ Config loader with nested access and family-specific overrides
+  * ✅ All model trainers updated to use centralized configs (preprocessing, callbacks, optimizers, safety guards)
+  * ✅ Pipeline, threading, memory, GPU, and system settings integrated
+  * ✅ Backward compatibility maintained with hardcoded defaults
+  * 🔄 Validation layer and logging modernization in progress
+
 * **Upcoming refactors**
 
   Planning deeper improvements to training intelligence, model selection, and automated workflows.
@@ -32,7 +42,7 @@ With this foundation in place, **active development has now resumed**, and focus
 
 * Complete final testing of remaining sequential models
 * Validate ranking/selection scripts
-* Begin configuration system and logging modernization (likely sooner than expected)
+* Complete configuration system validation and logging modernization
 
 Thank you again for your understanding during this infrastructure-heavy cycle. The system is now **clearer, more maintainable, legally compliant, and ready for continued development**.
 

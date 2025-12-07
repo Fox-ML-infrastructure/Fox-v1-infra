@@ -69,14 +69,20 @@ FoxML Core is maintained with an **enterprise reliability mindset**:
 
 # Phase 2 — Centralized Configuration & UX Modernization 🔄
 
-**Goals:**
-* YAML-based config schema (single source of truth)
+**Status:** Underway and mostly complete
+
+**Completed:**
+* ✅ YAML-based config schema (single source of truth) — 9 training config files created
+* ✅ Config loader with nested access and family-specific overrides
+* ✅ Integration into all model trainers (preprocessing, callbacks, optimizers, safety guards)
+* ✅ Pipeline, threading, memory, GPU, and system configs integrated
+* ✅ Backward compatibility maintained with hardcoded defaults
+
+**In Progress:**
 * Validation layer + example templates
 * Unified logging + consistent output formatting
 * Optional LLM-friendly structured logs
 * Naming and terminology cleanup across modules
-
-**Note:** Centralized configuration work is likely to be completed sooner than originally expected.
 
 **Outcome:** Faster onboarding, easier enterprise deployment, more predictable behavior.
 
@@ -166,7 +172,7 @@ FoxML Core is maintained with an **enterprise reliability mindset**:
 # Development Priorities (Live List)
 
 1. **Testing GPU models + ranking system**
-2. **Configuration system & logging revamp** (likely sooner than expected)
+2. **Configuration system validation & logging revamp** (mostly complete, validation in progress)
 3. **Memory batching + Polars optimizations**
 4. **Alpaca module fixes**
 5. **IBKR validation**
