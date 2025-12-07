@@ -46,10 +46,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commercial
 - Commercial license pricing recalibrated to align with enterprise market norms:
-  - 1-10 employees: $18,000 → $25,200/year
-  - 11-50 employees: $36,000 → $60,000/year
-  - 51-250 employees: $90,000 → $165,000/year
-  - 251-1000 employees: $180,000 → $252,000/year
+  - 1–10 employees: $18,000 → $25,200/year
+  - 11–50 employees: $36,000 → $60,000/year
+  - 51–250 employees: $90,000 → $165,000/year
+  - 251–1000 employees: $180,000 → $252,000/year
   - 1000+ employees: $300,000 → $500,000+/year (custom quote)
 
 ### Documentation
