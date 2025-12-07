@@ -2,7 +2,7 @@
 
 # -*- coding: utf-8 -*-
 """
-Copyright (c) 2025 Fox ML Infrastructure
+Copyright (c) 2025-2026 Fox ML Infrastructure LLC
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published

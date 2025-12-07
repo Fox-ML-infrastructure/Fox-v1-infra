@@ -1,7 +1,7 @@
 Fox ML Infrastructure — Terms of Service
 Last Updated: December 2025
 Operated by: Fox ML Infrastructure LLC (“Company”, “we”, “our”, “us”)
-Address: 2211 White Way, Hoover, AL 35226, United States
+Address: STE B 212 W. Troy St., Dothan, AL 36303, United States
 Email: jenn.lewis5789@gmail.com
 
 These Terms of Service (“Terms”) govern your access to and use of the software,
@@ -104,4 +104,4 @@ changes take effect constitutes acceptance.
 15. Contact
 Fox ML Infrastructure LLC
 Email: jenn.lewis5789@gmail.com
-Address: 2211 White Way, Hoover, AL 35226, USA
+Address: STE B 212 W. Troy St., Dothan, AL 36303, USA
