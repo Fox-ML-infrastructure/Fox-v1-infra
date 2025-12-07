@@ -222,11 +222,13 @@ class BaseModelTrainer(ABC):
                 if early_stop_cfg.get('enabled', True):
                     try:
                         import tensorflow as tf
+                        # Ensure patience is int
+                        patience = int(patience)
                         callbacks.append(tf.keras.callbacks.EarlyStopping(
                             monitor=early_stop_cfg.get('monitor', 'val_loss'),
                             patience=patience,
                             restore_best_weights=early_stop_cfg.get('restore_best_weights', True),
-                            min_delta=early_stop_cfg.get('min_delta', 0.0),
+                            min_delta=float(early_stop_cfg.get('min_delta', 0.0)),
                             mode=early_stop_cfg.get('mode', 'min')
                         ))
                     except ImportError:
@@ -236,14 +238,27 @@ class BaseModelTrainer(ABC):
                 if lr_reduction_cfg.get('enabled', True):
                     try:
                         import tensorflow as tf
+                        # Convert numeric values to proper types (YAML may load 1e-6 as string)
+                        min_lr_val = lr_reduction_cfg.get('min_lr', 1e-6)
+                        if isinstance(min_lr_val, str):
+                            min_lr_val = float(min_lr_val)
+                        else:
+                            min_lr_val = float(min_lr_val)
+                        
+                        factor_val = lr_reduction_cfg.get('factor', 0.5)
+                        if isinstance(factor_val, str):
+                            factor_val = float(factor_val)
+                        else:
+                            factor_val = float(factor_val)
+                        
                         callbacks.append(tf.keras.callbacks.ReduceLROnPlateau(
                             monitor=lr_reduction_cfg.get('monitor', 'val_loss'),
-                            patience=lr_reduction_cfg.get('patience', 5),
-                            factor=lr_reduction_cfg.get('factor', 0.5),
-                            min_lr=lr_reduction_cfg.get('min_lr', 1e-6),
+                            patience=int(lr_reduction_cfg.get('patience', 5)),
+                            factor=factor_val,
+                            min_lr=min_lr_val,
                             mode=lr_reduction_cfg.get('mode', 'min'),
-                            cooldown=lr_reduction_cfg.get('cooldown', 0),
-                            min_delta=lr_reduction_cfg.get('min_delta', 0.0)
+                            cooldown=int(lr_reduction_cfg.get('cooldown', 0)),
+                            min_delta=float(lr_reduction_cfg.get('min_delta', 0.0))
                         ))
                     except ImportError:
                         pass
