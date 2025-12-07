@@ -71,6 +71,7 @@ Complete technical reference for daily use.
 - [Pipeline Reference](02_reference/systems/PIPELINE_REFERENCE.md) - Data pipelines
 
 ### Configuration Reference
+- [Configuration System](../CONFIG/README.md) - Centralized configuration system overview
 - [Config Loader API](02_reference/configuration/CONFIG_LOADER_API.md) - Config loading
 - [Config Overlays](02_reference/configuration/CONFIG_OVERLAYS.md) - Overlay system
 - [Environment Variables](02_reference/configuration/ENVIRONMENT_VARIABLES.md) - Environment config

@@ -123,3 +123,14 @@ For configuration questions or issues, refer to:
 - `config_loader.py` - Implementation details
 - Individual config files - Inline documentation
 - Training pipeline code - Usage examples
+
+## Related Documentation
+
+- [Config Basics](../docs/01_tutorials/configuration/CONFIG_BASICS.md) - Configuration fundamentals tutorial
+- [Config Examples](../docs/01_tutorials/configuration/CONFIG_EXAMPLES.md) - Example configurations
+- [Advanced Config](../docs/01_tutorials/configuration/ADVANCED_CONFIG.md) - Advanced configuration guide
+- [Config Loader API](../docs/02_reference/configuration/CONFIG_LOADER_API.md) - Complete API reference
+- [Config Schema](../docs/02_reference/api/CONFIG_SCHEMA.md) - Configuration schema documentation
+- [Environment Variables](../docs/02_reference/configuration/ENVIRONMENT_VARIABLES.md) - Environment variable overrides
+- [Model Config Reference](../docs/02_reference/models/MODEL_CONFIG_REFERENCE.md) - Model-specific configurations
+- [Adding Proprietary Models](../docs/03_technical/implementation/ADDING_PROPRIETARY_MODELS.md) - Using BaseModelTrainer with custom configs
