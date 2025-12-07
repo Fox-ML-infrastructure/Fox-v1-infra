@@ -10,13 +10,13 @@ With this foundation in place, **active development has now resumed**, and focus
 
   Pipeline is fully functional and verified. XGBoost source-build issues and readline symbol errors resolved.
 
-* **GPU families — all working** ✅
+* **GPU models — all working** ✅
 
   All GPU model families are operational and producing artifacts. Expect some noise and warnings during GPU model training (version compatibility messages, plugin registration notices) — these are harmless and do not affect functionality.
 
-* **Sequential models — mostly working**
+* **LSTM variants — timing out but appear functional**
 
-  CNN1D, Transformer, and other sequential models are working. LSTM appears functional but is timing out at the 3-hour limit (10800s) — it seems to work but requires longer training time than the current timeout allows. 3D preprocessing issues resolved.
+  LSTM and LSTM-based models are timing out at the 3-hour limit (10800s), but they appear to run fine and produce outputs — they simply require longer training time than the current timeout allows. Other sequential models (CNN1D, Transformer) are working normally. 3D preprocessing issues resolved.
 
 * **Target ranking & selection — testing**
 
