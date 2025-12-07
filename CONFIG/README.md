@@ -1,78 +1,125 @@
-# Configuration Directory
+# Configuration System
 
-Configuration files for the trader project.
+Centralized configuration management for FoxML Core training pipeline and model families.
 
-## Files
+## Overview
 
-### Model Configurations
-- `model_config/*.yaml` - Per-model hyperparameters for TRAINING module
-- 17 model types (LightGBM, XGBoost, Ensemble, MultiTask, MLP, etc.)
-- Variants: conservative, balanced, aggressive
+The configuration system provides a single source of truth for all training parameters, system settings, and model hyperparameters. All configurations are stored as YAML files and loaded programmatically via `config_loader.py`.
 
-### Feature Selection
-- `feature_selection_config.yaml` - LightGBM params, defaults, data filtering for feature selection
-- `target_configs.yaml` - Target definitions for multi-target feature selection
-- `feature_groups.yaml` - Feature family definitions for concept-based aggregation
+## Directory Structure
 
-### Legacy
-- `base.yaml` - Base engine configuration (Fox ML Infrastructure ruleset)
+```
+CONFIG/
+├── model_config/          # Model-specific hyperparameters
+│   ├── lightgbm.yaml
+│   ├── xgboost.yaml
+│   ├── mlp.yaml
+│   └── ... (17 model configs)
+│
+└── training_config/       # Training pipeline and system settings
+    ├── pipeline_config.yaml      # Main pipeline settings
+    ├── gpu_config.yaml            # GPU/CUDA configuration
+    ├── memory_config.yaml         # Memory management
+    ├── preprocessing_config.yaml  # Data preprocessing
+    ├── threading_config.yaml      # Threading policies
+    ├── safety_config.yaml         # Numerical stability guards
+    ├── callbacks_config.yaml      # Training callbacks
+    ├── optimizer_config.yaml      # Optimizer defaults
+    ├── system_config.yaml         # System-level settings
+    ├── family_config.yaml         # Model family policies
+    ├── sequential_config.yaml     # Sequential model settings
+    └── first_batch_specs.yaml     # First batch specifications
+```
 
 ## Usage
 
-### Load Model Config
+### Loading Configurations
+
 ```python
-from CONFIG.config_loader import load_model_config
+from CONFIG.config_loader import (
+    load_model_config,
+    get_pipeline_config,
+    get_gpu_config,
+    get_cfg
+)
 
-# Load with variant
-config = load_model_config("lightgbm", variant="conservative")
+# Load model-specific config
+lightgbm_config = load_model_config("lightgbm", variant="aggressive")
 
-# Load default
-config = load_model_config("mlp")
+# Load training configs
+pipeline = get_pipeline_config()
+gpu = get_gpu_config()
+
+# Access nested values with dot notation
+timeout = get_cfg("pipeline.isolation_timeout_seconds", default=7200)
+vram_cap = get_cfg("gpu.vram_cap_mb", default=4096, config_name="gpu_config")
 ```
 
-### Load Feature Selection Config
-```python
-import yaml
+### Configuration Hierarchy
 
-with open("CONFIG/feature_selection_config.yaml") as f:
-    config = yaml.safe_load(f)
+1. **Model Configs** (`model_config/`) - Hyperparameters for specific model families
+2. **Training Configs** (`training_config/`) - Pipeline, system, and resource settings
 
-lgbm_params = config['lightgbm']
-defaults = config['defaults']
+### Key Configuration Files
+
+#### Pipeline Configuration
+- **File:** `training_config/pipeline_config.yaml`
+- **Purpose:** Main training pipeline orchestration
+- **Key Settings:** Timeouts, data limits, sequential model settings, determinism
+
+#### GPU Configuration
+- **File:** `training_config/gpu_config.yaml`
+- **Purpose:** GPU device management and CUDA settings
+- **Key Settings:** VRAM caps, device visibility, TensorFlow/PyTorch GPU options
+
+#### Threading Configuration
+- **File:** `training_config/threading_config.yaml`
+- **Purpose:** Thread allocation and OpenMP/MKL policies
+- **Key Settings:** Default threads, per-family policies, thread planning
+
+#### Memory Configuration
+- **File:** `training_config/memory_config.yaml`
+- **Purpose:** Memory thresholds and cleanup policies
+- **Key Settings:** Memory caps, chunk sizes, cleanup aggressiveness
+
+## Environment Variable Overrides
+
+Most configuration values can be overridden via environment variables:
+
+```bash
+# Override GPU device
+export CUDA_VISIBLE_DEVICES=0
+
+# Override thread count
+export OMP_NUM_THREADS=8
+
+# Override timeout
+export TRAINER_ISOLATION_TIMEOUT=10800
 ```
 
-### Load Target Configs
-```python
-import yaml
+## Configuration Variants
 
-with open("CONFIG/target_configs.yaml") as f:
-    config = yaml.safe_load(f)
+Model configs support variants for different use cases:
 
-enabled_targets = {
-    name: cfg for name, cfg in config['targets'].items()
-    if cfg.get('enabled', True)
-}
-```
+- `conservative` - Lower risk, more stable settings
+- `aggressive` - Higher performance, more experimental
+- `default` - Balanced settings (used if variant not specified)
 
 ## Best Practices
 
-1. Never hardcode values - Always use config files
-2. Version control configs - Track changes in git
-3. Document changes - Add comments explaining why values changed
-4. Test changes - Run on small dataset before full production
-5. Create variants - Don't modify defaults, create new variant configs
+1. **Never hardcode values** - Always load from config files
+2. **Use defaults** - Provide sensible fallbacks when config unavailable
+3. **Validate inputs** - Check config values before use
+4. **Document changes** - Update configs with clear comments
+5. **Test variants** - Verify all config variants work correctly
 
-## Creating Custom Configs
+## Migration Status
 
-```bash
-# Copy existing config
-cp CONFIG/feature_selection_config.yaml CONFIG/my_fast_selection.yaml
+✅ **Phase 2 Complete** - All hardcoded configurations have been migrated to YAML files. The system maintains backward compatibility with hardcoded defaults during the transition period.
 
-# Edit values
-vim CONFIG/my_fast_selection.yaml
+## Support
 
-# Use it
-python scripts/select_features.py --config CONFIG/my_fast_selection.yaml
-```
-
-For detailed documentation, see `INFORMATION/` directory.
+For configuration questions or issues, refer to:
+- `config_loader.py` - Implementation details
+- Individual config files - Inline documentation
+- Training pipeline code - Usage examples
