@@ -52,13 +52,13 @@ class LSTMTrainer(BaseModelTrainer):
         
         # DEPRECATED: Hardcoded defaults kept for backward compatibility
         # To change these, edit CONFIG/model_config/lstm.yaml
-        self.config.setdefault("epochs", 50)
-        self.config.setdefault("batch_size", 512)
+        self.config.setdefault("epochs", 30)  # Reduced from 50 to prevent timeouts
+        self.config.setdefault("batch_size", 256)  # Reduced from 512 to speed up training
         self.config.setdefault("lstm_units", self.config.get("units", 128))  # Support old "units" key
         self.config.setdefault("dropout", 0.2)
-        self.config.setdefault("recurrent_dropout", 0.2)
+        self.config.setdefault("recurrent_dropout", 0.1)  # Reduced from 0.2 to speed up training
         self.config.setdefault("learning_rate", 1e-3)
-        self.config.setdefault("patience", 10)
+        self.config.setdefault("patience", 5)  # Reduced from 10 for faster early stopping
 
     def train(self, X_tr: np.ndarray, y_tr: np.ndarray, 
               X_va=None, y_va=None, feature_names: List[str] = None, **kwargs) -> Any:

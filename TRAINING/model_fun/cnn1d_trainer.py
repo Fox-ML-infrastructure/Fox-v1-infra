@@ -52,8 +52,8 @@ class CNN1DTrainer(BaseModelTrainer):
         
         # DEPRECATED: Hardcoded defaults kept for backward compatibility
         # To change these, edit CONFIG/model_config/cnn1d.yaml
-        self.config.setdefault("epochs", 50)
-        self.config.setdefault("batch_size", 512)
+        self.config.setdefault("epochs", 30)  # Reduced from 50 to prevent timeouts
+        self.config.setdefault("batch_size", 256)  # Reduced from 512 to prevent OOM
         self.config.setdefault("filters", [64, 64])
         self.config.setdefault("dropout", 0.2)
         self.config.setdefault("learning_rate", 1e-3)

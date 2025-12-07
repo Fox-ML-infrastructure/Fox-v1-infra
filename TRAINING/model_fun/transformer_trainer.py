@@ -53,9 +53,9 @@ class TransformerTrainer(BaseModelTrainer):
         # DEPRECATED: Hardcoded defaults kept for backward compatibility
         # To change these, edit CONFIG/model_config/transformer.yaml
         self.config.setdefault("epochs", 50)
-        self.config.setdefault("batch_size", 512)
+        self.config.setdefault("batch_size", 128)  # Reduced from 512 to prevent OOM
         self.config.setdefault("d_model", 128)
-        self.config.setdefault("heads", 8)
+        self.config.setdefault("heads", 4)  # Reduced from 8 to prevent OOM with large sequences
         self.config.setdefault("ff_dim", 256)
         self.config.setdefault("dropout", 0.1)
         self.config.setdefault("learning_rate", 1e-3)
@@ -84,6 +84,19 @@ class TransformerTrainer(BaseModelTrainer):
         # 4) Reshape for Transformer
         X_tr = X_tr.reshape(X_tr.shape[0], X_tr.shape[1], 1)
         X_va = X_va.reshape(X_va.shape[0], X_va.shape[1], 1)
+        
+        # 4.5) Adjust batch size dynamically based on sequence length to prevent OOM
+        # Attention matrix size scales as batch_size * heads * seq_len^2
+        seq_len = X_tr.shape[1]
+        base_batch_size = self.config["batch_size"]
+        # For sequences > 200, reduce batch size to prevent OOM
+        if seq_len > 200:
+            # Scale batch size inversely with sequence length
+            adjusted_batch_size = max(32, int(base_batch_size * (200 / seq_len)))
+            if adjusted_batch_size < base_batch_size:
+                logger.warning(f"⚠️ [Transformer] Reducing batch size from {base_batch_size} to {adjusted_batch_size} "
+                             f"to prevent OOM (sequence length: {seq_len})")
+                self.config["batch_size"] = adjusted_batch_size
         
         # 5) Build model with safe defaults
         model = self._build_model(X_tr.shape[1])
