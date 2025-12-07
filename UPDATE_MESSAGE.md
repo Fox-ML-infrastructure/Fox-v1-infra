@@ -55,6 +55,7 @@ With this foundation in place, **active development has now resumed**, and focus
 * More core work will begin after testing completes
 * Validate ranking/selection scripts
 * Complete configuration system validation and logging modernization
+* Inquiring about potential hospital compliance and other regulatory requirements — exploring stricter legal frameworks for healthcare, medical, and other highly regulated use cases
 
 Thank you again for your understanding during this infrastructure-heavy cycle. The system is now **clearer, more maintainable, legally compliant, and ready for continued development**.
 
