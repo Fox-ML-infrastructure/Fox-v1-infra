@@ -28,12 +28,28 @@ import numpy as np
 import joblib
 import logging
 import os
+import sys
+from pathlib import Path
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import Ridge
 from TRAINING.common.safety import guard_features, guard_targets, finite_preds_or_raise
 from TRAINING.common.threads import thread_guard, set_estimator_threads, default_threads, guard_for_estimator
 
 logger = logging.getLogger(__name__)
+
+# Add CONFIG directory to path for centralized config loading
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+_CONFIG_DIR = _REPO_ROOT / "CONFIG"
+if str(_CONFIG_DIR) not in sys.path:
+    sys.path.insert(0, str(_CONFIG_DIR))
+
+# Try to import config loader
+_CONFIG_AVAILABLE = False
+try:
+    from config_loader import get_callbacks_config, get_cfg
+    _CONFIG_AVAILABLE = True
+except ImportError:
+    logger.debug("Config loader not available; using hardcoded callback defaults")
 
 def safe_ridge_fit(X, y, alpha=1.0):
     """
@@ -143,6 +159,79 @@ class BaseModelTrainer(ABC):
             return self.model.predict_proba(X_tr)
         else:
             raise NotImplementedError("predict_proba not supported for this trainer")
+    
+    def get_callbacks(self, family_name: str = None) -> List[Any]:
+        """
+        Get training callbacks from centralized config.
+        
+        Args:
+            family_name: Model family name (defaults to self.family_name)
+            
+        Returns:
+            List of Keras callbacks (EarlyStopping, ReduceLROnPlateau, etc.)
+        """
+        if family_name is None:
+            family_name = self.family_name
+        
+        # Try to load from config
+        if _CONFIG_AVAILABLE:
+            try:
+                callbacks_cfg = get_callbacks_config()
+                early_stop_cfg = callbacks_cfg.get('callbacks', {}).get('early_stopping', {})
+                lr_reduction_cfg = callbacks_cfg.get('callbacks', {}).get('lr_reduction', {})
+                
+                # Get family-specific patience or use default
+                model_patience = early_stop_cfg.get('model_patience', {})
+                patience = model_patience.get(family_name, model_patience.get('default', 10))
+                
+                # Build callbacks
+                callbacks = []
+                
+                # Early stopping
+                if early_stop_cfg.get('enabled', True):
+                    try:
+                        import tensorflow as tf
+                        callbacks.append(tf.keras.callbacks.EarlyStopping(
+                            monitor=early_stop_cfg.get('monitor', 'val_loss'),
+                            patience=patience,
+                            restore_best_weights=early_stop_cfg.get('restore_best_weights', True),
+                            min_delta=early_stop_cfg.get('min_delta', 0.0),
+                            mode=early_stop_cfg.get('mode', 'min')
+                        ))
+                    except ImportError:
+                        logger.warning("TensorFlow not available for callbacks")
+                
+                # Learning rate reduction
+                if lr_reduction_cfg.get('enabled', True):
+                    try:
+                        import tensorflow as tf
+                        callbacks.append(tf.keras.callbacks.ReduceLROnPlateau(
+                            monitor=lr_reduction_cfg.get('monitor', 'val_loss'),
+                            patience=lr_reduction_cfg.get('patience', 5),
+                            factor=lr_reduction_cfg.get('factor', 0.5),
+                            min_lr=lr_reduction_cfg.get('min_lr', 1e-6),
+                            mode=lr_reduction_cfg.get('mode', 'min'),
+                            cooldown=lr_reduction_cfg.get('cooldown', 0),
+                            min_delta=lr_reduction_cfg.get('min_delta', 0.0)
+                        ))
+                    except ImportError:
+                        pass
+                
+                if callbacks:
+                    return callbacks
+            except Exception as e:
+                logger.debug(f"Failed to load callbacks from config: {e}, using defaults")
+        
+        # Fallback to hardcoded defaults
+        try:
+            import tensorflow as tf
+            patience = self.config.get('patience', 10)
+            return [
+                tf.keras.callbacks.EarlyStopping(patience=patience, restore_best_weights=True),
+                tf.keras.callbacks.ReduceLROnPlateau(patience=5, factor=0.5, min_lr=1e-6)
+            ]
+        except ImportError:
+            return []
     
     def get_feature_importance(self) -> Optional[np.ndarray]:
         """Get feature importance"""

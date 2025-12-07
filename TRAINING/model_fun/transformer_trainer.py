@@ -103,8 +103,8 @@ class TransformerTrainer(BaseModelTrainer):
         
         # 6) Train with callbacks
         callbacks = [
-            tf.keras.callbacks.EarlyStopping(patience=self.config["patience"], restore_best_weights=True),
-            tf.keras.callbacks.ReduceLROnPlateau(patience=5, factor=0.5, min_lr=1e-6)
+            # Use callbacks from config if available
+            *self.get_callbacks("Transformer")
         ]
         
         model.fit(

@@ -119,11 +119,8 @@ class LSTMTrainer(BaseModelTrainer):
         # 5) Build model with safe defaults
         model = self._build_model(X_tr.shape[1])
         
-        # 6) Train with callbacks
-        callbacks = [
-            tf.keras.callbacks.EarlyStopping(patience=self.config["patience"], restore_best_weights=True),
-            tf.keras.callbacks.ReduceLROnPlateau(patience=5, factor=0.5, min_lr=1e-6)
-        ]
+        # 6) Train with callbacks (load from config if available)
+        callbacks = self.get_callbacks("LSTM")
         
         model.fit(
             X_tr, y_tr,
