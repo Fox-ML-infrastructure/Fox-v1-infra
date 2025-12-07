@@ -211,6 +211,19 @@ def _to_int(v, default):
         return default
 
 def default_threads() -> int:
+    """
+    Get default thread count, loading from config if available.
+    Falls back to max(1, cpu_count() - 1) if config not available.
+    """
+    if _CONFIG_AVAILABLE:
+        try:
+            default = get_cfg("threading.defaults.default_threads", config_name="threading_config")
+            if default is not None and isinstance(default, int):
+                return default
+        except Exception as e:
+            logger.debug(f"Failed to load default_threads from config: {e}")
+    
+    # Fallback to calculated default
     return max(1, (os.cpu_count() or 8) - 1)
 
 def plan_for_family(family: str, total_threads: int) -> dict[str, int]:

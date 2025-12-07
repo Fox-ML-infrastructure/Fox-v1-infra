@@ -33,6 +33,7 @@ from dataclasses import dataclass
 from typing import FrozenSet, Dict, Optional
 import logging
 import sys
+from pathlib import Path
 
 # Configure logger for this module (use stderr to avoid corrupting script output)
 logger = logging.getLogger(__name__)
@@ -41,6 +42,36 @@ if not logger.handlers:
     handler.setFormatter(logging.Formatter('%(levelname)s - %(message)s'))
     logger.addHandler(handler)
     logger.setLevel(logging.INFO)
+
+# Add CONFIG directory to path for centralized config loading
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+_CONFIG_DIR = _REPO_ROOT / "CONFIG"
+if str(_CONFIG_DIR) not in sys.path:
+    sys.path.insert(0, str(_CONFIG_DIR))
+
+# Try to import config loader
+_CONFIG_AVAILABLE = False
+try:
+    from config_loader import get_gpu_config, get_cfg
+    _CONFIG_AVAILABLE = True
+except ImportError:
+    logger.debug("Config loader not available; using hardcoded VRAM caps")
+
+def _get_vram_cap(family: str, default: int = 4096) -> int:
+    """Get VRAM cap for a family from config, with fallback to default."""
+    if _CONFIG_AVAILABLE:
+        try:
+            vram_caps = get_cfg("gpu.vram.caps", config_name="gpu_config")
+            if isinstance(vram_caps, dict):
+                # Try family-specific cap first
+                if family in vram_caps:
+                    return vram_caps[family]
+                # Fallback to default
+                if "default" in vram_caps:
+                    return vram_caps["default"]
+        except Exception as e:
+            logger.debug(f"Failed to load VRAM cap for {family}: {e}")
+    return default
 
 
 @dataclass(frozen=True)
@@ -84,7 +115,7 @@ CROSS_SECTIONAL_POLICIES: Dict[str, RuntimePolicy] = {
         needs_gpu=True,
         backends=frozenset({"tf"}),
         omp_user_api="openmp",
-        cap_vram_mb=4096,
+        cap_vram_mb=_get_vram_cap("MLP", 4096),
         force_isolation_reason="TensorFlow CUDA context persists in-process"
     ),
     
@@ -93,7 +124,7 @@ CROSS_SECTIONAL_POLICIES: Dict[str, RuntimePolicy] = {
         needs_gpu=True,
         backends=frozenset({"tf"}),
         omp_user_api="openmp",
-        cap_vram_mb=4096,
+        cap_vram_mb=_get_vram_cap("VAE", 4096),
         force_isolation_reason="TensorFlow CUDA context persists in-process"
     ),
     
@@ -102,7 +133,7 @@ CROSS_SECTIONAL_POLICIES: Dict[str, RuntimePolicy] = {
         needs_gpu=True,
         backends=frozenset({"tf"}),
         omp_user_api="openmp",
-        cap_vram_mb=4096,
+        cap_vram_mb=_get_vram_cap("GAN", 4096),
         force_isolation_reason="TensorFlow CUDA context persists in-process"
     ),
     
@@ -111,7 +142,7 @@ CROSS_SECTIONAL_POLICIES: Dict[str, RuntimePolicy] = {
         needs_gpu=True,
         backends=frozenset({"tf"}),
         omp_user_api="openmp",
-        cap_vram_mb=4096,
+        cap_vram_mb=_get_vram_cap("MultiTask", 4096),
         force_isolation_reason="TensorFlow CUDA context persists in-process"
     ),
     
@@ -150,7 +181,7 @@ CROSS_SECTIONAL_POLICIES: Dict[str, RuntimePolicy] = {
         needs_gpu=True,
         backends=frozenset({"tf"}),
         omp_user_api="openmp",
-        cap_vram_mb=4096,
+        cap_vram_mb=_get_vram_cap("MetaLearning", 4096),
         force_isolation_reason="TensorFlow CUDA context persists in-process"
     ),
     
@@ -201,7 +232,7 @@ SEQUENTIAL_POLICIES: Dict[str, RuntimePolicy] = {
         needs_gpu=True,
         backends=frozenset({"tf"}),
         omp_user_api="openmp",
-        cap_vram_mb=4096,
+        cap_vram_mb=_get_vram_cap("CNN1D", 4096),
         force_isolation_reason="TensorFlow CUDA context persists in-process"
     ),
     
@@ -210,7 +241,7 @@ SEQUENTIAL_POLICIES: Dict[str, RuntimePolicy] = {
         needs_gpu=True,
         backends=frozenset({"tf"}),
         omp_user_api="openmp",
-        cap_vram_mb=4096,
+        cap_vram_mb=_get_vram_cap("LSTM", 4096),
         force_isolation_reason="TensorFlow CUDA context persists in-process"
     ),
     
@@ -219,7 +250,7 @@ SEQUENTIAL_POLICIES: Dict[str, RuntimePolicy] = {
         needs_gpu=True,
         backends=frozenset({"tf"}),
         omp_user_api="openmp",
-        cap_vram_mb=4096,
+        cap_vram_mb=_get_vram_cap("Transformer", 4096),
         force_isolation_reason="TensorFlow CUDA context persists in-process"
     ),
     
@@ -228,7 +259,7 @@ SEQUENTIAL_POLICIES: Dict[str, RuntimePolicy] = {
         needs_gpu=True,
         backends=frozenset({"tf"}),
         omp_user_api="openmp",
-        cap_vram_mb=4096,
+        cap_vram_mb=_get_vram_cap("TabLSTM", 4096),
         force_isolation_reason="TensorFlow CUDA context persists in-process"
     ),
     
@@ -237,7 +268,7 @@ SEQUENTIAL_POLICIES: Dict[str, RuntimePolicy] = {
         needs_gpu=True,
         backends=frozenset({"tf"}),
         omp_user_api="openmp",
-        cap_vram_mb=4096,
+        cap_vram_mb=_get_vram_cap("TabTransformer", 4096),
         force_isolation_reason="TensorFlow CUDA context persists in-process"
     ),
     
@@ -246,7 +277,7 @@ SEQUENTIAL_POLICIES: Dict[str, RuntimePolicy] = {
         needs_gpu=True,
         backends=frozenset({"tf"}),
         omp_user_api="openmp",
-        cap_vram_mb=4096,
+        cap_vram_mb=_get_vram_cap("TabCNN", 4096),
         force_isolation_reason="TensorFlow CUDA context persists in-process"
     ),
 }

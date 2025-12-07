@@ -24,20 +24,56 @@ Handles memory optimization, monitoring, and cleanup for large-scale training.
 import gc
 import psutil
 import logging
+import sys
+from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
 import numpy as np
 import pandas as pd
 
 logger = logging.getLogger(__name__)
 
+# Add CONFIG directory to path for centralized config loading
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+_CONFIG_DIR = _REPO_ROOT / "CONFIG"
+if str(_CONFIG_DIR) not in sys.path:
+    sys.path.insert(0, str(_CONFIG_DIR))
+
+# Try to import config loader
+_CONFIG_AVAILABLE = False
+try:
+    from config_loader import get_memory_config, get_cfg
+    _CONFIG_AVAILABLE = True
+except ImportError:
+    logger.debug("Config loader not available; using hardcoded defaults")
+
 class MemoryManager:
     """Memory management system for large-scale training."""
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.config = config or {}
-        self.memory_threshold = self.config.get('memory_threshold', 0.8)  # 80% memory usage
-        self.chunk_size = self.config.get('chunk_size', 1000000)  # 1M rows per chunk
-        self.aggressive_cleanup = self.config.get('aggressive_cleanup', True)
+        
+        # Load from centralized config if available, otherwise use provided config or defaults
+        if _CONFIG_AVAILABLE and not self.config:
+            try:
+                memory_cfg = get_memory_config()
+                thresholds = memory_cfg.get('memory', {}).get('thresholds', {})
+                chunking = memory_cfg.get('memory', {}).get('chunking', {})
+                cleanup = memory_cfg.get('memory', {}).get('cleanup', {})
+                
+                self.memory_threshold = thresholds.get('memory_threshold', 0.8)
+                self.chunk_size = chunking.get('chunk_size', 1000000)
+                self.aggressive_cleanup = cleanup.get('aggressive', True)
+            except Exception as e:
+                logger.debug(f"Failed to load memory config: {e}, using defaults")
+                self.memory_threshold = 0.8
+                self.chunk_size = 1000000
+                self.aggressive_cleanup = True
+        else:
+            # Use provided config or defaults
+            self.memory_threshold = self.config.get('memory_threshold', 0.8)  # 80% memory usage
+            self.chunk_size = self.config.get('chunk_size', 1000000)  # 1M rows per chunk
+            self.aggressive_cleanup = self.config.get('aggressive_cleanup', True)
+        
         self.initial_memory = self.get_memory_usage()
         
     def get_memory_usage(self) -> Dict[str, float]:
@@ -75,8 +111,18 @@ class MemoryManager:
     def should_cleanup(self) -> bool:
         """Check if memory cleanup is needed."""
         memory_info = self.get_memory_usage()
+        
+        # Load RSS threshold from config if available
+        if _CONFIG_AVAILABLE:
+            try:
+                rss_threshold_gb = get_cfg("memory.thresholds.process_rss_warning_gb", default=50, config_name="memory_config")
+            except Exception:
+                rss_threshold_gb = 50
+        else:
+            rss_threshold_gb = 50
+        
         return (memory_info['system_percent'] > self.memory_threshold * 100 or 
-                memory_info['rss_gb'] > 50)  # 50GB threshold
+                memory_info['rss_gb'] > rss_threshold_gb)
     
     def cleanup(self, aggressive: bool = None) -> None:
         """Perform memory cleanup."""
