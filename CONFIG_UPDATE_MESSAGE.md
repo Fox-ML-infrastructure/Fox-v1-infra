@@ -243,7 +243,7 @@ export TRAINER_ISOLATION_TIMEOUT=10800
 
 ✅ **Integration Complete** — All code updated to use centralized configs  
 🔄 **Testing Underway** — Validating all integrations work correctly  
-⏳ **Validation Pending** — Comprehensive testing of all model families
+🔧 **Minor Fixes Underway** — Addressing type conversion and edge cases discovered during testing
 
 ### Known Issues Fixed
 
@@ -251,6 +251,9 @@ export TRAINER_ISOLATION_TIMEOUT=10800
 - ✅ Removed duplicate config loader setup in `seq_torch_base.py`
 - ✅ Removed redundant imports in `ngboost_trainer.py`
 - ✅ All config imports verified working correctly
+- ✅ Fixed `TypeError` in ReduceLROnPlateau callback (min_lr loaded as string instead of float)
+- ✅ Added type conversion for all numeric callback config values
+- ✅ Updated YAML config to use explicit float notation (0.000001 instead of 1e-6)
 
 ## Next Steps
 

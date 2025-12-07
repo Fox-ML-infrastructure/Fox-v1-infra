@@ -31,6 +31,7 @@ With this foundation in place, **active development has now resumed**, and focus
   * ✅ Pipeline, threading, memory, GPU, and system settings integrated
   * ✅ Backward compatibility maintained with hardcoded defaults
   * 🔄 Testing underway for new config refactor — validating all integrations work correctly
+  * 🔧 Minor fixes underway — addressing type conversion and edge cases discovered during testing
   * 🔄 Validation layer and logging modernization in progress
 
 * **Upcoming refactors**
