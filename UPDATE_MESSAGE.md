@@ -30,6 +30,7 @@ With this foundation in place, **active development has now resumed**, and focus
   * ✅ All model trainers updated to use centralized configs (preprocessing, callbacks, optimizers, safety guards)
   * ✅ Pipeline, threading, memory, GPU, and system settings integrated
   * ✅ Backward compatibility maintained with hardcoded defaults
+  * 🔄 Testing underway for new config refactor — validating all integrations work correctly
   * 🔄 Validation layer and logging modernization in progress
 
 * **Upcoming refactors**
