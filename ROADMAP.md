@@ -11,7 +11,7 @@ FoxML Core is maintained with an **enterprise reliability mindset**:
 * Documentation and legal compliance are treated as first-class deliverables.
 * Stability always precedes new features.
 * GPU acceleration, orchestration, and model tooling will remain backwards-compatible.
-* **UI integration approach** — FoxML Core provides Python programmatic interfaces and integration points for external dashboards. A native UI layer is optional and out of scope for the core infrastructure. *As always, priorities are subject to change based upon client demand.*
+* **UI integration approach** — UI is intentionally decoupled from the core. FoxML Core provides Python programmatic interfaces and integration points so teams can plug into their existing dashboards, monitoring tools, or UX layers. *As always, priorities are subject to change based upon client demand.*
 
 ---
 
@@ -19,10 +19,10 @@ FoxML Core is maintained with an **enterprise reliability mindset**:
 
 ## Core System Status
 
-* **TRAINING Pipeline** ✅ — Testing and verified. XGBoost issues resolved, orchestration stable, GPU training operational.
+* **TRAINING Pipeline** ✅ — Testing and verified. XGBoost issues resolved, orchestration stable, GPU training operational. (See Phase 1 for intelligent training framework work.)
 * **GPU Families** ✅ — Confirmed working. All GPU model families operational and producing artifacts. Expect some noise and warnings during training (harmless, do not affect functionality).
-* **Sequential Models** — Final 4 in testing (CNN1D, LSTM, Transformer, and remaining). 3D preprocessing issues resolved.
-* **Target Ranking & Selection** — Testing in progress, validating correctness before integration.
+* **Sequential Models** ✅ — All sequential models (CNN1D, LSTM, Transformer, and LSTM-based variants) working and producing outputs. 3D preprocessing issues resolved. (See Phase 1 for planned intelligent training orchestration refactors.)
+* **Target Ranking & Selection** — Testing in progress, validating correctness before integration into TRAINING pipeline.
 * **Documentation Overhaul** ✅ — 55 new files created, 50+ rewritten, standardized across all tiers.
 
 ---
