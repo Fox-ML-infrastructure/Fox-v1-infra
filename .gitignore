@@ -71,6 +71,8 @@ TRAINING/EXPERIMENTS/metadata/
 TRAINING/EXPERIMENTS/logs/
 TRAINING/test_output*/
 **/test_output*/
+test_config_output*/
+test_config_integration.sh
 catboost_info/
 lightgbm_models/
 xgboost_models/
