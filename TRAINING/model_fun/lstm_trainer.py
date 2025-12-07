@@ -93,6 +93,29 @@ class LSTMTrainer(BaseModelTrainer):
         X_tr = X_tr.reshape(X_tr.shape[0], X_tr.shape[1], 1)
         X_va = X_va.reshape(X_va.shape[0], X_va.shape[1], 1)
         
+        # 4.5) Adjust batch size and epochs dynamically based on sequence length to prevent timeouts
+        seq_len = X_tr.shape[1]
+        base_batch_size = self.config["batch_size"]
+        base_epochs = self.config["epochs"]
+        max_seq_for_full_batch = self.config.get("max_sequence_length_for_full_batch", 200)
+        
+        # For sequences > 200, reduce batch size to speed up training
+        if seq_len > max_seq_for_full_batch:
+            # Scale batch size inversely with sequence length
+            adjusted_batch_size = max(32, int(base_batch_size * (max_seq_for_full_batch / seq_len)))
+            if adjusted_batch_size < base_batch_size:
+                logger.warning(f"⚠️ [LSTM] Reducing batch size from {base_batch_size} to {adjusted_batch_size} "
+                             f"to speed up training (sequence length: {seq_len})")
+                self.config["batch_size"] = adjusted_batch_size
+            
+            # For very long sequences (>300), also reduce epochs to prevent timeouts
+            if seq_len > 300:
+                adjusted_epochs = max(15, int(base_epochs * (300 / seq_len)))
+                if adjusted_epochs < base_epochs:
+                    logger.warning(f"⚠️ [LSTM] Reducing epochs from {base_epochs} to {adjusted_epochs} "
+                                 f"to prevent timeout (sequence length: {seq_len})")
+                    self.config["epochs"] = adjusted_epochs
+        
         # 5) Build model with safe defaults
         model = self._build_model(X_tr.shape[1])
         
