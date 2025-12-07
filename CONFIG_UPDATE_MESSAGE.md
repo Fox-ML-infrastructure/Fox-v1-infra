@@ -93,19 +93,37 @@ The configuration system has been completely refactored to use centralized YAML-
 
 **All model trainers updated** to use centralized configs:
 
-- ✅ `base_trainer.py` — Preprocessing, callbacks, safety guards, imputation
+**Base Infrastructure:**
+- ✅ `base_trainer.py` — Preprocessing, callbacks, safety guards, imputation (inherited by all trainers)
+
+**CPU-Only Trainers:**
 - ✅ `lightgbm_trainer.py` — Test splits, random state
+- ✅ `quantile_lightgbm_trainer.py` — Model config loading
 - ✅ `xgboost_trainer.py` — Test splits, random state, optimizer clipnorm
+- ✅ `reward_based_trainer.py` — Model config loading
+- ✅ `ngboost_trainer.py` — Test splits, random state (val_ratio: 0.15)
+- ✅ `ensemble_trainer.py` — Model config loading
+- ✅ `gmm_regime_trainer.py` — Model config loading
+- ✅ `change_point_trainer.py` — Model config loading
+- ✅ `ftrl_proximal_trainer.py` — Model config loading
+
+**TensorFlow/GPU Trainers:**
 - ✅ `mlp_trainer.py` — Test splits, optimizer clipnorm
 - ✅ `cnn1d_trainer.py` — Test splits, optimizer clipnorm, callbacks
 - ✅ `lstm_trainer.py` — Test splits, optimizer clipnorm, callbacks, dynamic batch/epoch scaling
 - ✅ `transformer_trainer.py` — Test splits, optimizer clipnorm, callbacks, dynamic batch scaling
+- ✅ `tabcnn_trainer.py` — Inherits configs via base_trainer
+- ✅ `tablstm_trainer.py` — Inherits configs via base_trainer
+- ✅ `tabtransformer_trainer.py` — Inherits configs via base_trainer
 - ✅ `vae_trainer.py` — Test splits, optimizer clipnorm, callbacks
 - ✅ `gan_trainer.py` — Test splits, optimizer clipnorm, callbacks
 - ✅ `meta_learning_trainer.py` — Test splits, optimizer clipnorm
 - ✅ `multi_task_trainer.py` — Test splits, optimizer clipnorm
-- ✅ `ngboost_trainer.py` — Test splits, random state (val_ratio: 0.15)
+
+**PyTorch Base:**
 - ✅ `seq_torch_base.py` — Gradient clipping max_norm, optimizer settings
+
+**Total: 20 model trainers** (all benefit from centralized configs via BaseModelTrainer inheritance)
 
 **System components updated**:
 
