@@ -6,10 +6,12 @@ description: "LSTM model for time-series prediction"
 
 hyperparameters:
   # Training
-  epochs: 50
-  batch_size: 512
-  patience: 10
+  epochs: 30  # Reduced from 50 to prevent timeouts
+  batch_size: 256  # Reduced from 512 to speed up training
+  patience: 5  # Reduced from 10 for faster early stopping
   learning_rate: 0.001
+  # Dynamic batch size reduction for long sequences (>200 features)
+  max_sequence_length_for_full_batch: 200
   
   # Architecture
   lstm_units: 128

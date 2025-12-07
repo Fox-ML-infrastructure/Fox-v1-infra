@@ -5,6 +5,13 @@ pipeline:
   # Timeouts
   isolation_timeout_seconds: 7200  # 2 hours default for isolated child processes
   
+  # Family-specific timeouts (in seconds)
+  # Families that may need longer timeouts can be specified here
+  family_timeouts:
+    LSTM: 10800  # 3 hours for LSTM (can be slow with long sequences)
+    Transformer: 10800  # 3 hours for Transformer (can be slow with long sequences)
+    # Add more family-specific timeouts as needed
+  
   # Data Processing Limits
   data_limits:
     max_samples_per_symbol: null  # None = no limit, or set to integer (e.g., 20 for testing)

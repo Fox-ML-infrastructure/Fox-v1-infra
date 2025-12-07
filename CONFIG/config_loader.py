@@ -227,6 +227,105 @@ def load_multi_task_config(variant: Optional[str] = None, **overrides) -> Dict[s
     return load_model_config("multi_task", variant=variant, overrides=overrides)
 
 
+# Training config convenience functions
+
+def get_cfg(path: str, default: Any = None, config_name: str = "pipeline_config") -> Any:
+    """
+    Get a nested config value using dot notation.
+    
+    Args:
+        path: Dot-separated path to config value (e.g., "pipeline.isolation_timeout_seconds")
+        default: Default value if path not found
+        config_name: Name of training config file (without .yaml)
+        
+    Returns:
+        Config value or default
+        
+    Example:
+        >>> timeout = get_cfg("pipeline.isolation_timeout_seconds", default=7200)
+        >>> batch_size = get_cfg("preprocessing.validation.test_size", default=0.2)
+    """
+    config = load_training_config(config_name)
+    if not config:
+        return default
+    
+    keys = path.split(".")
+    value = config
+    for key in keys:
+        if isinstance(value, dict) and key in value:
+            value = value[key]
+        else:
+            return default
+    return value
+
+
+def get_pipeline_config() -> Dict[str, Any]:
+    """Load pipeline configuration"""
+    return load_training_config("pipeline_config")
+
+
+def get_gpu_config() -> Dict[str, Any]:
+    """Load GPU configuration"""
+    return load_training_config("gpu_config")
+
+
+def get_memory_config() -> Dict[str, Any]:
+    """Load memory configuration"""
+    return load_training_config("memory_config")
+
+
+def get_preprocessing_config() -> Dict[str, Any]:
+    """Load preprocessing configuration"""
+    return load_training_config("preprocessing_config")
+
+
+def get_threading_config() -> Dict[str, Any]:
+    """Load threading configuration"""
+    return load_training_config("threading_config")
+
+
+def get_safety_config() -> Dict[str, Any]:
+    """Load safety configuration"""
+    return load_training_config("safety_config")
+
+
+def get_callbacks_config() -> Dict[str, Any]:
+    """Load callbacks configuration"""
+    return load_training_config("callbacks_config")
+
+
+def get_optimizer_config() -> Dict[str, Any]:
+    """Load optimizer configuration"""
+    return load_training_config("optimizer_config")
+
+
+def get_system_config() -> Dict[str, Any]:
+    """Load system configuration"""
+    return load_training_config("system_config")
+
+
+def get_family_timeout(family: str, default: int = 7200) -> int:
+    """
+    Get timeout for a specific family, with fallback to default.
+    
+    Args:
+        family: Model family name
+        default: Default timeout in seconds
+        
+    Returns:
+        Timeout in seconds
+    """
+    # Check for family-specific timeout in pipeline config
+    pipeline = get_pipeline_config()
+    family_timeouts = pipeline.get("pipeline", {}).get("family_timeouts", {})
+    if family in family_timeouts:
+        return family_timeouts[family]
+    
+    # Fallback to general isolation timeout
+    timeout = get_cfg("pipeline.isolation_timeout_seconds", default=default)
+    return timeout
+
+
 if __name__ == "__main__":
     # Test the loader
     import json
