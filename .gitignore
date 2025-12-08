@@ -15,6 +15,8 @@ dep/
 # Internal documentation and audit trails
 docs/internal/
 docs/audit/
+DOCS/internal/
+DOCS/audit/
 
 # Personal notes
 NOTES/
