@@ -117,6 +117,11 @@ class TargetPredictabilityScore:
     leakage_flag: str = "OK"  # "OK", "SUSPICIOUS", "HIGH_SCORE", "INCONSISTENT"
     suspicious_features: Dict[str, List[Tuple[str, float]]] = None  # {model: [(feature, imp), ...]}
     fold_timestamps: List[Dict[str, Any]] = None  # List of {fold_idx, train_start, train_end, test_start, test_end} per fold
+    # Auto-fix and rerun tracking
+    autofix_info: Optional['AutoFixInfo'] = None  # AutoFixInfo from auto-fixer (if leakage was detected)
+    leakage_flags: Dict[str, bool] = None  # Detailed leakage flags: {"perfect_train_acc": bool, "high_auc": bool, etc.}
+    status: str = "OK"  # "OK", "SUSPICIOUS_STRONG", "LEAKAGE_UNRESOLVED", "LEAKAGE_UNRESOLVED_MAX_RETRIES"
+    attempts: int = 1  # Number of evaluation attempts (for auto-rerun tracking)
     
     # Backward compatibility: mean_r2 property
     @property
@@ -2666,6 +2671,9 @@ def evaluate_target_predictability(
             _log_suspicious_features(target_column, "CROSS_SECTIONAL", suspicious_features)
         
         # AUTO-FIX LEAKAGE: If leakage detected, automatically fix and re-run
+        # Initialize autofix_info to None (will be set if auto-fixer runs)
+        autofix_info = None
+        
         # Load thresholds from config (with sensible defaults)
         if _CONFIG_AVAILABLE:
             try:
@@ -2813,16 +2821,19 @@ def evaluate_target_predictability(
                 if detections:
                     logger.warning(f"🔧 Auto-detected {len(detections)} leaking features")
                     # Apply fixes (with high confidence threshold to avoid false positives)
-                    updates = fixer.apply_fixes(
+                    updates, autofix_info = fixer.apply_fixes(
                         detections, 
                         min_confidence=auto_fix_min_confidence, 
                         max_features=auto_fix_max_features,
                         dry_run=False
                     )
-                    logger.info(f"✅ Auto-fixed leaks. Configs updated. Please re-run ranking to verify.")
-                    logger.info(f"   Updated: {len(updates.get('excluded_features_updates', {}).get('exact_patterns', []))} exact patterns, "
-                              f"{len(updates.get('excluded_features_updates', {}).get('prefix_patterns', []))} prefix patterns")
-                    logger.info(f"   Rejected: {len(updates.get('feature_registry_updates', {}).get('rejected_features', []))} features in registry")
+                    if autofix_info.modified_configs:
+                        logger.info(f"✅ Auto-fixed leaks. Configs updated.")
+                        logger.info(f"   Updated: {len(updates.get('excluded_features_updates', {}).get('exact_patterns', []))} exact patterns, "
+                                  f"{len(updates.get('excluded_features_updates', {}).get('prefix_patterns', []))} prefix patterns")
+                        logger.info(f"   Rejected: {len(updates.get('feature_registry_updates', {}).get('rejected_features', []))} features in registry")
+                    else:
+                        logger.info("🔍 Auto-fix detected leaks but no configs were modified")
                 else:
                     logger.info("🔍 Auto-fix detected no leaks (may need manual review)")
             except Exception as e:
@@ -2949,6 +2960,14 @@ def evaluate_target_predictability(
     leakage_flag = detect_leakage(mean_score, composite, mean_importance, 
                                   target_name=target_name, model_scores=model_means, task_type=final_task_type)
     
+    # Build detailed leakage flags for auto-rerun logic
+    leakage_flags = {
+        "perfect_train_acc": len(_perfect_correlation_models) > 0,  # Any model hit 100% training accuracy
+        "high_auc": mean_score > 0.95 if final_task_type == TaskType.BINARY_CLASSIFICATION else False,
+        "high_r2": mean_score > 0.80 if final_task_type == TaskType.REGRESSION else False,
+        "suspicious_flag": leakage_flag != "OK"
+    }
+    
     result = TargetPredictabilityScore(
         target_name=target_name,
         target_column=target_column,
@@ -2962,7 +2981,11 @@ def evaluate_target_predictability(
         composite_score=composite,
         leakage_flag=leakage_flag,
         suspicious_features=all_suspicious_features if all_suspicious_features else None,
-        fold_timestamps=fold_timestamps
+        fold_timestamps=fold_timestamps,
+        leakage_flags=leakage_flags,
+        autofix_info=autofix_info if 'autofix_info' in locals() else None,
+        status="OK",
+        attempts=1
     )
     
     # Log with leakage warning if needed

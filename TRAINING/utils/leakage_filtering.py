@@ -340,6 +340,18 @@ def _get_config_path() -> Path:
 _CONFIG_MTIME: Optional[float] = None  # Track file modification time for cache invalidation
 
 
+def reload_feature_configs() -> None:
+    """
+    Reload feature configs (leakage config and schema config).
+    
+    This is useful after auto-fixer modifies configs and you want to re-evaluate
+    targets with the updated configuration.
+    """
+    _load_leakage_config(force_reload=True)
+    _load_schema_config(force_reload=True)
+    logger.info("Reloaded feature configs (excluded_features.yaml, feature_registry.yaml, feature_target_schema.yaml)")
+
+
 def _load_leakage_config(force_reload: bool = False) -> Dict[str, Any]:
     """Load leakage filtering configuration from YAML file (cached).
     

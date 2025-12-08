@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Status**: Testing in progress - All changes merged to main and ready for validation
 
+**Note**: Backward functionality remains fully operational. The ranking and intelligent training pipeline is currently being tested and improved. All existing training workflows continue to function as before.
+
 ### Added
 - **Automated leakage detection and auto-fix system**:
   - `LeakageAutoFixer` class for automatic detection and remediation of data leakage
@@ -25,6 +27,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Minimum confidence for auto-fix (default: 0.8)
     - Maximum features to fix per run (default: 20) - prevents overly aggressive fixes
     - Enable/disable auto-fixer flag
+- **Auto-rerun after leakage fixes**:
+  - Automatic rerun of target evaluation after auto-fixer modifies configs
+  - Configurable via `safety_config.yaml` (`auto_rerun` section):
+    - `enabled`: Enable/disable auto-rerun (default: `true`)
+    - `max_reruns`: Maximum reruns per target (default: `3`)
+    - `rerun_on_perfect_train_acc`: Rerun on perfect training accuracy (default: `true`)
+    - `rerun_on_high_auc_only`: Rerun on high AUC alone (default: `false`)
+  - Stops automatically when no leakage detected or no config changes
+  - Tracks attempt count and final status (`OK`, `SUSPICIOUS_STRONG`, `LEAKAGE_UNRESOLVED`, etc.)
 - **Pre-training leak scan**:
   - Detects near-copy features before model training (catches obvious leaks early)
   - Binary classification: detects features matching target with ≥99.9% accuracy

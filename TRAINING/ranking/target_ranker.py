@@ -43,6 +43,15 @@ from TRAINING.ranking.rank_target_predictability import (
     save_rankings as _save_rankings
 )
 from TRAINING.utils.task_types import TargetConfig, TaskType
+from TRAINING.utils.leakage_filtering import reload_feature_configs
+
+# Try to import config loader
+_CONFIG_AVAILABLE = False
+try:
+    from config_loader import get_safety_config
+    _CONFIG_AVAILABLE = True
+except ImportError:
+    pass
 
 # Suppress expected warnings
 warnings.filterwarnings('ignore', message='X does not have valid feature names')
@@ -166,29 +175,68 @@ def rank_targets(
     logger.info(f"Ranking {len(targets)} targets across {len(symbols)} symbols")
     logger.info(f"Model families: {', '.join(model_families)}")
     
+    # Load auto-rerun config
+    auto_rerun_enabled = False
+    max_reruns = 3
+    rerun_on_perfect_train_acc = True
+    rerun_on_high_auc_only = False
+    
+    if _CONFIG_AVAILABLE:
+        try:
+            safety_cfg = get_safety_config()
+            auto_rerun_cfg = safety_cfg.get('leakage_detection', {}).get('auto_rerun', {})
+            auto_rerun_enabled = auto_rerun_cfg.get('enabled', False)
+            max_reruns = int(auto_rerun_cfg.get('max_reruns', 3))
+            rerun_on_perfect_train_acc = auto_rerun_cfg.get('rerun_on_perfect_train_acc', True)
+            rerun_on_high_auc_only = auto_rerun_cfg.get('rerun_on_high_auc_only', False)
+        except Exception:
+            pass
+    
     for idx, (target_name, target_config) in enumerate(targets.items(), 1):
         logger.info(f"[{idx}/{len(targets)}] Evaluating {target_name}...")
         
         try:
-            result = evaluate_target_predictability(
-                target_name=target_name,
-                target_config=target_config,
-                symbols=symbols,
-                data_dir=data_dir,
-                model_families=model_families,
-                multi_model_config=multi_model_config,
-                output_dir=output_dir,
-                min_cs=min_cs,
-                max_cs_samples=max_cs_samples,
-                max_rows_per_symbol=max_rows_per_symbol
-            )
+            # Use auto-rerun wrapper if enabled, otherwise use regular evaluation
+            if auto_rerun_enabled:
+                result = evaluate_target_with_autofix(
+                    target_name=target_name,
+                    target_config=target_config,
+                    symbols=symbols,
+                    data_dir=data_dir,
+                    model_families=model_families,
+                    multi_model_config=multi_model_config,
+                    output_dir=output_dir,
+                    min_cs=min_cs,
+                    max_cs_samples=max_cs_samples,
+                    max_rows_per_symbol=max_rows_per_symbol,
+                    max_reruns=max_reruns,
+                    rerun_on_perfect_train_acc=rerun_on_perfect_train_acc,
+                    rerun_on_high_auc_only=rerun_on_high_auc_only
+                )
+            else:
+                result = evaluate_target_predictability(
+                    target_name=target_name,
+                    target_config=target_config,
+                    symbols=symbols,
+                    data_dir=data_dir,
+                    model_families=model_families,
+                    multi_model_config=multi_model_config,
+                    output_dir=output_dir,
+                    min_cs=min_cs,
+                    max_cs_samples=max_cs_samples,
+                    max_rows_per_symbol=max_rows_per_symbol
+                )
             
             # Skip degenerate/failed targets (marked with mean_score = -999)
-            if result.mean_score != -999.0:
+            # Also skip targets with unresolved leakage
+            if result.mean_score != -999.0 and result.status not in ["LEAKAGE_UNRESOLVED", "LEAKAGE_UNRESOLVED_MAX_RETRIES"]:
                 results.append(result)
             else:
                 # Provide more specific reason for skipping
-                reason = result.leakage_flag if result.leakage_flag != "OK" else "degenerate/failed"
+                if result.status in ["LEAKAGE_UNRESOLVED", "LEAKAGE_UNRESOLVED_MAX_RETRIES"]:
+                    reason = result.status
+                else:
+                    reason = result.leakage_flag if result.leakage_flag != "OK" else "degenerate/failed"
                 logger.info(f"  Skipped {target_name} ({reason})")
         
         except Exception as e:

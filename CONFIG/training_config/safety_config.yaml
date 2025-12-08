@@ -62,6 +62,13 @@ safety:
     # Enable/disable auto-fixer
     auto_fix_enabled: true  # Set to false to disable automatic leakage fixing
     
+    # Auto-rerun after fixing leaks
+    auto_rerun:
+      enabled: true  # Enable automatic rerun of targets after auto-fix
+      max_reruns: 3  # Maximum number of reruns per target (default: 3)
+      rerun_on_perfect_train_acc: true  # Rerun if perfect training accuracy detected
+      rerun_on_high_auc_only: false  # Rerun on high AUC alone (default: false, only rerun on perfect train acc)
+    
     # Pre-training leak scan thresholds
     pre_scan:
       min_match: 0.999  # Minimum match ratio for binary classification (99.9%)

@@ -58,6 +58,17 @@ class LeakageDetection:
     suggested_action: str  # 'exact', 'prefix', 'regex', 'registry_reject'
 
 
+@dataclass
+class AutoFixInfo:
+    """Information about what was modified by auto-fixer."""
+    modified_configs: bool  # True if any configs were modified
+    modified_files: List[str]  # List of config files that were modified
+    modified_features: List[str]  # List of feature names that were excluded/rejected
+    excluded_features_updates: Dict[str, Any]  # Updates to excluded_features.yaml
+    feature_registry_updates: Dict[str, Any]  # Updates to feature_registry.yaml
+    backup_files: List[str] = None  # List of backup files created
+
+
 class LeakageAutoFixer:
     """
     Automatically detects and fixes data leakage by:
@@ -348,7 +359,7 @@ class LeakageAutoFixer:
         min_confidence: float = 0.7,
         max_features: Optional[int] = None,
         dry_run: bool = False
-    ) -> Dict[str, Any]:
+    ) -> Tuple[Dict[str, Any], AutoFixInfo]:
         """
         Apply detected fixes to config files.
         
@@ -359,14 +370,24 @@ class LeakageAutoFixer:
             dry_run: If True, don't actually modify files, just return what would be done
         
         Returns:
-            Dict with 'excluded_features_updates' and 'feature_registry_updates'
+            Tuple of (updates_dict, AutoFixInfo) where:
+            - updates_dict: Dict with 'excluded_features_updates' and 'feature_registry_updates'
+            - AutoFixInfo: Information about what was modified
         """
         # Filter by confidence
         high_confidence = [d for d in detections if d.confidence >= min_confidence]
         
         if not high_confidence:
             logger.info(f"No leaks detected with confidence >= {min_confidence}")
-            return {'excluded_features_updates': {}, 'feature_registry_updates': {}}
+            empty_autofix_info = AutoFixInfo(
+                modified_configs=False,
+                modified_files=[],
+                modified_features=[],
+                excluded_features_updates={},
+                feature_registry_updates={},
+                backup_files=None
+            )
+            return {'excluded_features_updates': {}, 'feature_registry_updates': {}}, empty_autofix_info
         
         # Sort by confidence (descending) and limit to max_features
         high_confidence.sort(key=lambda x: x.confidence, reverse=True)
@@ -415,11 +436,39 @@ class LeakageAutoFixer:
             }
         }
         
+        modified_files = []
+        backup_files = []
+        
         if not dry_run:
             self._apply_excluded_features_updates(updates['excluded_features_updates'])
             self._apply_feature_registry_updates(updates['feature_registry_updates'])
+            
+            # Track which files were modified
+            if updates['excluded_features_updates'].get('exact_patterns') or updates['excluded_features_updates'].get('prefix_patterns'):
+                modified_files.append(str(self.excluded_features_path))
+            if updates['feature_registry_updates'].get('rejected_features'):
+                modified_files.append(str(self.feature_registry_path))
+            
+            # Get backup files if backups were created
+            if self.backup_configs:
+                import datetime
+                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                backup_files = [
+                    str(self.excluded_features_path.parent / f"{self.excluded_features_path.name}.backup_{timestamp}"),
+                    str(self.feature_registry_path.parent / f"{self.feature_registry_path.name}.backup_{timestamp}")
+                ]
         
-        return updates
+        # Create AutoFixInfo
+        autofix_info = AutoFixInfo(
+            modified_configs=len(modified_files) > 0,
+            modified_files=modified_files,
+            modified_features=[d.feature_name for d in high_confidence],
+            excluded_features_updates=updates['excluded_features_updates'],
+            feature_registry_updates=updates['feature_registry_updates'],
+            backup_files=backup_files if backup_files else None
+        )
+        
+        return updates, autofix_info
     
     def _backup_configs(self):
         """Backup config files before modification."""
