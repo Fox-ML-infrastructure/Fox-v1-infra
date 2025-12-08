@@ -82,6 +82,7 @@ Complete technical reference for daily use.
 Research notes, design rationale, advanced topics.
 
 ### Research
+- [Intelligence Layer Overview](03_technical/research/INTELLIGENCE_LAYER.md) - Complete overview of intelligent training pipeline decision-making and automation
 - [Leakage Analysis](03_technical/research/LEAKAGE_ANALYSIS.md) - Leakage research
 - [Feature Importance Methodology](03_technical/research/FEATURE_IMPORTANCE_METHODOLOGY.md) - Feature importance
 - [Target Discovery](03_technical/research/TARGET_DISCOVERY.md) - Target research
