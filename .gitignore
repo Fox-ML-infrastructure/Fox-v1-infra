@@ -351,3 +351,7 @@ docs/COMPREHENSIVE_FEATURE_RANKING.md
 !docs/**/*.csv
 intelligent_output/
 test_*_output/
+
+# Test output directories
+test_e2e_fresh/
+test_*output*/
