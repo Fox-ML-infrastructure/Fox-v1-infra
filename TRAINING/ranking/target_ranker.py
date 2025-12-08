@@ -53,6 +53,15 @@ try:
 except ImportError:
     pass
 
+# Import new config system (optional - for backward compatibility)
+try:
+    from CONFIG.config_builder import build_target_ranking_config
+    from CONFIG.config_schemas import ExperimentConfig, TargetRankingConfig
+    _NEW_CONFIG_AVAILABLE = True
+except ImportError:
+    _NEW_CONFIG_AVAILABLE = False
+    logger.debug("New config system not available, using legacy configs")
+
 # Suppress expected warnings
 warnings.filterwarnings('ignore', message='X does not have valid feature names')
 warnings.filterwarnings('ignore', category=UserWarning, module='sklearn')
@@ -147,7 +156,8 @@ def rank_targets(
     min_cs: int = 10,
     max_cs_samples: Optional[int] = None,
     max_rows_per_symbol: int = 50000,
-    top_n: Optional[int] = None
+    top_n: Optional[int] = None,
+    target_ranking_config: Optional['TargetRankingConfig'] = None  # New typed config (optional)
 ) -> List[TargetPredictabilityScore]:
     """
     Rank multiple targets by predictability.
@@ -160,17 +170,41 @@ def rank_targets(
         symbols: List of symbols to evaluate on
         data_dir: Directory containing symbol data
         model_families: List of model family names to use
-        multi_model_config: Multi-model config dict
+        multi_model_config: Multi-model config dict [LEGACY]
         output_dir: Optional output directory for results
         min_cs: Minimum cross-sectional size per timestamp
         max_cs_samples: Maximum samples per timestamp for cross-sectional sampling
         max_rows_per_symbol: Maximum rows to load per symbol
         top_n: Optional limit on number of top targets to return
+        target_ranking_config: Optional TargetRankingConfig object [NEW - preferred]
     
     Returns:
         List of TargetPredictabilityScore objects, sorted by composite_score (descending)
     """
     results = []
+    
+    # NEW: Use typed config if provided
+    if target_ranking_config is not None and _NEW_CONFIG_AVAILABLE:
+        # Extract values from typed config
+        if target_ranking_config.model_families:
+            # Convert to list of enabled family names
+            model_families = [
+                name for name, cfg in target_ranking_config.model_families.items()
+                if cfg.get('enabled', False)
+            ]
+        if target_ranking_config.data_dir:
+            data_dir = target_ranking_config.data_dir
+        if target_ranking_config.symbols:
+            symbols = target_ranking_config.symbols
+        if target_ranking_config.max_samples_per_symbol:
+            max_rows_per_symbol = target_ranking_config.max_samples_per_symbol
+        # Build multi_model_config dict from typed config for backward compat
+        multi_model_config = {
+            'model_families': target_ranking_config.model_families,
+            'cross_validation': target_ranking_config.cross_validation,
+            'sampling': target_ranking_config.sampling,
+            'ranking': target_ranking_config.ranking
+        }
     
     logger.info(f"Ranking {len(targets)} targets across {len(symbols)} symbols")
     logger.info(f"Model families: {', '.join(model_families)}")
