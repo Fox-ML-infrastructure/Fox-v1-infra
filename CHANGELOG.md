@@ -14,11 +14,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **Note**: Backward functionality remains fully operational. The ranking and intelligent training pipeline is currently being tested and improved. All existing training workflows continue to function as before.
 
 ### Added
+- **Production-grade backup system for auto-fixer**:
+  - **Per-target timestamped backup structure**: `CONFIG/backups/{target}/{timestamp}/files + manifest.json`
+  - **Automatic retention policy**: Keeps last N backups per target (configurable, default: 20)
+  - **High-resolution timestamps**: Uses microseconds to avoid collisions in concurrent scenarios
+  - **Manifest files with full provenance**: Includes backup_version, source, target_name, timestamp, git_commit, file paths
+  - **Atomic restore operations**: Writes to temp file first, then atomic rename (prevents partial writes)
+  - **Enhanced error handling**: Lists available timestamps on unknown timestamp, validates manifest structure
+  - **Comprehensive observability**: Logs backup creation, pruning, and restore operations with full context
+  - **Config-driven settings**: `max_backups_per_target` configurable via `system_config.yaml` (default: 20, 0 = no limit)
+  - **Restoration helpers**: `list_backups()` and `restore_backup()` static methods for backup management
+  - **Backward compatible**: Legacy flat structure still supported (with warning) when no target_name provided
+  - **Git commit tracking**: Captures git commit hash in manifest for debugging and provenance
 - **Automated leakage detection and auto-fix system**:
   - `LeakageAutoFixer` class for automatic detection and remediation of data leakage
   - Integration with leakage sentinels (shifted-target, symbol-holdout, randomized-time tests)
   - Automatic config file updates (`excluded_features.yaml`, `feature_registry.yaml`)
   - Auto-fixer triggers automatically when perfect scores (≥0.99) are detected during target ranking
+  - **Checks against pre-excluded features**: Filters out already-excluded features before detection to avoid redundant work
   - **Configurable auto-fixer thresholds** in `safety_config.yaml`:
     - CV score threshold (default: 0.99)
     - Training accuracy threshold (default: 0.999)
@@ -114,6 +127,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Hardcoded safety net in leakage filtering** — added fallback patterns to exclude known leaky features even when config fails to load
 - **Path resolution in moved files** — corrected `parents[2]` vs `parents[3]` for repo root detection
 - **Import paths after module migration** — all `scripts.utils.*` imports updated to `TRAINING.utils.*`
+- **Auto-fixer pre-excluded feature check** — now filters out already-excluded features before detection to prevent redundant exclusions
 - VAE serialization issues — custom Keras layers now properly imported before deserialization
 - Sequential models 3D preprocessing issues — input shape handling corrected
 - XGBoost source-build stability — persistent build directory and non-editable install
@@ -148,6 +162,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `LEAKAGE_ANALYSIS.md` with pre-training leak scan and new config options
 - Updated `INTELLIGENT_TRAINING_TUTORIAL.md` with configuration details
 - Marked target ranking integration as completed in planning docs
+- Updated `README.md` with direct commercial licensing focus and recent feature improvements
+- Added NVLink-ready architecture planning document (`docs/internal/planning/NVLINK_READY_ARCHITECTURE.md`)
+- Updated `ROADMAP.md` with NVLink compatibility exploration and feature engineering revamp plans
+- Hardened `COMMERCIAL_LICENSE.md` with enterprise-grade improvements (AGPL clarity, termination, audit, SaaS restrictions)
 - Added comprehensive configuration documentation for all leakage detection thresholds
 - 55+ new documentation files created
 - 50+ existing files rewritten and standardized
