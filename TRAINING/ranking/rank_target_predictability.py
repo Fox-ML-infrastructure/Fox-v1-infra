@@ -2825,7 +2825,8 @@ def evaluate_target_predictability(
                         detections, 
                         min_confidence=auto_fix_min_confidence, 
                         max_features=auto_fix_max_features,
-                        dry_run=False
+                        dry_run=False,
+                        target_name=target_name
                     )
                     if autofix_info.modified_configs:
                         logger.info(f"✅ Auto-fixed leaks. Configs updated.")

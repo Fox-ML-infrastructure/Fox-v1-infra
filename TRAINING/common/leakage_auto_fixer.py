@@ -493,7 +493,8 @@ class LeakageAutoFixer:
         detections: List[LeakageDetection],
         min_confidence: float = 0.7,
         max_features: Optional[int] = None,
-        dry_run: bool = False
+        dry_run: bool = False,
+        target_name: Optional[str] = None
     ) -> Tuple[Dict[str, Any], AutoFixInfo]:
         """
         Apply detected fixes to config files.
@@ -541,7 +542,7 @@ class LeakageAutoFixer:
         # Backup configs if requested
         backup_files = []
         if self.backup_configs and not dry_run:
-            backup_files = self._backup_configs()
+            backup_files = self._backup_configs(target_name=target_name)
         
         # Group by action type
         exact_matches = []
@@ -602,13 +603,31 @@ class LeakageAutoFixer:
         
         return updates, autofix_info
     
-    def _backup_configs(self):
-        """Backup config files before modification."""
+    def _backup_configs(self, target_name: Optional[str] = None):
+        """
+        Backup config files before modification.
+        
+        Args:
+            target_name: Optional target name to organize backups per-target.
+                        If provided, backups are stored in CONFIG/backups/{target_name}/
+        
+        Returns:
+            List of backup file paths
+        """
         import shutil
         from datetime import datetime
         
         # Use configured backup directory (set in __init__)
-        backup_dir = self.backup_dir
+        base_backup_dir = self.backup_dir
+        
+        # Organize by target if provided
+        if target_name:
+            # Sanitize target name for filesystem (remove invalid chars)
+            safe_target = "".join(c for c in target_name if c.isalnum() or c in ('_', '-', '.'))[:50]
+            backup_dir = base_backup_dir / safe_target
+        else:
+            backup_dir = base_backup_dir
+        
         backup_dir.mkdir(parents=True, exist_ok=True)
         
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -628,6 +647,24 @@ class LeakageAutoFixer:
             shutil.copy2(self.feature_registry_path, backup_path)
             backup_files.append(str(backup_path))
             logger.info(f"Backed up feature_registry.yaml to {backup_path}")
+        
+        # Create a manifest file to track this backup
+        if target_name:
+            manifest_path = backup_dir / f"manifest_{timestamp}.json"
+            try:
+                import json
+                manifest = {
+                    "target_name": target_name,
+                    "timestamp": timestamp,
+                    "backup_files": backup_files,
+                    "excluded_features_path": str(self.excluded_features_path),
+                    "feature_registry_path": str(self.feature_registry_path)
+                }
+                with open(manifest_path, 'w') as f:
+                    json.dump(manifest, f, indent=2)
+                backup_files.append(str(manifest_path))
+            except Exception as e:
+                logger.debug(f"Could not create manifest file: {e}")
         
         return backup_files
     
@@ -780,7 +817,12 @@ class LeakageAutoFixer:
             
             # Apply fixes
             logger.info(f"Applying fixes for {len(detections)} leaks...")
-            updates = self.apply_fixes(detections, min_confidence=min_confidence, dry_run=False)
+            updates = self.apply_fixes(
+                detections, 
+                min_confidence=min_confidence, 
+                dry_run=False,
+                target_name=target_column  # Use target_column from training_kwargs if available
+            )
             
             fix_history.append({
                 'iteration': self.iteration_count,
