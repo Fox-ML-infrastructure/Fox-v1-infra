@@ -44,9 +44,19 @@ class ExperimentConfig:
     training_overrides: Dict[str, Any] = field(default_factory=dict)
     
     def __post_init__(self):
-        """Convert string paths to Path objects"""
+        """Convert string paths to Path objects and validate"""
         if isinstance(self.data_dir, str):
             self.data_dir = Path(self.data_dir)
+        
+        # Validation
+        if not self.name:
+            raise ValueError("ExperimentConfig.name cannot be empty")
+        if not self.symbols:
+            raise ValueError("ExperimentConfig.symbols cannot be empty")
+        if not self.target:
+            raise ValueError("ExperimentConfig.target cannot be empty")
+        if self.max_samples_per_symbol < 1:
+            raise ValueError(f"ExperimentConfig.max_samples_per_symbol must be >= 1, got {self.max_samples_per_symbol}")
 
 
 @dataclass
@@ -67,6 +77,13 @@ class FeatureSelectionConfig:
     data_dir: Optional[Path] = None
     symbols: Optional[List[str]] = None
     max_samples_per_symbol: Optional[int] = None
+    
+    def __post_init__(self):
+        """Validate feature selection config"""
+        if self.top_n < 1:
+            raise ValueError(f"FeatureSelectionConfig.top_n must be >= 1, got {self.top_n}")
+        if not isinstance(self.model_families, dict):
+            raise ValueError(f"FeatureSelectionConfig.model_families must be a dict, got {type(self.model_families)}")
 
 
 @dataclass
@@ -85,6 +102,15 @@ class TargetRankingConfig:
     data_dir: Optional[Path] = None
     symbols: Optional[List[str]] = None
     max_samples_per_symbol: Optional[int] = None
+    
+    def __post_init__(self):
+        """Validate target ranking config"""
+        if not isinstance(self.model_families, dict):
+            raise ValueError(f"TargetRankingConfig.model_families must be a dict, got {type(self.model_families)}")
+        if self.min_samples < 1:
+            raise ValueError(f"TargetRankingConfig.min_samples must be >= 1, got {self.min_samples}")
+        if self.min_class_samples < 1:
+            raise ValueError(f"TargetRankingConfig.min_class_samples must be >= 1, got {self.min_class_samples}")
 
 
 @dataclass
@@ -105,6 +131,13 @@ class TrainingConfig:
     data_dir: Optional[Path] = None
     symbols: Optional[List[str]] = None
     max_samples_per_symbol: Optional[int] = None
+    
+    def __post_init__(self):
+        """Validate training config"""
+        if not isinstance(self.model_families, dict):
+            raise ValueError(f"TrainingConfig.model_families must be a dict, got {type(self.model_families)}")
+        if self.cv_folds < 2:
+            raise ValueError(f"TrainingConfig.cv_folds must be >= 2, got {self.cv_folds}")
 
 
 @dataclass

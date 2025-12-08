@@ -111,7 +111,10 @@ def load_multi_model_config(config_path: Path = None) -> Dict[str, Any]:
             logger.debug(f"Using new config location: {config_path}")
         elif legacy_path.exists():
             config_path = legacy_path
-            logger.debug(f"Using legacy config location: {config_path}")
+            logger.warning(
+                f"⚠️  DEPRECATED: Using legacy config location: {legacy_path}\n"
+                f"   Please migrate to: CONFIG/feature_selection/multi_model.yaml"
+            )
         else:
             logger.warning(f"Config not found in new ({new_path}) or legacy ({legacy_path}) locations, using defaults")
             return get_default_config()

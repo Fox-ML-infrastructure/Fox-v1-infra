@@ -433,7 +433,10 @@ def load_multi_model_config(config_path: Path = None) -> Dict[str, Any]:
             logger.debug(f"Using feature selection config (shared): {config_path}")
         elif legacy_path.exists():
             config_path = legacy_path
-            logger.debug(f"Using legacy config: {config_path}")
+            logger.warning(
+                f"⚠️  DEPRECATED: Using legacy config location: {legacy_path}\n"
+                f"   Please migrate to: CONFIG/target_ranking/multi_model.yaml"
+            )
         else:
             logger.debug(f"Multi-model config not found in any location, using defaults")
             return None

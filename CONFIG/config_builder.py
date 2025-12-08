@@ -66,21 +66,37 @@ def load_experiment_config(experiment_name: str) -> ExperimentConfig:
     
     Returns:
         ExperimentConfig object
+    
+    Raises:
+        FileNotFoundError: If experiment config file doesn't exist
+        ValueError: If required fields are missing or invalid
     """
     exp_path = CONFIG_DIR / "experiments" / f"{experiment_name}.yaml"
     if not exp_path.exists():
-        raise FileNotFoundError(f"Experiment config not found: {exp_path}")
+        raise FileNotFoundError(
+            f"Experiment config not found: {exp_path}\n"
+            f"Available experiments: {[f.stem for f in (CONFIG_DIR / 'experiments').glob('*.yaml') if f.is_file()]}"
+        )
     
     data = load_yaml(exp_path)
     exp_data = data.get('experiment', {})
     data_data = data.get('data', {})
+    targets_data = data.get('targets', {})
     
-    # Build ExperimentConfig
+    # Validate required fields
+    if not data_data.get('data_dir'):
+        raise ValueError(f"Experiment config missing required field: data.data_dir")
+    if not data_data.get('symbols'):
+        raise ValueError(f"Experiment config missing required field: data.symbols")
+    if not targets_data.get('primary'):
+        raise ValueError(f"Experiment config missing required field: targets.primary")
+    
+    # Build ExperimentConfig (validation happens in __post_init__)
     return ExperimentConfig(
         name=exp_data.get('name', experiment_name),
-        data_dir=Path(data_data.get('data_dir', 'data/data_labeled/interval=5m')),
-        symbols=data_data.get('symbols', []),
-        target=data.get('targets', {}).get('primary', ''),
+        data_dir=Path(data_data['data_dir']),
+        symbols=data_data['symbols'],
+        target=targets_data['primary'],
         interval=data_data.get('interval', '5m'),
         max_samples_per_symbol=data_data.get('max_samples_per_symbol', 5000),
         description=exp_data.get('description'),
@@ -103,6 +119,9 @@ def build_feature_selection_config(
     
     Returns:
         FeatureSelectionConfig object
+    
+    Raises:
+        ValueError: If config validation fails
     """
     # Load module config
     if module_cfg_path is None:
@@ -151,28 +170,38 @@ def build_feature_selection_config(
             else:
                 module_data[key] = value
     
-    # Build config
-    return FeatureSelectionConfig(
-        top_n=experiment_cfg.feature_selection_overrides.get('top_n', module_data.get('top_n', 30)),
-        model_families=model_families,
-        aggregation=module_data.get('aggregation', {}),
-        sampling=module_data.get('sampling', {}),
-        shap=module_data.get('shap', {}),
-        permutation=module_data.get('permutation', {}),
-        cross_validation=module_data.get('cross_validation', {}),
-        output=module_data.get('output', {}),
-        compute=module_data.get('compute', {}),
-        target=experiment_cfg.target,
-        data_dir=experiment_cfg.data_dir,
-        symbols=experiment_cfg.symbols,
-        max_samples_per_symbol=experiment_cfg.max_samples_per_symbol
-    )
+    # Build config (validation happens in __post_init__)
+    try:
+        return FeatureSelectionConfig(
+            top_n=experiment_cfg.feature_selection_overrides.get('top_n', module_data.get('top_n', 30)),
+            model_families=model_families,
+            aggregation=module_data.get('aggregation', {}),
+            sampling=module_data.get('sampling', {}),
+            shap=module_data.get('shap', {}),
+            permutation=module_data.get('permutation', {}),
+            cross_validation=module_data.get('cross_validation', {}),
+            output=module_data.get('output', {}),
+            compute=module_data.get('compute', {}),
+            target=experiment_cfg.target,
+            data_dir=experiment_cfg.data_dir,
+            symbols=experiment_cfg.symbols,
+            max_samples_per_symbol=experiment_cfg.max_samples_per_symbol
+        )
+    except ValueError as e:
+        logger.error(f"FeatureSelectionConfig validation failed: {e}")
+        raise
 
 
 def build_target_ranking_config(
     experiment_cfg: ExperimentConfig,
     module_cfg_path: Optional[Path] = None
 ) -> TargetRankingConfig:
+    """
+    Build TargetRankingConfig by merging experiment config with module config.
+    
+    Raises:
+        ValueError: If config validation fails
+    """
     """
     Build TargetRankingConfig by merging experiment config with module config.
     
@@ -197,23 +226,34 @@ def build_target_ranking_config(
             else:
                 module_data[key] = value
     
-    return TargetRankingConfig(
-        model_families=module_data.get('model_families', {}),
-        ranking=module_data.get('ranking', {}),
-        sampling=module_data.get('sampling', {}),
-        cross_validation=module_data.get('cross_validation', {}),
-        min_samples=module_data.get('min_samples', 100),
-        min_class_samples=module_data.get('min_class_samples', 10),
-        data_dir=experiment_cfg.data_dir,
-        symbols=experiment_cfg.symbols,
-        max_samples_per_symbol=experiment_cfg.max_samples_per_symbol
-    )
+    # Build config (validation happens in __post_init__)
+    try:
+        return TargetRankingConfig(
+            model_families=module_data.get('model_families', {}),
+            ranking=module_data.get('ranking', {}),
+            sampling=module_data.get('sampling', {}),
+            cross_validation=module_data.get('cross_validation', {}),
+            min_samples=module_data.get('min_samples', 100),
+            min_class_samples=module_data.get('min_class_samples', 10),
+            data_dir=experiment_cfg.data_dir,
+            symbols=experiment_cfg.symbols,
+            max_samples_per_symbol=experiment_cfg.max_samples_per_symbol
+        )
+    except ValueError as e:
+        logger.error(f"TargetRankingConfig validation failed: {e}")
+        raise
 
 
 def build_training_config(
     experiment_cfg: ExperimentConfig,
     module_cfg_path: Optional[Path] = None
 ) -> TrainingConfig:
+    """
+    Build TrainingConfig by merging experiment config with module config.
+    
+    Raises:
+        ValueError: If config validation fails
+    """
     """
     Build TrainingConfig by merging experiment config with module config.
     
@@ -262,21 +302,26 @@ def build_training_config(
             else:
                 models_data[key] = value
     
-    return TrainingConfig(
-        model_families=models_data.get('model_families', {}),
-        cv_folds=experiment_cfg.training_overrides.get('cv_folds', pipeline_data.get('pipeline', {}).get('cv_folds', 5)),
-        pipeline=pipeline_data,
-        gpu=load_yaml(CONFIG_DIR / "training_config" / "gpu_config.yaml"),
-        memory=load_yaml(CONFIG_DIR / "training_config" / "memory_config.yaml"),
-        preprocessing=load_yaml(CONFIG_DIR / "training_config" / "preprocessing_config.yaml"),
-        threading=load_yaml(CONFIG_DIR / "training_config" / "threading_config.yaml"),
-        callbacks=load_yaml(CONFIG_DIR / "training_config" / "callbacks_config.yaml"),
-        optimizer=load_yaml(CONFIG_DIR / "training_config" / "optimizer_config.yaml"),
-        target=experiment_cfg.target,
-        data_dir=experiment_cfg.data_dir,
-        symbols=experiment_cfg.symbols,
-        max_samples_per_symbol=experiment_cfg.max_samples_per_symbol
-    )
+    # Build config (validation happens in __post_init__)
+    try:
+        return TrainingConfig(
+            model_families=models_data.get('model_families', {}),
+            cv_folds=experiment_cfg.training_overrides.get('cv_folds', pipeline_data.get('pipeline', {}).get('cv_folds', 5)),
+            pipeline=pipeline_data,
+            gpu=load_yaml(CONFIG_DIR / "training_config" / "gpu_config.yaml"),
+            memory=load_yaml(CONFIG_DIR / "training_config" / "memory_config.yaml"),
+            preprocessing=load_yaml(CONFIG_DIR / "training_config" / "preprocessing_config.yaml"),
+            threading=load_yaml(CONFIG_DIR / "training_config" / "threading_config.yaml"),
+            callbacks=load_yaml(CONFIG_DIR / "training_config" / "callbacks_config.yaml"),
+            optimizer=load_yaml(CONFIG_DIR / "training_config" / "optimizer_config.yaml"),
+            target=experiment_cfg.target,
+            data_dir=experiment_cfg.data_dir,
+            symbols=experiment_cfg.symbols,
+            max_samples_per_symbol=experiment_cfg.max_samples_per_symbol
+        )
+    except ValueError as e:
+        logger.error(f"TrainingConfig validation failed: {e}")
+        raise
 
 
 def build_leakage_config(module_cfg_path: Optional[Path] = None) -> LeakageConfig:

@@ -1,0 +1,13 @@
+# DEPRECATED: This file has been moved to CONFIG/feature_selection/multi_model.yaml
+# 
+# This file is kept for backward compatibility during migration.
+# New code should use CONFIG/feature_selection/multi_model.yaml
+#
+# To migrate:
+# 1. Copy your customizations to CONFIG/feature_selection/multi_model.yaml
+# 2. Update any scripts that reference this file
+# 3. This file will be removed in a future version
+
+# This file now just imports the new location
+# (The actual config loader will automatically find the new location)
+

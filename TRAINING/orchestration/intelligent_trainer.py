@@ -621,10 +621,10 @@ Examples:
     )
     
     # Core arguments
-    parser.add_argument('--data-dir', type=Path, required=True,
-                       help='Data directory containing symbol data')
-    parser.add_argument('--symbols', nargs='+', required=True,
-                       help='Symbols to train on')
+    parser.add_argument('--data-dir', type=Path, required=False,
+                       help='Data directory containing symbol data (required unless --experiment-config provided)')
+    parser.add_argument('--symbols', nargs='+', required=False,
+                       help='Symbols to train on (required unless --experiment-config provided)')
     parser.add_argument('--output-dir', type=Path, default=Path('intelligent_output'),
                        help='Output directory for results')
     parser.add_argument('--cache-dir', type=Path,
@@ -680,18 +680,43 @@ Examples:
                        help='Path to target ranking config YAML (default: CONFIG/training_config/target_ranking_config.yaml)')
     parser.add_argument('--multi-model-config', type=Path,
                        help='Path to multi-model feature selection config YAML (default: CONFIG/multi_model_feature_selection.yaml)')
+    parser.add_argument('--experiment-config', type=str,
+                       help='Experiment config name (without .yaml) from CONFIG/experiments/ [NEW - preferred]')
     
     args = parser.parse_args()
+    
+    # NEW: Load experiment config if provided
+    experiment_config = None
+    if args.experiment_config and _NEW_CONFIG_AVAILABLE:
+        try:
+            from CONFIG.config_builder import load_experiment_config
+            experiment_config = load_experiment_config(args.experiment_config)
+            logger.info(f"✅ Loaded experiment config: {experiment_config.name}")
+            # Use experiment config values if CLI args not provided
+            if not args.data_dir:
+                args.data_dir = experiment_config.data_dir
+            if not args.symbols:
+                args.symbols = experiment_config.symbols
+        except Exception as e:
+            logger.error(f"Failed to load experiment config '{args.experiment_config}': {e}")
+            raise
+    
+    # Validate required args (either from CLI or experiment config)
+    if not args.data_dir:
+        parser.error("--data-dir is required (or provide --experiment-config)")
+    if not args.symbols:
+        parser.error("--symbols is required (or provide --experiment-config)")
     
     # Create orchestrator
     trainer = IntelligentTrainer(
         data_dir=args.data_dir,
         symbols=args.symbols,
         output_dir=args.output_dir,
-        cache_dir=args.cache_dir
+        cache_dir=args.cache_dir,
+        experiment_config=experiment_config  # Pass experiment config if loaded
     )
     
-    # Load configs
+    # Load configs (legacy support)
     target_ranking_config = None
     if args.target_ranking_config:
         target_ranking_config = load_target_configs(args.target_ranking_config)
@@ -699,6 +724,9 @@ Examples:
     multi_model_config = None
     if args.multi_model_config:
         multi_model_config = load_multi_model_config(args.multi_model_config)
+    elif not experiment_config:
+        # Only load default if no experiment config
+        multi_model_config = load_multi_model_config()
     
     # Determine cache usage
     use_cache = not args.no_cache
