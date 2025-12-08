@@ -1,6 +1,6 @@
 #!/bin/bash
 # Helper script to create UPDATE directory entries
-# Usage: ./scripts/utils/create_update_entry.sh [description]
+# Usage: ./SCRIPTS/utils/create_update_entry.sh [description]
 
 set -e
 

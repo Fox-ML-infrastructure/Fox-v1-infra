@@ -17,7 +17,7 @@ mkdir -p results/target_rankings_demo
 
 # Run on just 1 target for speed
 echo "Running..."
-python scripts/rank_target_predictability.py \
+python SCRIPTS/rank_target_predictability.py \
   --symbols AAPL \
   --targets peak_60m \
   --output-dir results/target_rankings_demo
@@ -40,6 +40,6 @@ echo "==========================================================================
 echo "NEXT: Run on all targets"
 echo "================================================================================"
 echo ""
-echo "python scripts/rank_target_predictability.py --symbols AAPL,MSFT,GOOGL,TSLA,JPM"
+echo "python SCRIPTS/rank_target_predictability.py --symbols AAPL,MSFT,GOOGL,TSLA,JPM"
 echo ""
 

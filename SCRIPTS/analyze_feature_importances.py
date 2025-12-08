@@ -21,10 +21,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 Analyze feature importance results to identify leaking features.
 
 Usage:
-    python scripts/analyze_feature_importances.py <output_dir>
+    python SCRIPTS/analyze_feature_importances.py <output_dir>
     
 Example:
-    python scripts/analyze_feature_importances.py results/target_rankings_updated
+    python SCRIPTS/analyze_feature_importances.py results/target_rankings_updated
 """
 
 
@@ -201,8 +201,8 @@ def analyze_importances(output_dir: Path):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python scripts/analyze_feature_importances.py <output_dir>")
-        print("Example: python scripts/analyze_feature_importances.py results/target_rankings_updated")
+        print("Usage: python SCRIPTS/analyze_feature_importances.py <output_dir>")
+        print("Example: python SCRIPTS/analyze_feature_importances.py results/target_rankings_updated")
         sys.exit(1)
     
     output_dir = Path(sys.argv[1])

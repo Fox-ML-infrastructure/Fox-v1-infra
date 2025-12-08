@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 Target Ranking and Feature Selection Module
 
-Extracted from scripts/rank_target_predictability.py and scripts/multi_model_feature_selection.py
+Extracted from SCRIPTS/rank_target_predictability.py and SCRIPTS/multi_model_feature_selection.py
 to enable integration into the training pipeline while preserving leakage-free behavior.
 """
 

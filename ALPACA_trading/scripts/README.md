@@ -16,7 +16,7 @@ Features:
 
 Usage:
 ```bash
-python ALPACA_trading/scripts/paper_runner.py \
+python ALPACA_trading/SCRIPTS/paper_runner.py \
     --symbols SPY,TSLA,AAPL \
     --profile risk_balanced \
     --config config/paper_trading_config.json
@@ -62,11 +62,11 @@ Performance: Faster than standard batch fetching for large symbol lists.
 All scripts can be run from the repository root:
 ```bash
 # From repo root
-python ALPACA_trading/scripts/paper_runner.py [options]
+python ALPACA_trading/SCRIPTS/paper_runner.py [options]
 
 # Or from ALPACA_trading directory
 cd ALPACA_trading
-python scripts/paper_runner.py [options]
+python SCRIPTS/paper_runner.py [options]
 ```
 
 ## Environment Setup

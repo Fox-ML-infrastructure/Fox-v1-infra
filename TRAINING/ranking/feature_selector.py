@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 Feature Selection Module
 
-Extracted from scripts/multi_model_feature_selection.py to enable integration
+Extracted from SCRIPTS/multi_model_feature_selection.py to enable integration
 into the training pipeline. All leakage-free behavior is preserved by
 reusing the original functions.
 """

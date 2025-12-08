@@ -54,7 +54,7 @@ python ALPACA_trading/cli/paper.py
 ## Integration
 
 CLI interfaces with:
-- `scripts/paper_runner.py` - Trading execution
+- `SCRIPTS/paper_runner.py` - Trading execution
 - `core/paper.py` - Trading engine
 - `brokers/paper.py` - Broker operations
 - `core/performance.py` - Performance tracking

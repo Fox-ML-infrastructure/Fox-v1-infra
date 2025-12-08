@@ -26,11 +26,11 @@ This script analyzes exported feature importance CSVs to identify:
 3. Features that should be added to exclusion config
 
 Usage:
-    python scripts/find_leaking_features.py <output_dir> [--top-n 50] [--threshold 0.50]
+    python SCRIPTS/find_leaking_features.py <output_dir> [--top-n 50] [--threshold 0.50]
     
 Example:
-    python scripts/find_leaking_features.py results/target_rankings_updated
-    python scripts/find_leaking_features.py results/target_rankings_updated --top-n 30 --threshold 0.40
+    python SCRIPTS/find_leaking_features.py results/target_rankings_updated
+    python SCRIPTS/find_leaking_features.py results/target_rankings_updated --top-n 30 --threshold 0.40
 """
 
 

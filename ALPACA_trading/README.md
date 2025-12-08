@@ -6,7 +6,7 @@ Alpaca paper trading service package.
 
 ```
 ALPACA_trading/
-├── scripts/
+├── SCRIPTS/
 │   ├── paper_runner.py              # Main paper trading runner
 │   └── data/
 │       ├── alpaca_batch_optimized.py
@@ -55,7 +55,7 @@ ALPACA_trading/
 
 ## Entry Points
 
-- `scripts/paper_runner.py` - Main paper trading runner
+- `SCRIPTS/paper_runner.py` - Main paper trading runner
 - `core/engine/paper.py` - Core trading engine
 - `cli/paper.py` - CLI interface
 
@@ -86,7 +86,7 @@ Configuration files in `config/`:
 
 From repo root:
 ```bash
-python ALPACA_trading/scripts/paper_runner.py --symbols SPY,TSLA --profile risk_balanced
+python ALPACA_trading/SCRIPTS/paper_runner.py --symbols SPY,TSLA --profile risk_balanced
 ```
 
 Or using CLI:

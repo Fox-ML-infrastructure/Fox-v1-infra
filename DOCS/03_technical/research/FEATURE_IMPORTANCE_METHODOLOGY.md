@@ -75,7 +75,7 @@ for target in targets:
 Combine predictive power and data quality:
 
 ```python
-python scripts/rank_features_comprehensive.py \
+python SCRIPTS/rank_features_comprehensive.py \
     --target y_will_peak_60m_0.8 \
     --output-dir results/ranking
 ```

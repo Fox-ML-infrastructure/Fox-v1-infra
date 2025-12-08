@@ -155,10 +155,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - GPU verification diagnostics
   - Fallback to CPU if GPU unavailable
 - **TRAINING module self-contained**:
-  - Moved all utility dependencies from `scripts/` to `TRAINING/utils/`
+  - Moved all utility dependencies from `SCRIPTS/` to `TRAINING/utils/`
   - Moved `rank_target_predictability.py` to `TRAINING/ranking/`
   - Moved `multi_model_feature_selection.py` to `TRAINING/ranking/`
-  - TRAINING module now has zero dependencies on `scripts/` folder
+  - TRAINING module now has zero dependencies on `SCRIPTS/` folder
 - Centralized configuration system with 9 training config YAML files (pipeline, GPU, memory, preprocessing, threading, safety, callbacks, optimizer, system)
 - Config loader with nested access and family-specific overrides
 - Compliance documentation suite:

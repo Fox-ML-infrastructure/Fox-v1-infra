@@ -28,7 +28,7 @@ This script checks:
 5. Target degeneracy
 
 Usage:
-    python scripts/diagnose_leakage.py <target_column> [--symbol AAPL]
+    python SCRIPTS/diagnose_leakage.py <target_column> [--symbol AAPL]
 """
 
 

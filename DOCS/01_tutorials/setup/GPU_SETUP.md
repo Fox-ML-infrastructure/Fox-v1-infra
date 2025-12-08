@@ -20,7 +20,7 @@ GPU acceleration provides 10-50x speedup for feature selection and training, esp
 ### 1. Check GPU Setup
 
 ```bash
-python scripts/check_gpu_setup.py
+python SCRIPTS/check_gpu_setup.py
 ```
 
 This verifies:
@@ -43,7 +43,7 @@ lightgbm:
 ### 3. Run Feature Selection
 
 ```bash
-python scripts/select_features.py
+python SCRIPTS/select_features.py
 ```
 
 The script automatically:

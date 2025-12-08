@@ -17,7 +17,7 @@ echo "╚═══════════════════════�
 echo ""
 
 # Run the feature ranking
-python scripts/rank_features_by_ic_and_predictive.py \
+python SCRIPTS/rank_features_by_ic_and_predictive.py \
   --symbols AAPL,MSFT,GOOGL,TSLA,JPM \
   --target-rankings results/final_clean/target_predictability_rankings.yaml \
   --top-n-targets 10 \

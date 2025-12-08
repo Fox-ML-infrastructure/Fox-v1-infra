@@ -24,8 +24,8 @@ Parses ranking.md (or any log file) to extract completed target evaluations
 and restores them into a checkpoint file so you can resume without re-running.
 
 Usage:
-    python scripts/restore_checkpoint_from_logs.py \
-      --log-file scripts/ranking.md \
+    python SCRIPTS/restore_checkpoint_from_logs.py \
+      --log-file SCRIPTS/ranking.md \
       --output-dir results/target_rankings \
       --script-name rank_target_predictability
 """
@@ -255,7 +255,7 @@ def restore_checkpoint(
     logger.info(f"\nCheckpoint restored to: {checkpoint_file}")
     logger.info(f"Completed targets: {len(extracted_results)}")
     logger.info("\nYou can now resume with:")
-    logger.info(f"  python scripts/{script_name}.py --resume --output-dir {output_dir}")
+    logger.info(f"  python SCRIPTS/{script_name}.py --resume --output-dir {output_dir}")
     
     # Also save as CSV for easy viewing
     try:
@@ -304,8 +304,8 @@ def main():
     parser.add_argument(
         '--log-file',
         type=Path,
-        default=Path('scripts/ranking.md'),
-        help='Log file to parse (default: scripts/ranking.md)'
+        default=Path('SCRIPTS/ranking.md'),
+        help='Log file to parse (default: SCRIPTS/ranking.md)'
     )
     parser.add_argument(
         '--output-dir',

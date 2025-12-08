@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 Target Ranking Module
 
-Extracted from scripts/rank_target_predictability.py to enable integration
+Extracted from SCRIPTS/rank_target_predictability.py to enable integration
 into the training pipeline. All leakage-free behavior is preserved by
 reusing the original functions.
 """

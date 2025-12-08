@@ -95,7 +95,7 @@ selected = [feature_names[i] for i in range(len(feature_names)) if selector.supp
 Rank features by both predictive power and data quality:
 
 ```python
-python scripts/rank_features_comprehensive.py \
+python SCRIPTS/rank_features_comprehensive.py \
     --data data/labeled/AAPL_labeled.parquet \
     --target target_fwd_ret_5m \
     --output results/feature_ranking.csv

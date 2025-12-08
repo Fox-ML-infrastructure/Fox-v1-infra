@@ -25,17 +25,17 @@ Useful when:
 
 Usage:
     # Remove specific targets
-    python scripts/remove_targets_from_checkpoint.py \
+    python SCRIPTS/remove_targets_from_checkpoint.py \
         --checkpoint results/target_rankings/checkpoint.json \
         --targets fwd_ret_60m,fwd_ret_120m,fwd_ret_oc_same_day
     
     # Remove all targets matching a pattern
-    python scripts/remove_targets_from_checkpoint.py \
+    python SCRIPTS/remove_targets_from_checkpoint.py \
         --checkpoint results/target_rankings/checkpoint.json \
         --pattern "fwd_ret_.*"
     
     # List all targets in checkpoint
-    python scripts/remove_targets_from_checkpoint.py \
+    python SCRIPTS/remove_targets_from_checkpoint.py \
         --checkpoint results/target_rankings/checkpoint.json \
         --list
 """

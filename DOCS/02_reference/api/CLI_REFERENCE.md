@@ -109,7 +109,7 @@ python TRAINING/train.py \
 ### Comprehensive Feature Ranking
 
 ```bash
-python scripts/rank_features_comprehensive.py \
+python SCRIPTS/rank_features_comprehensive.py \
     --symbols AAPL,MSFT,GOOGL,TSLA,JPM \
     --target y_will_peak_60m_0.8 \
     --output-dir results/feature_ranking
@@ -123,7 +123,7 @@ python scripts/rank_features_comprehensive.py \
 ### Target Predictability Ranking
 
 ```bash
-python scripts/rank_target_predictability.py \
+python SCRIPTS/rank_target_predictability.py \
     --symbols AAPL,MSFT,GOOGL,TSLA,JPM \
     --output-dir results/target_rankings
 ```
@@ -136,7 +136,7 @@ python scripts/rank_target_predictability.py \
 ### Multi-Model Feature Selection
 
 ```bash
-python scripts/multi_model_feature_selection.py \
+python SCRIPTS/multi_model_feature_selection.py \
     --target-column y_will_peak_60m_0.8 \
     --top-n 60 \
     --output-dir results/multi_model_selection
@@ -147,13 +147,13 @@ python scripts/multi_model_feature_selection.py \
 ### List Available Symbols
 
 ```bash
-python scripts/list_available_symbols.py
+python SCRIPTS/list_available_symbols.py
 ```
 
 ### Remove Targets from Checkpoint
 
 ```bash
-python scripts/remove_targets_from_checkpoint.py \
+python SCRIPTS/remove_targets_from_checkpoint.py \
     --checkpoint models/checkpoint.pkl \
     --targets target1,target2
 ```
@@ -163,7 +163,7 @@ python scripts/remove_targets_from_checkpoint.py \
 ### Paper Trading Runner
 
 ```bash
-python ALPACA_trading/scripts/paper_runner.py
+python ALPACA_trading/SCRIPTS/paper_runner.py
 ```
 
 ### CLI Commands

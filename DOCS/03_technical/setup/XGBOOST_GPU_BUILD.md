@@ -31,7 +31,7 @@ Even though XGBoost conda packages show `USE_CUDA=True` in build info, the Pytho
 Use the provided build script:
 
 ```bash
-bash scripts/build_xgboost_cuda.sh
+bash SCRIPTS/build_xgboost_cuda.sh
 ```
 
 This script:

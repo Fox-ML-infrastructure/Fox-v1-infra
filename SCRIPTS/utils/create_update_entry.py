@@ -21,9 +21,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 Helper script to create UPDATE directory entries
 
 Usage:
-    python scripts/utils/create_update_entry.py [description]
-    python scripts/utils/create_update_entry.py --interactive
-    python scripts/utils/create_update_entry.py "Fixed bug in target ranking"
+    python SCRIPTS/utils/create_update_entry.py [description]
+    python SCRIPTS/utils/create_update_entry.py --interactive
+    python SCRIPTS/utils/create_update_entry.py "Fixed bug in target ranking"
 """
 
 

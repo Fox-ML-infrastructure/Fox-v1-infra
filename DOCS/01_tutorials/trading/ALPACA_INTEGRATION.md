@@ -67,7 +67,7 @@ trading:
 ### 4. Run Paper Trading
 
 ```bash
-python ALPACA_trading/scripts/paper_runner.py
+python ALPACA_trading/SCRIPTS/paper_runner.py
 ```
 
 ## Usage

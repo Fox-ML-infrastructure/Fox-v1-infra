@@ -32,13 +32,13 @@ Methodology:
 
 Usage:
   # Rank all enabled targets
-  python scripts/rank_target_predictability.py
+  python SCRIPTS/rank_target_predictability.py
   
   # Test on specific symbols first
-  python scripts/rank_target_predictability.py --symbols AAPL,MSFT,GOOGL
+  python SCRIPTS/rank_target_predictability.py --symbols AAPL,MSFT,GOOGL
   
   # Rank specific targets
-  python scripts/rank_target_predictability.py --targets peak_60m,valley_60m,swing_high_15m
+  python SCRIPTS/rank_target_predictability.py --targets peak_60m,valley_60m,swing_high_15m
 """
 
 

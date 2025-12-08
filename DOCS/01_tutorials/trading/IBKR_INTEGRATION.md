@@ -106,7 +106,7 @@ python test_cpp_components.py
 ### Check System Status
 
 ```bash
-python IBKR_trading/scripts/check_status.py
+python IBKR_trading/SCRIPTS/check_status.py
 ```
 
 ### View Positions

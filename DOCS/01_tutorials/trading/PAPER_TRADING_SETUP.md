@@ -53,7 +53,7 @@ Edit `ALPACA_trading/config/paper_trading_config.json`:
 
 ```bash
 cd ALPACA_trading
-python scripts/paper_runner.py
+python SCRIPTS/paper_runner.py
 ```
 
 ## Configuration Options

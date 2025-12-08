@@ -25,7 +25,7 @@ read -p "Press Enter to continue or Ctrl+C to cancel..."
 # Check baseline exists
 if [ ! -f "results/baseline_week1/top_3_targets.txt" ]; then
     echo "❌ Baseline not found. Run baseline validation first:"
-    echo "   bash scripts/run_baseline_validation.sh"
+    echo "   bash SCRIPTS/run_baseline_validation.sh"
     exit 1
 fi
 
@@ -44,7 +44,7 @@ echo "==========================================================================
 echo ""
 echo "Creating script to add regime features..."
 
-cat > scripts/add_regime_to_data.py << 'EOPY'
+cat > SCRIPTS/add_regime_to_data.py << 'EOPY'
 #!/usr/bin/env python
 """
 Add regime features to labeled data.
@@ -135,15 +135,15 @@ if __name__ == '__main__':
     main()
 EOPY
 
-chmod +x scripts/add_regime_to_data.py
+chmod +x SCRIPTS/add_regime_to_data.py
 
-echo "✅ Created scripts/add_regime_to_data.py"
+echo "✅ Created SCRIPTS/add_regime_to_data.py"
 echo ""
 echo "Running on top 3 target symbols + test set (10 symbols total)..."
 echo ""
 
 # Add regime features (test on small set first)
-python scripts/add_regime_to_data.py \
+python SCRIPTS/add_regime_to_data.py \
   --symbols AAPL,MSFT,GOOGL,TSLA,JPM \
   | tee "$REGIME_DIR/add_regime_features.log"
 
@@ -164,7 +164,7 @@ for target in $TOP_3_TARGETS; do
     echo "🤖 Multi-model selection with regime features: $target"
     echo "────────────────────────────────────────────────────────────────────────────"
     
-    python scripts/multi_model_feature_selection.py \
+    python SCRIPTS/multi_model_feature_selection.py \
       --target-column "$target" \
       --top-n 60 \
       --data-dir data/data_labeled_with_regime/interval=5m \

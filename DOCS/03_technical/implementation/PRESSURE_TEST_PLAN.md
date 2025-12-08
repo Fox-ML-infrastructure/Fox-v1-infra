@@ -72,7 +72,7 @@ tail -f logs/ibkr_trading.log
 htop
 
 # Check API connection
-python scripts/check_ibkr_connection.py
+python SCRIPTS/check_ibkr_connection.py
 ```
 
 ## Success Criteria

@@ -34,7 +34,7 @@ dependencies:
   - keras>=3.12.0  # Tested with 3.12.0
   
   # XGBoost (must be built from source with CUDA for GPU support)
-  # See scripts/build_xgboost_cuda.sh
+  # See SCRIPTS/build_xgboost_cuda.sh
   # Tested with 3.2.0-dev (built from source)
   
   # Statistical & Time Series
@@ -127,12 +127,12 @@ dependencies:
     # NOTE: LightGBM with CUDA must be built from source
     # Do NOT install lightgbm via pip - it's CPU only
     # After creating this environment, build LightGBM with:
-    #   bash scripts/build_lightgbm_cuda.sh
+    #   bash SCRIPTS/build_lightgbm_cuda.sh
     #
     # NOTE: XGBoost with CUDA must be built from source
     # Do NOT install xgboost via pip/conda - GPU support not available
     # After creating this environment, build XGBoost with:
-    #   bash scripts/build_xgboost_cuda.sh
+    #   bash SCRIPTS/build_xgboost_cuda.sh
 
 # Post-installation instructions:
 # 1. Create environment:
@@ -147,14 +147,14 @@ dependencies:
 #    (Or add to ~/.bashrc/.zshrc for persistence)
 #
 # 4. Build LightGBM with CUDA (RTX 3080):
-#    bash scripts/build_lightgbm_cuda.sh
+#    bash SCRIPTS/build_lightgbm_cuda.sh
 #
 # 5. Build XGBoost with CUDA (RTX 3080):
-#    bash scripts/build_xgboost_cuda.sh
+#    bash SCRIPTS/build_xgboost_cuda.sh
 #
 # 6. Verify GPU setup:
-#    python scripts/check_gpu_setup.py
+#    python SCRIPTS/check_gpu_setup.py
 #
 # 7. Test feature selection:
-#    python scripts/select_features.py --symbols AAPL
+#    python SCRIPTS/select_features.py --symbols AAPL
 

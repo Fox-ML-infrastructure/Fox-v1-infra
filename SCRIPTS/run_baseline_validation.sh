@@ -32,7 +32,7 @@ echo "Testing on 5 representative symbols: AAPL, MSFT, GOOGL, TSLA, JPM"
 echo "This evaluates all enabled targets across 3 model families"
 echo ""
 
-python scripts/rank_target_predictability.py \
+python SCRIPTS/rank_target_predictability.py \
   --symbols AAPL,MSFT,GOOGL,TSLA,JPM \
   --output-dir "$BASELINE_DIR/target_rankings" \
   | tee "$BASELINE_DIR/target_ranking.log"
@@ -69,7 +69,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "🤖 Multi-model selection for: $target"
         echo "────────────────────────────────────────────────────────────────────────────"
         
-        python scripts/multi_model_feature_selection.py \
+        python SCRIPTS/multi_model_feature_selection.py \
           --target-column "$target" \
           --top-n 60 \
           --enable-families lightgbm,xgboost,random_forest,neural_network \
@@ -84,7 +84,7 @@ else
     echo "Skipped. Run manually with:"
     for target in $TOP_3_TARGETS; do
         echo ""
-        echo "python scripts/multi_model_feature_selection.py \\"
+        echo "python SCRIPTS/multi_model_feature_selection.py \\"
         echo "  --target-column $target \\"
         echo "  --top-n 60 \\"
         echo "  --output-dir $BASELINE_DIR/features_${target}"
@@ -151,6 +151,6 @@ echo "  2. Feature rankings: head -20 $BASELINE_DIR/features_*/feature_importanc
 echo "  3. Baseline doc:     vim $BASELINE_DIR/baseline_metrics.md"
 echo ""
 echo "🎯 Next: Week 2 - Add regime features"
-echo "   bash scripts/run_regime_enhancement.sh"
+echo "   bash SCRIPTS/run_regime_enhancement.sh"
 echo ""
 

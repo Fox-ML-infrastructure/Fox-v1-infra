@@ -29,7 +29,7 @@ echo "Testing on 5 representative symbols: AAPL, MSFT, GOOGL, TSLA, SPY"
 echo "This will take ~5-10 minutes..."
 echo ""
 
-python scripts/rank_target_predictability.py \
+python SCRIPTS/rank_target_predictability.py \
   --symbols AAPL,MSFT,GOOGL,TSLA,SPY \
   --model-families lightgbm,random_forest,neural_network \
   --output-dir results/target_rankings
@@ -56,7 +56,7 @@ echo ""
 TOP_TARGET=$(tail -n +2 results/target_rankings/target_predictability_rankings.csv | head -1 | cut -d',' -f3)
 echo "Selected target: $TOP_TARGET"
 
-python scripts/multi_model_feature_selection.py \
+python SCRIPTS/multi_model_feature_selection.py \
   --symbols AAPL,MSFT,GOOGL,TSLA,SPY \
   --target-column "$TOP_TARGET" \
   --top-n 60 \
@@ -84,7 +84,7 @@ if [ -f "$SINGLE_MODEL_FEATURES" ]; then
     echo "Found existing LightGBM-only features. Comparing..."
     echo ""
     
-    python scripts/compare_feature_sets.py \
+    python SCRIPTS/compare_feature_sets.py \
       --set1 "$SINGLE_MODEL_FEATURES" \
       --set2 DATA_PROCESSING/data/features/multi_model/selected_features.txt \
       --name1 "LightGBM-only" \
@@ -96,7 +96,7 @@ if [ -f "$SINGLE_MODEL_FEATURES" ]; then
 else
     echo "No existing single-model features found. Skipping comparison."
     echo "To compare, first run:"
-    echo "  python scripts/select_features.py --target-column $TOP_TARGET"
+    echo "  python SCRIPTS/select_features.py --target-column $TOP_TARGET"
 fi
 
 # ============================================================================
@@ -121,7 +121,7 @@ echo "2. Use multi-model features in training:"
 echo "   features=\$(cat DATA_PROCESSING/data/features/multi_model/selected_features.txt)"
 echo ""
 echo "3. Run on full universe (728 symbols):"
-echo "   python scripts/multi_model_feature_selection.py --target-column $TOP_TARGET --top-n 60"
+echo "   python SCRIPTS/multi_model_feature_selection.py --target-column $TOP_TARGET --top-n 60"
 echo ""
 echo "4. Read full documentation:"
 echo "   cat INFORMATION/MULTI_MODEL_FEATURE_SELECTION.md"

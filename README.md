@@ -212,7 +212,7 @@ FoxML_Core/
 ├── TRAINING/              (Model training & research workflows)
 ├── CONFIG/                (Configuration management system)
 ├── DOCS/                  (Technical documentation)
-└── scripts/               (Utilities & tools)
+└── SCRIPTS/               (Utilities & tools)
 ```
 
 ---------------------------------------------------------------------
