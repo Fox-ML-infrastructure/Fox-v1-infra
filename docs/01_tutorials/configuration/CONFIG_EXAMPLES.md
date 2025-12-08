@@ -4,6 +4,54 @@ Example configurations for common use cases.
 
 > **📚 For comprehensive configuration documentation, see the [Configuration Reference](../../02_reference/configuration/README.md).**
 
+## Using Experiment Configs (Recommended for Intelligent Training)
+
+The **preferred way** to configure the intelligent training pipeline is with experiment configs. This keeps all settings in one file:
+
+**1. Create experiment config** (`CONFIG/experiments/my_experiment.yaml`):
+```yaml
+experiment:
+  name: my_experiment
+  description: "Test run for fwd_ret_60m"
+
+data:
+  data_dir: data/data_labeled/interval=5m
+  symbols: [AAPL, MSFT]
+  interval: 5m
+  max_samples_per_symbol: 3000
+
+targets:
+  primary: fwd_ret_60m
+  candidate_targets:
+    - fwd_ret_60m
+    - fwd_ret_30m
+
+feature_selection:
+  top_n_features: 30
+  model_families: [lightgbm, xgboost]
+
+training:
+  model_families: [lightgbm, xgboost]
+  cv_folds: 5
+```
+
+**2. Use in CLI:**
+```bash
+python TRAINING/train.py --experiment-config my_experiment --auto-targets
+```
+
+**3. Or use programmatically:**
+```python
+from CONFIG.config_builder import load_experiment_config
+
+exp_cfg = load_experiment_config("my_experiment")
+# exp_cfg is a typed ExperimentConfig object with validation
+```
+
+See [Modular Config System](../../02_reference/configuration/MODULAR_CONFIG_SYSTEM.md) for complete details.
+
+---
+
 ## Conservative Training
 
 High regularization to prevent overfitting:

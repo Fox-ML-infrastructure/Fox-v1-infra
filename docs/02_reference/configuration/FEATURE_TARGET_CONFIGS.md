@@ -226,11 +226,17 @@ targets:
 
 ---
 
-### `multi_model_feature_selection.yaml`
+### `multi_model_feature_selection.yaml` (Feature Selection)
 
 **Purpose:** Configures multi-model consensus for feature selection.
 
 **When to use:** When adjusting which models participate in feature selection or their weights.
+
+**Location:**
+- **NEW:** `CONFIG/feature_selection/multi_model.yaml` (preferred)
+- **LEGACY:** `CONFIG/multi_model_feature_selection.yaml` (deprecated, still works)
+
+**Note:** For new projects, use experiment configs (see [Modular Config System](MODULAR_CONFIG_SYSTEM.md)) instead of editing this file directly. The config builder automatically merges experiment config overrides with this module config.
 
 **Structure:**
 ```yaml
@@ -252,6 +258,8 @@ model_families:
 
 **Example: Adjusting Model Weights**
 
+Edit `CONFIG/feature_selection/multi_model.yaml` (or use experiment config override):
+
 ```yaml
 model_families:
   lightgbm:
@@ -262,6 +270,13 @@ model_families:
     weight: 1.0
   neural_network:
     enabled: false  # Disable this model family
+```
+
+**Or override in experiment config:**
+```yaml
+# CONFIG/experiments/my_experiment.yaml
+feature_selection:
+  model_families: [lightgbm, xgboost]  # Override enabled families
 ```
 
 **Example: Changing Importance Method**

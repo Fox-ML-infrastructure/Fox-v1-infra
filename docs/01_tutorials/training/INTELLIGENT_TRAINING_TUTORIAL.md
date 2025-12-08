@@ -26,7 +26,51 @@ Trained Models
 
 ## Quick Start
 
-### Basic Usage (Fully Automatic)
+### Using Experiment Configs (Recommended)
+
+The **preferred way** to use the intelligent training pipeline is with experiment configs. This keeps all settings in one file and prevents config "crossing" between modules:
+
+**1. Create an experiment config** (`CONFIG/experiments/my_experiment.yaml`):
+```yaml
+experiment:
+  name: my_experiment
+
+data:
+  data_dir: data/data_labeled/interval=5m
+  symbols: [AAPL, MSFT, GOOGL]
+  max_samples_per_symbol: 5000
+
+targets:
+  primary: fwd_ret_60m
+
+feature_selection:
+  top_n: 100
+  model_families: [lightgbm, xgboost]
+
+training:
+  model_families: [lightgbm, xgboost]
+```
+
+**2. Run with experiment config:**
+```bash
+python TRAINING/train.py \
+    --experiment-config my_experiment \
+    --auto-targets \
+    --top-n-targets 5 \
+    --auto-features
+```
+
+**Benefits:**
+- All settings in one file
+- Type-safe configs with validation
+- No config "crossing" between modules
+- Easy to version and share
+
+See [Modular Config System](../../02_reference/configuration/MODULAR_CONFIG_SYSTEM.md) for complete details.
+
+### Basic Usage (Fully Automatic with CLI Args)
+
+You can also use CLI arguments directly:
 
 ```bash
 python TRAINING/train.py \
@@ -66,6 +110,26 @@ python TRAINING/train.py \
     --auto-features \
     --top-m-features 50
 ```
+
+### Faster E2E Testing
+
+For faster end-to-end testing, use `--max-targets-to-evaluate` to limit the number of targets evaluated during ranking (this is different from `--top-n-targets`, which limits the final selection):
+
+```bash
+python TRAINING/train.py \
+    --data-dir data/data_labeled/interval=5m \
+    --symbols AAPL MSFT \
+    --auto-targets \
+    --top-n-targets 3 \
+    --max-targets-to-evaluate 23 \
+    --auto-features \
+    --top-m-features 50
+```
+
+This will:
+- Evaluate only 23 targets (instead of all discovered targets)
+- Select top 3 from those evaluated
+- Much faster for testing without running full ranking
 
 ### Using Cached Rankings (Faster)
 

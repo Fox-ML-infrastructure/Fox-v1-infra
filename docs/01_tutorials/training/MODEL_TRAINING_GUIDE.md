@@ -12,6 +12,15 @@ There are two ways to train models:
 
 Automated pipeline that ranks targets, selects features, and trains models:
 
+**Using experiment config (preferred):**
+```bash
+python TRAINING/train.py \
+    --experiment-config my_experiment \
+    --auto-targets \
+    --auto-features
+```
+
+**Or using CLI arguments:**
 ```bash
 python TRAINING/train.py \
     --data-dir data/data_labeled/interval=5m \
@@ -20,7 +29,7 @@ python TRAINING/train.py \
     --auto-features
 ```
 
-**See**: [Intelligent Training Tutorial](INTELLIGENT_TRAINING_TUTORIAL.md)
+**See**: [Intelligent Training Tutorial](INTELLIGENT_TRAINING_TUTORIAL.md) | [Modular Config System](../../02_reference/configuration/MODULAR_CONFIG_SYSTEM.md)
 
 ### 2. Manual Training
 

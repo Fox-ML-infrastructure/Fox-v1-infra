@@ -409,8 +409,10 @@ Tuning model hyperparameters?
   → model_config/{model_name}.yaml
 
 Configuring feature selection?
-  → CONFIG/feature_selection/multi_model.yaml (NEW)
-  → multi_model_feature_selection.yaml (LEGACY - deprecated)
+  → CONFIG/feature_selection/multi_model.yaml (NEW - preferred)
+  → CONFIG/multi_model_feature_selection.yaml (LEGACY - deprecated)
+  
+  **Better:** Use experiment configs (see Example 13 below)
 
 Using experiment configs?
   → CONFIG/experiments/*.yaml (NEW - recommended)
@@ -426,7 +428,7 @@ Adjusting training pipeline?
 
 ## Example 13: Using Experiment Configs (NEW - Recommended)
 
-**Goal:** Use the new modular config system with experiment configs.
+**Goal:** Use the new modular config system with experiment configs. This is the **preferred way** to configure the intelligent training pipeline.
 
 **Steps:**
 
