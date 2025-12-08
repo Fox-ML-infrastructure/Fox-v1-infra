@@ -5,6 +5,8 @@
 FoxML Core is a high-performance research and machine learning infrastructure stack.  
 It provides a reference-grade architecture for ML pipelines, quantitative workflows, reproducible experiments, and HPC-optimized engineering without exposing proprietary signals or production-ready trading systems.
 
+> **Note:** Personal / academic use is AGPL-3.0. **Company / production use requires a commercial license.**
+
 Developed and maintained by **Jennifer Lewis**  
 Independent Contractor • ML Engineering • Quantitative Research • Systems Architecture
 
@@ -14,12 +16,13 @@ Independent Contractor • ML Engineering • Quantitative Research • Systems 
 
 FoxML Core demonstrates:
 
-- scalable ML workflow design  
-- leakage-safe research architecture  
-- high-throughput data processing  
-- multi-model training systems  
-- hybrid C++/Python infrastructure  
-- HPC-compatible orchestration patterns  
+- **Intelligent training pipeline** with automated target ranking and feature selection
+- **Leakage-safe research architecture** with pre-training leak detection and auto-fix
+- **Scalable ML workflow design** with config-driven orchestration
+- **High-throughput data processing** with Polars-optimized pipelines
+- **Multi-model training systems** with 20+ model families (GPU-accelerated)
+- **Hybrid C++/Python infrastructure** for performance-critical paths
+- **HPC-compatible orchestration patterns** with NVLink-ready architecture
 
 This is a **research infrastructure system**, not a trading bot or financial product.
 
@@ -44,41 +47,60 @@ FoxML Core provides **architecture**, not alpha.
 
 ---------------------------------------------------------------------
 
-## Licensing (Dual-License Model)
+## Licensing & Commercial Use
 
-FoxML Core is distributed under a dual licensing system.
+FoxML Core is released under the **AGPL-3.0** license for open-source use.
 
-### AGPL-3.0 (Open Source)
-Permitted for:
-- academic research  
-- personal study  
-- open-source contributions  
+That means:
 
-AGPL requires that any modified version deployed over a network must publicly release those modifications.
+- Individual developers, students, and researchers can use FoxML Core under AGPL-3.0 for **personal and academic research, evaluation, and experimentation**.
+- Organizations that want to use FoxML Core in **production, revenue-generating, or internal trading / research environments** will almost always want a **commercial license** to avoid AGPL copyleft obligations and to get clear commercial terms.
 
-### Commercial License (Required for Organizational Use)
-Required for any use by:
-- businesses, institutions, or funds  
-- internal research or modeling  
-- proprietary workflows  
-- trading systems  
-- any revenue-associated use  
+> ⚠️ **If you're running this inside a company (trading desk, fund, fintech, SaaS, etc.), you should assume you need a commercial license unless your legal team is explicitly comfortable with AGPL-3.0 obligations.**
 
-Commercial licensing provides:
-- internal deployment without AGPL disclosure  
-- proprietary modifications  
-- integration support (contracted)  
-- closed-system usage rights  
+### Commercial License (Recommended for Organizations)
 
-For licensing inquiries:  
-**jenn.lewis5789@gmail.com**  
-Subject: **Fox Infrastructure Licensing Inquiry**
+Commercial licensing gives your organization the right to:
+
+- Use FoxML Core for **commercial and internal production use**
+- Integrate FoxML into proprietary systems without AGPL disclosure obligations
+- Get access to **enterprise-focused terms** and optional support / integration work
+
+**Base annual license pricing (by org size):**
+
+- **1–10 employees** — $30,000 / year
+- **11–50 employees** — $75,000 / year
+- **51–250 employees** — $200,000 / year
+- **251–1000 employees** — $350,000 / year
+- **1000+ employees** — starts at $750,000 / year (custom quote)
+
+To begin the licensing process, email:
+
+> 📧 **jenn.lewis5789@gmail.com**  
+> Subject: `FoxML Core Commercial Licensing`
+
+Please include:
+
+- Your name and role
+- Organization name + website or LinkedIn
+- Organization size (from the tiers above)
+- Primary use case (1–3 sentences)
+- Desired start timeline
+
+### Optional Add-Ons
+
+For trading desks and infra teams that need more than a license, optional services are available, including:
+
+- **Dedicated support retainers** (priority fixes, direct maintainer access)
+- **Custom integration projects** (fit FoxML into your existing infra and data)
+- **Onboarding & deployment assistance**
+- **Private Slack / direct founder access**
 
 See:
-- [`DUAL_LICENSE.md`](DUAL_LICENSE.md) - Dual licensing overview
-- [`COMMERCIAL_LICENSE.md`](COMMERCIAL_LICENSE.md) - Commercial license terms
-- [`LICENSE`](LICENSE) - AGPL-3.0 license text
-- [`legal/`](legal/) directory for complete licensing documentation
+
+- [`legal/COMMERCIAL_USE.md`](legal/COMMERCIAL_USE.md) for commercial license terms
+- [`legal/SUBSCRIPTIONS.md`](legal/SUBSCRIPTIONS.md) for detailed pricing and add-ons
+- [`legal/COMMERCIAL_LICENSE.md`](legal/COMMERCIAL_LICENSE.md) for the full FoxML Core Commercial License text
 
 ---------------------------------------------------------------------
 
@@ -92,22 +114,28 @@ For full policies and contracting information:
 ### Core Expertise
 
 #### Machine Learning Infrastructure
-- End-to-end pipeline architecture  
-- Leakage-safe validation systems  
-- Configurable model zoos  
-- GPU-optimized training  
+- **Intelligent training pipeline** with automated target ranking and selection
+- **Automated leakage detection** with pre-training scans and auto-fix system
+- **Config-driven orchestration** with 9 centralized config files
+- End-to-end pipeline architecture with leakage-safe validation
+- Configurable model zoos (20+ families: LightGBM, XGBoost, Random Forest, Neural Networks, etc.)
+- GPU-optimized training with CUDA support
 
 #### Quantitative Research Engineering
-- Walk-forward analysis frameworks  
-- Strict leakage auditing  
-- Research-oriented data pipelines  
-- Feature engineering at scale  
+- **Automated target predictability assessment** with multi-model evaluation
+- **Feature/target schema system** with ranking vs. training mode rules
+- Walk-forward analysis frameworks with time-purged cross-validation
+- Strict leakage auditing with sentinel tests (shifted-target, symbol-holdout, randomized-time)
+- Research-oriented data pipelines with Polars optimization
+- Feature engineering at scale with registry-based temporal rules  
 
 #### High-Performance Computing
 - C++ inference engines  
 - Multi-node and GPU workflows  
+- **NVLink-ready architecture** (device group abstraction, multi-GPU scheduling)
 - System-level throughput optimization  
-- Parallel experiment execution  
+- Parallel experiment execution
+- GPU topology detection and logging  
 
 #### Systems Architecture
 - Hybrid C++/Python system design  
