@@ -2443,6 +2443,33 @@ def evaluate_target_predictability(
                 # Average importance across models
                 avg_importance = {feat: np.mean(imps) for feat, imps in aggregated_importance.items()} if aggregated_importance else {}
                 
+                # Get actual training accuracy from model_metrics (not CV scores)
+                # This is critical - we detected perfect training accuracy, so pass that value
+                actual_train_score = None
+                if model_metrics:
+                    for model_name, metrics in model_metrics.items():
+                        if isinstance(metrics, dict):
+                            # For classification, use accuracy
+                            if 'accuracy' in metrics and metrics['accuracy'] >= accuracy_threshold:
+                                actual_train_score = metrics['accuracy']
+                                logger.debug(f"Using training accuracy {actual_train_score:.4f} from {model_name} for auto-fixer")
+                                break
+                            # For regression, use R²
+                            elif 'r2' in metrics and metrics['r2'] >= r2_threshold:
+                                actual_train_score = metrics['r2']
+                                logger.debug(f"Using training R² {actual_train_score:.4f} from {model_name} for auto-fixer")
+                                break
+                
+                # Fallback to CV score if no perfect training score found
+                if actual_train_score is None:
+                    actual_train_score = max(primary_scores.values()) if primary_scores else None
+                    logger.debug(f"Using CV score {actual_train_score:.4f} as fallback for auto-fixer")
+                
+                # Log what we're passing to auto-fixer
+                logger.debug(f"Auto-fixer inputs: train_score={actual_train_score:.4f}, "
+                           f"model_importance keys={len(avg_importance)}, "
+                           f"feature_names={len(feature_names)}")
+                
                 # Detect leaks
                 detections = fixer.detect_leaking_features(
                     X=X_df, y=y_series, feature_names=feature_names,
@@ -2450,8 +2477,8 @@ def evaluate_target_predictability(
                     symbols=pd.Series(symbols_array) if symbols_array is not None else None,
                     task_type='classification' if task_type == TaskType.BINARY_CLASSIFICATION or task_type == TaskType.MULTICLASS_CLASSIFICATION else 'regression',
                     data_interval_minutes=detected_interval,
-                    model_importance=avg_importance,
-                    train_score=max(primary_scores.values()) if primary_scores else None,
+                    model_importance=avg_importance if avg_importance else None,
+                    train_score=actual_train_score,
                     test_score=None  # CV scores are already validation scores
                 )
                 

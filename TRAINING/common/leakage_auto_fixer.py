@@ -116,10 +116,12 @@ class LeakageAutoFixer:
         
         # Method 1: Perfect scores indicate leakage
         if train_score is not None and train_score >= 0.99:
+            logger.debug(f"Method 1: Perfect score detected ({train_score:.4f} >= 0.99)")
             # High importance features in perfect-score models are suspicious
-            if model_importance:
+            if model_importance and len(model_importance) > 0:
                 sorted_features = sorted(model_importance.items(), key=lambda x: x[1], reverse=True)
                 top_features = sorted_features[:10]  # Top 10 most important
+                logger.debug(f"Method 1: Found {len(top_features)} top features from model_importance")
                 
                 for feat_name, importance in top_features:
                     if feat_name in feature_names:
@@ -130,6 +132,22 @@ class LeakageAutoFixer:
                             source="perfect_score_importance",
                             suggested_action=self._suggest_action(feat_name)
                         ))
+                logger.debug(f"Method 1: Created {len(detections)} detections from perfect score")
+            else:
+                logger.debug(f"Method 1: No model_importance provided or empty (len={len(model_importance) if model_importance else 0})")
+                # Even without importance, if we have perfect score, check for known leaky patterns in top features
+                # This is a fallback - check all features for known patterns
+                logger.debug("Method 1: Falling back to pattern-based detection for all features")
+                for feat_name in feature_names:
+                    if self._is_known_leaky_pattern(feat_name):
+                        detections.append(LeakageDetection(
+                            feature_name=feat_name,
+                            confidence=0.9,  # High confidence for known patterns with perfect score
+                            reason=f"Known leaky pattern in perfect-score model (train_score={train_score:.4f})",
+                            source="perfect_score_pattern",
+                            suggested_action=self._suggest_action(feat_name)
+                        ))
+                logger.debug(f"Method 1: Pattern-based fallback found {len(detections)} detections")
         
         # Method 2: Leakage sentinels
         try:
