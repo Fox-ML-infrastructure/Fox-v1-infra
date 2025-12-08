@@ -30,7 +30,8 @@ from typing import List, Dict, Any, Optional, Tuple
 import warnings
 
 # Add project root to path for imports
-_REPO_ROOT = Path(__file__).resolve().parents[3]
+# TRAINING/ranking/target_ranker.py -> parents[2] = repo root
+_REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
