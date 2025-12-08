@@ -1,21 +1,24 @@
 # Testing Notice
 
-**Status**: Testing Underway  
+**Status**: Target Ranking Appears Working  
 **Date**: 2025-12-08
 
 ## Current Status
 
-Testing is currently underway for recent changes. Initial testing indicates things appear to be working, but **your mileage may vary (YMMV)**.
+**Target ranking appears to be working.** However, there may be issues due to feature engineering that will be investigated. Moving forward to fix issues in feature selection.
 
 ## What's Being Tested
 
+- ✅ Target ranking workflows — Appears working, may have feature engineering issues
+- 🔄 Feature selection — Currently investigating and fixing issues
 - Modular config system integration
-- Feature registry and target ranking workflows
 - Training pipeline orchestration
 - Configuration file updates
 
 ## Known Considerations
 
+- Target ranking may have issues related to feature engineering (temporal alignment, lag structure, leakage validation)
+- Feature selection issues are being actively addressed
 - Some configurations may require adjustment based on your specific use case
 - Performance characteristics may vary depending on hardware and dataset size
 - Edge cases and error handling are still being validated
@@ -30,6 +33,8 @@ If you encounter issues during testing:
 
 ## Next Steps
 
+- Investigate feature engineering issues that may affect target ranking
+- Fix issues in feature selection
 - Continue monitoring test results
 - Address any issues that arise
 - Update this notice as testing progresses
