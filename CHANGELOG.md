@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-**Status**: Testing in progress - Reproducibility validation underway
+**Status**: Testing in progress - Reproducibility validation and modular config system testing underway
 
-**Note**: Backward functionality remains fully operational. The ranking and intelligent training pipeline is currently being tested for reproducibility. All existing training workflows continue to function as before.
+**Note**: Backward functionality remains fully operational. The ranking and intelligent training pipeline is currently being tested for reproducibility. The new modular configuration system is also under active testing. All existing training workflows continue to function as before, and legacy config locations are still supported with deprecation warnings.
 
 ### Stability Guarantees
 
@@ -30,12 +30,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Phase 2-3 of experiments workflow** (core models and sequential models) require implementation beyond Phase 1
 
 **TL;DR**:
+- **New**: Modular configuration system with typed configs, experiment configs, and config validation
 - **New**: Automated leakage detection + auto-fixer with production-grade backup system
 - **New**: Centralized safety configs and feature/target schema system
 - **New**: LightGBM GPU support in ranking + TRAINING module now self-contained
 - **New**: Full compliance documentation suite + commercial pricing update
 
 ### Added
+
+#### **Modular Configuration System** (Testing in Progress)
+- **Typed configuration schemas** (`CONFIG/config_schemas.py`):
+  - `ExperimentConfig` - Experiment-level configuration (data, targets, overrides)
+  - `FeatureSelectionConfig` - Feature selection module configuration
+  - `TargetRankingConfig` - Target ranking module configuration
+  - `TrainingConfig` - Training module configuration
+  - All configs validated on load (required fields, value ranges, type checking)
+- **Configuration builder** (`CONFIG/config_builder.py`):
+  - `load_experiment_config()` - Load experiment configs from YAML
+  - `build_feature_selection_config()` - Build typed configs by merging experiment + module configs
+  - `build_target_ranking_config()` - Build typed configs for target ranking
+  - `build_training_config()` - Build typed configs for training
+  - Automatic fallback to legacy config locations with deprecation warnings
+- **New config directory structure**:
+  - `CONFIG/experiments/` - Experiment-level configs (what are we running?)
+  - `CONFIG/feature_selection/` - Feature selection module configs
+  - `CONFIG/target_ranking/` - Target ranking module configs
+  - `CONFIG/training/` - Training module configs
+  - Prevents config "crossing" between pipeline components
+- **Experiment configs** (preferred way):
+  - Single YAML file defines data, targets, and module overrides
+  - Use via `--experiment-config` CLI argument
+  - Example: `python TRAINING/train.py --experiment-config my_experiment`
+  - All settings grouped logically in one file
+- **Backward compatibility**:
+  - All legacy config locations still supported
+  - Deprecation warnings guide migration to new locations
+  - Old code continues to work without changes
+- **CLI improvements**:
+  - `--experiment-config` argument for using experiment configs
+  - `--max-targets-to-evaluate` option for faster E2E testing (limits evaluation, not just return count)
+  - `--data-dir` and `--symbols` now optional when experiment config provided
+- **Progress logging fixes**:
+  - Fixed progress indicator to show correct denominator when using `--max-targets-to-evaluate`
+  - Now correctly shows `[1/23]` instead of `[1/63]` when limiting evaluation
+- **Path resolution fixes**:
+  - Fixed inconsistent `_REPO_ROOT` calculations in `feature_selector.py` and `target_ranker.py`
+  - All files now consistently use `parents[2]` for repo root detection
+- **Config validation**:
+  - Required fields validated on load
+  - Value ranges checked (e.g., `cv_folds >= 2`, `max_samples_per_symbol >= 1`)
+  - Type checking (paths converted to `Path` objects)
+  - Clear error messages for invalid configs
+- **Migration support**:
+  - Automatic fallback to legacy config locations
+  - Deprecation warnings with migration instructions
+  - Example experiment config provided (`CONFIG/experiments/fwd_ret_60m_test.yaml`)
 
 #### **Leakage Safety Suite**
 - **Production-grade backup system for auto-fixer**:
@@ -144,6 +193,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed insufficient features handling (now properly filters targets with <2 features)
 - Fixed early exit logic when leakage detected (removed false positive triggers)
 - Improved error messages when no targets selected after ranking
+- **Fixed progress logging denominator** - Now correctly shows `[1/23]` instead of `[1/63]` when using `--max-targets-to-evaluate`
+- **Fixed inconsistent repo root calculations** - `feature_selector.py` and `target_ranker.py` now use `parents[2]` consistently
 - **Auto-fixer import path** — fixed `parents[3]` to `parents[2]` in `leakage_auto_fixer.py` for correct repo root detection
 - **Auto-fixer training accuracy detection** — now passes actual training accuracy (from `model_metrics`) instead of CV scores to auto-fixer
 - **Auto-fixer pattern-based fallback** — added fallback detection when `model_importance` is missing
@@ -184,6 +235,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pricing aligned with market comps for enterprise ML infrastructure and reflects value of replacing 4–8 engineers + MLOps team + compliance overhead
 
 ### Documentation
+- **Modular configuration system documentation**:
+  - Created `MODULAR_CONFIG_SYSTEM.md` - Complete guide to new config system
+  - Updated `CLI_REFERENCE.md` with `--max-targets-to-evaluate` and `--experiment-config` options
+  - Updated `INTELLIGENT_TRAINING_TUTORIAL.md` with faster E2E testing examples
+  - Added experiment config examples to `USAGE_EXAMPLES.md`
+  - Updated configuration README to highlight modular config system
+  - Updated main docs index to link to modular config guide
 - **Documentation structure reorganization**:
   - Moved all CONFIG documentation to `docs/02_reference/configuration/`:
     - Configuration system overview, feature/target configs, training pipeline configs, safety/leakage configs, model configuration, usage examples
