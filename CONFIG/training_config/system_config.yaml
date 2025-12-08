@@ -17,6 +17,11 @@ system:
     feature_target_schema: null  # null = CONFIG/feature_target_schema.yaml, or set custom path
     config_backup_dir: null  # null = CONFIG/backups/, or set custom backup directory
   
+  # Backup System Settings
+  backup:
+    max_backups_per_target: 20  # Maximum number of backups to keep per target (0 = no limit)
+    enable_retention: true  # Enable automatic pruning of old backups
+  
   # Environment Variables
   environment:
     # Shell Settings (for subprocess suppression)

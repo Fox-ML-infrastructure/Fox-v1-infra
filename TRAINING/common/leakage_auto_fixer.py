@@ -173,6 +173,9 @@ class LeakageAutoFixer:
         # Cache of already-excluded features (loaded on demand)
         self._excluded_features_cache: Optional[Set[str]] = None
         self._excluded_prefixes_cache: Optional[Set[str]] = None
+        
+        # Load backup settings from config
+        self.max_backups_per_target = self._load_backup_config()
     
     def _load_excluded_features(self) -> Tuple[Set[str], Set[str]]:
         """Load already-excluded features from config files."""
@@ -543,9 +546,11 @@ class LeakageAutoFixer:
         # Backup configs if requested
         backup_files = []
         if self.backup_configs and not dry_run:
+            # Use provided max_backups or fall back to instance config
+            backup_max = max_backups_per_target if max_backups_per_target is not None else self.max_backups_per_target
             backup_files = self._backup_configs(
                 target_name=target_name,
-                max_backups_per_target=max_backups_per_target
+                max_backups_per_target=backup_max
             )
         
         # Group by action type
@@ -607,6 +612,19 @@ class LeakageAutoFixer:
         
         return updates, autofix_info
     
+    def _load_backup_config(self) -> int:
+        """Load backup configuration from system_config.yaml."""
+        default_max_backups = 20
+        if _CONFIG_AVAILABLE:
+            try:
+                system_cfg = get_system_config()
+                backup_cfg = system_cfg.get('system', {}).get('backup', {})
+                max_backups = backup_cfg.get('max_backups_per_target', default_max_backups)
+                return int(max_backups) if max_backups is not None else default_max_backups
+            except Exception as e:
+                logger.debug(f"Could not load backup config: {e}, using default {default_max_backups}")
+        return default_max_backups
+    
     def _get_git_commit_hash(self) -> Optional[str]:
         """Get current git commit hash if available."""
         try:
@@ -624,7 +642,7 @@ class LeakageAutoFixer:
             pass
         return None
     
-    def _backup_configs(self, target_name: Optional[str] = None, max_backups_per_target: int = 20):
+    def _backup_configs(self, target_name: Optional[str] = None, max_backups_per_target: Optional[int] = None):
         """
         Backup config files before modification.
         
@@ -635,7 +653,8 @@ class LeakageAutoFixer:
         Args:
             target_name: Optional target name to organize backups per-target.
                         If provided, backups are stored in CONFIG/backups/{target_name}/{timestamp}/
-            max_backups_per_target: Maximum number of backups to keep per target (default: 20)
+            max_backups_per_target: Maximum number of backups to keep per target 
+                                   (None = use config/default, 0 = no limit)
         
         Returns:
             List of backup file paths
@@ -646,6 +665,10 @@ class LeakageAutoFixer:
         
         # Use configured backup directory (set in __init__)
         base_backup_dir = self.backup_dir
+        
+        # Use config value if not explicitly provided
+        if max_backups_per_target is None:
+            max_backups_per_target = self.max_backups_per_target
         
         # Generate high-resolution timestamp to avoid collisions
         now = datetime.now()
@@ -682,6 +705,14 @@ class LeakageAutoFixer:
             backup_files.append(str(backup_path))
             logger.info(f"Backed up feature_registry.yaml to {backup_path}")
         
+        # Log backup creation with full context
+        git_commit = self._get_git_commit_hash()
+        logger.info(
+            f"📦 Backup created: target={target_name or 'N/A'}, "
+            f"timestamp={timestamp}, git_commit={git_commit or 'N/A'}, "
+            f"source=auto_fix_leakage"
+        )
+        
         # Create manifest file
         manifest_path = snapshot_dir / "manifest.json"
         try:
@@ -703,20 +734,28 @@ class LeakageAutoFixer:
         
         # Apply retention policy (prune old backups for this target)
         if target_name and max_backups_per_target > 0:
-            self._prune_old_backups(target_backup_dir, max_backups_per_target)
+            pruned_count = self._prune_old_backups(target_backup_dir, max_backups_per_target)
+            if pruned_count > 0:
+                logger.info(
+                    f"🧹 Pruned {pruned_count} old backup(s) for target={target_name} "
+                    f"(kept {max_backups_per_target} most recent)"
+                )
         
         return backup_files
     
-    def _prune_old_backups(self, target_backup_dir: Path, max_backups: int):
+    def _prune_old_backups(self, target_backup_dir: Path, max_backups: int) -> int:
         """
         Prune old backups for a target, keeping only the most recent N.
         
         Args:
             target_backup_dir: Directory containing backups for a target
             max_backups: Maximum number of backups to keep
+        
+        Returns:
+            Number of backups pruned
         """
         if not target_backup_dir.exists():
-            return
+            return 0
         
         try:
             # Get all timestamp subdirectories
@@ -726,28 +765,27 @@ class LeakageAutoFixer:
             ]
             
             if len(backup_dirs) <= max_backups:
-                return  # No pruning needed
+                return 0  # No pruning needed
             
             # Sort by timestamp (directory name is timestamp)
             backup_dirs.sort(key=lambda d: d.name, reverse=True)
             
             # Remove oldest backups
             to_remove = backup_dirs[max_backups:]
+            pruned_count = 0
             for old_backup in to_remove:
                 try:
                     import shutil
                     shutil.rmtree(old_backup)
-                    logger.debug(f"Pruned old backup: {old_backup}")
+                    pruned_count += 1
+                    logger.debug(f"Pruned old backup: {old_backup.name}")
                 except Exception as e:
                     logger.warning(f"Could not prune backup {old_backup}: {e}")
             
-            if to_remove:
-                logger.info(
-                    f"Pruned {len(to_remove)} old backup(s) for target "
-                    f"(kept {max_backups} most recent)"
-                )
+            return pruned_count
         except Exception as e:
             logger.debug(f"Could not prune backups: {e}")
+            return 0
     
     def _apply_excluded_features_updates(self, updates: Dict[str, Any]):
         """Apply updates to excluded_features.yaml."""
@@ -1021,39 +1059,69 @@ class LeakageAutoFixer:
         target_backup_dir = backup_dir / safe_target
         
         if not target_backup_dir.exists():
-            logger.error(f"No backups found for target: {target_name}")
+            logger.error(f"❌ No backups found for target: {target_name}")
+            logger.error(f"   Backup directory does not exist: {target_backup_dir}")
             return False
         
         # Find backup to restore
         if timestamp:
             snapshot_dir = target_backup_dir / timestamp
             if not snapshot_dir.exists():
-                logger.error(f"Backup not found: {target_name}/{timestamp}")
+                # List available timestamps for better error message
+                available = LeakageAutoFixer.list_backups(target_name=target_name, backup_dir=backup_dir)
+                available_timestamps = [b['timestamp'] for b in available]
+                logger.error(f"❌ Backup not found: {target_name}/{timestamp}")
+                if available_timestamps:
+                    logger.error(f"   Available timestamps for {target_name}:")
+                    for ts in available_timestamps[:10]:  # Show first 10
+                        logger.error(f"     - {ts}")
+                    if len(available_timestamps) > 10:
+                        logger.error(f"     ... and {len(available_timestamps) - 10} more")
+                else:
+                    logger.error(f"   No backups found for target: {target_name}")
                 return False
         else:
             # Find most recent backup
             backups = LeakageAutoFixer.list_backups(target_name=target_name, backup_dir=backup_dir)
             if not backups:
-                logger.error(f"No backups found for target: {target_name}")
+                logger.error(f"❌ No backups found for target: {target_name}")
+                logger.error(f"   Backup directory exists but contains no valid backups: {target_backup_dir}")
                 return False
             snapshot_dir = Path(backups[0]['snapshot_dir'])
             timestamp = backups[0]['timestamp']
-            logger.info(f"Using most recent backup: {timestamp}")
+            logger.info(f"📦 Using most recent backup: {timestamp} (git: {backups[0].get('git_commit', 'N/A')})")
         
         # Load manifest
         manifest_path = snapshot_dir / "manifest.json"
         if not manifest_path.exists():
-            logger.error(f"Manifest not found in backup: {snapshot_dir}")
+            logger.error(f"❌ Manifest not found in backup: {snapshot_dir}")
+            logger.error(f"   Expected manifest at: {manifest_path}")
+            logger.error(f"   This backup may be corrupted or incomplete")
             return False
         
         try:
             with open(manifest_path, 'r') as f:
                 manifest = json.load(f)
+        except json.JSONDecodeError as e:
+            logger.error(f"❌ Manifest is malformed (invalid JSON): {manifest_path}")
+            logger.error(f"   Error: {e}")
+            logger.error(f"   Cannot restore from corrupted backup")
+            return False
         except Exception as e:
-            logger.error(f"Could not load manifest: {e}")
+            logger.error(f"❌ Could not load manifest: {e}")
+            logger.error(f"   Manifest path: {manifest_path}")
             return False
         
-        # Restore files
+        # Validate manifest structure
+        required_fields = ['excluded_features_path', 'feature_registry_path']
+        missing_fields = [f for f in required_fields if f not in manifest]
+        if missing_fields:
+            logger.error(f"❌ Manifest missing required fields: {missing_fields}")
+            logger.error(f"   Manifest version: {manifest.get('backup_version', 'unknown')}")
+            logger.error(f"   Cannot restore from incomplete backup")
+            return False
+        
+        # Restore files with atomic writes
         excluded_features_backup = snapshot_dir / "excluded_features.yaml"
         feature_registry_backup = snapshot_dir / "feature_registry.yaml"
         
@@ -1061,30 +1129,60 @@ class LeakageAutoFixer:
         feature_registry_path = Path(manifest['feature_registry_path'])
         
         restored = []
+        import os
+        import tempfile
         
-        if excluded_features_backup.exists():
+        # Atomic restore helper
+        def atomic_restore(backup_file: Path, target_path: Path, file_name: str) -> bool:
+            """Restore a file atomically (write to temp, then atomic rename)."""
+            if not backup_file.exists():
+                logger.warning(f"⚠️  Backup file not found: {backup_file}")
+                return False
+            
             if dry_run:
-                logger.info(f"[DRY RUN] Would restore: {excluded_features_backup} -> {excluded_features_path}")
-            else:
-                excluded_features_path.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(excluded_features_backup, excluded_features_path)
-                restored.append('excluded_features.yaml')
-                logger.info(f"Restored: {excluded_features_path}")
+                logger.info(f"[DRY RUN] Would restore: {backup_file} -> {target_path}")
+                return True
+            
+            try:
+                # Create target directory if needed
+                target_path.parent.mkdir(parents=True, exist_ok=True)
+                
+                # Write to temporary file first
+                temp_suffix = f".tmp-{os.getpid()}-{os.urandom(4).hex()}"
+                temp_path = target_path.parent / f"{target_path.name}{temp_suffix}"
+                
+                # Copy backup to temp file
+                shutil.copy2(backup_file, temp_path)
+                
+                # Atomic rename (POSIX: rename is atomic)
+                os.replace(temp_path, target_path)
+                
+                restored.append(file_name)
+                logger.info(f"✅ Restored: {target_path}")
+                return True
+            except Exception as e:
+                logger.error(f"❌ Failed to restore {file_name}: {e}")
+                # Clean up temp file if it exists
+                if temp_path.exists():
+                    try:
+                        temp_path.unlink()
+                    except Exception:
+                        pass
+                return False
         
-        if feature_registry_backup.exists():
-            if dry_run:
-                logger.info(f"[DRY RUN] Would restore: {feature_registry_backup} -> {feature_registry_path}")
-            else:
-                feature_registry_path.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(feature_registry_backup, feature_registry_path)
-                restored.append('feature_registry.yaml')
-                logger.info(f"Restored: {feature_registry_path}")
+        # Restore both files
+        atomic_restore(excluded_features_backup, excluded_features_path, 'excluded_features.yaml')
+        atomic_restore(feature_registry_backup, feature_registry_path, 'feature_registry.yaml')
         
         if restored:
-            logger.info(f"✅ Restored {len(restored)} config file(s) from backup {timestamp}")
+            logger.info(
+                f"✅ Restored {len(restored)} config file(s) from backup "
+                f"(target={target_name}, timestamp={timestamp}, "
+                f"git_commit={manifest.get('git_commit', 'N/A')})"
+            )
             return True
         else:
-            logger.warning("No files were restored")
+            logger.warning("⚠️  No files were restored")
             return False
 
 
