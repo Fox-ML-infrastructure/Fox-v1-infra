@@ -245,6 +245,10 @@ Solution:
 
 ## Related Documentation
 
-- `../TRAINING_OPTIMIZATION_GUIDE.md`: Optimization guide
-- `../FEATURE_SELECTION_GUIDE.md`: Feature selection guide
-- `../FIRST_BATCH_SPECS_IMPLEMENTATION.md`: Trainer-level changes
+- [Experiments Quick Start](EXPERIMENTS_QUICK_START.md) - Quick setup guide
+- [Experiments Operations](EXPERIMENTS_OPERATIONS.md) - Step-by-step instructions
+- [Phase 1: Feature Engineering](PHASE1_FEATURE_ENGINEERING.md) - Phase 1 details
+- [Experiments Implementation](../../03_technical/implementation/EXPERIMENTS_IMPLEMENTATION.md) - Implementation details
+- [Training Optimization](../../03_technical/implementation/TRAINING_OPTIMIZATION_GUIDE.md) - Optimization guide
+- [Feature Selection Implementation](../../03_technical/implementation/FEATURE_SELECTION_GUIDE.md) - Feature selection guide
+- [First Batch Specs](../../03_technical/implementation/FIRST_BATCH_SPECS_IMPLEMENTATION.md) - Trainer-level changes
