@@ -183,11 +183,13 @@ def rank_targets(
                 max_rows_per_symbol=max_rows_per_symbol
             )
             
-            # Skip degenerate targets (marked with mean_score = -999)
+            # Skip degenerate/failed targets (marked with mean_score = -999)
             if result.mean_score != -999.0:
                 results.append(result)
             else:
-                logger.info(f"  Skipped degenerate target: {target_name}")
+                # Provide more specific reason for skipping
+                reason = result.leakage_flag if result.leakage_flag != "OK" else "degenerate/failed"
+                logger.info(f"  Skipped {target_name} ({reason})")
         
         except Exception as e:
             logger.error(f"  Failed to evaluate {target_name}: {e}")

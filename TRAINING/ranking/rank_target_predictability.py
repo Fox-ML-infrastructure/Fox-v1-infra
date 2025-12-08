@@ -2231,20 +2231,19 @@ def evaluate_target_predictability(
             f"  3. Checking if excluded_features.yaml is too restrictive\n"
             f"  4. Skipping this target and focusing on targets with longer horizons"
         )
-        # Return a low score to indicate this target is not predictable
+        # Return -999.0 to indicate this target should be skipped (same as degenerate targets)
         return TargetPredictabilityScore(
             target_name=target_name,
             target_column=target_column,
-            mean_score=0.0,
-            std_score=0.0,
-            composite_score=0.0,
-            mean_importance=0.0,
-            n_symbols=len(symbols),
-            n_samples=0,
             task_type=target_config_obj.task_type,
+            mean_score=-999.0,  # Flag for filtering (same as degenerate targets)
+            std_score=0.0,
+            mean_importance=0.0,
+            consistency=0.0,
+            n_models=0,
             model_scores={},
-            feature_importances={},
-            notes=f"INSUFFICIENT_FEATURES: Only {len(safe_columns)} features available (minimum: {MIN_FEATURES_REQUIRED})"
+            composite_score=0.0,
+            leakage_flag="INSUFFICIENT_FEATURES"
         )
     
     # Prepare cross-sectional data (matches training pipeline)
