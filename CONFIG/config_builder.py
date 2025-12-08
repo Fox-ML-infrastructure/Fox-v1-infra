@@ -235,17 +235,36 @@ def build_training_config(
     models_data = load_yaml(models_path) if models_path.exists() else {}
     pipeline_data = load_yaml(pipeline_path) if pipeline_path and pipeline_path.exists() else {}
     
+    # For training, model_families might come from feature_selection config (shared)
+    # Try to load from feature_selection config as fallback
+    if not models_data.get('model_families'):
+        feature_selection_path = CONFIG_DIR / "feature_selection" / "multi_model.yaml"
+        legacy_path = CONFIG_DIR / "multi_model_feature_selection.yaml"
+        
+        if feature_selection_path.exists():
+            fs_data = load_yaml(feature_selection_path)
+            models_data['model_families'] = fs_data.get('model_families', {})
+        elif legacy_path.exists():
+            fs_data = load_yaml(legacy_path)
+            models_data['model_families'] = fs_data.get('model_families', {})
+    
     # Apply experiment overrides
     if experiment_cfg.training_overrides:
         for key, value in experiment_cfg.training_overrides.items():
-            if key in models_data and isinstance(models_data[key], dict) and isinstance(value, dict):
+            if key == 'model_families' and isinstance(value, list):
+                # Filter model families if list provided
+                all_families = models_data.get('model_families', {})
+                models_data['model_families'] = {
+                    k: v for k, v in all_families.items() if k in value
+                }
+            elif key in models_data and isinstance(models_data[key], dict) and isinstance(value, dict):
                 models_data[key].update(value)
             else:
                 models_data[key] = value
     
     return TrainingConfig(
         model_families=models_data.get('model_families', {}),
-        cv_folds=experiment_cfg.training_overrides.get('cv_folds', pipeline_data.get('cv_folds', 5)),
+        cv_folds=experiment_cfg.training_overrides.get('cv_folds', pipeline_data.get('pipeline', {}).get('cv_folds', 5)),
         pipeline=pipeline_data,
         gpu=load_yaml(CONFIG_DIR / "training_config" / "gpu_config.yaml"),
         memory=load_yaml(CONFIG_DIR / "training_config" / "memory_config.yaml"),

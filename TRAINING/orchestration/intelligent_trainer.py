@@ -57,6 +57,19 @@ from TRAINING.ranking import (
     load_multi_model_config
 )
 
+# Import new config system (optional - for backward compatibility)
+try:
+    from CONFIG.config_builder import (
+        build_feature_selection_config,
+        build_target_ranking_config,
+        build_training_config
+    )
+    from CONFIG.config_schemas import ExperimentConfig, FeatureSelectionConfig, TargetRankingConfig, TrainingConfig
+    _NEW_CONFIG_AVAILABLE = True
+except ImportError:
+    _NEW_CONFIG_AVAILABLE = False
+    logger.debug("New config system not available, using legacy configs")
+
 # Import existing training pipeline functions
 # We import the module but don't run main() - we call functions directly
 import TRAINING.train_with_strategies as train_module
@@ -100,7 +113,8 @@ class IntelligentTrainer:
         symbols: List[str],
         output_dir: Path,
         cache_dir: Optional[Path] = None,
-        add_timestamp: bool = True
+        add_timestamp: bool = True,
+        experiment_config: Optional['ExperimentConfig'] = None  # New typed config (optional)
     ):
         """
         Initialize the intelligent trainer.
@@ -111,11 +125,19 @@ class IntelligentTrainer:
             output_dir: Output directory for training results
             cache_dir: Optional cache directory for ranking/selection results
             add_timestamp: If True, append timestamp to output_dir to make runs distinguishable
+            experiment_config: Optional ExperimentConfig object [NEW - preferred]
         """
         from datetime import datetime
         
-        self.data_dir = Path(data_dir)
-        self.symbols = symbols
+        # NEW: Use experiment config if provided
+        if experiment_config is not None and _NEW_CONFIG_AVAILABLE:
+            self.data_dir = experiment_config.data_dir
+            self.symbols = experiment_config.symbols
+            self.experiment_config = experiment_config
+        else:
+            self.data_dir = Path(data_dir)
+            self.symbols = symbols
+            self.experiment_config = None
         
         # Add timestamp to output directory if requested
         if add_timestamp:
@@ -222,16 +244,19 @@ class IntelligentTrainer:
         model_families: Optional[List[str]] = None,
         multi_model_config: Optional[Dict[str, Any]] = None,
         force_refresh: bool = False,
-        use_cache: bool = True
+        use_cache: bool = True,
+        target_ranking_config: Optional['TargetRankingConfig'] = None  # New typed config (optional)
     ) -> List[str]:
         """
         Automatically rank targets and return top N.
         
         Args:
             top_n: Number of top targets to return
-            model_families: Optional list of model families to use
-            multi_model_config: Optional multi-model config
+            model_families: Optional list of model families to use [LEGACY]
+            multi_model_config: Optional multi-model config [LEGACY]
             force_refresh: If True, ignore cache and re-rank
+            use_cache: If True, use cached rankings if available
+            target_ranking_config: Optional TargetRankingConfig object [NEW - preferred]
         
         Returns:
             List of top N target names
@@ -276,9 +301,19 @@ class IntelligentTrainer:
             logger.error("No targets found")
             return []
         
+        # NEW: Build target ranking config from experiment config if available
+        if target_ranking_config is None and self.experiment_config and _NEW_CONFIG_AVAILABLE:
+            target_ranking_config = build_target_ranking_config(self.experiment_config)
+        
         # Default model families if not provided
         if model_families is None:
-            if multi_model_config:
+            if target_ranking_config and _NEW_CONFIG_AVAILABLE:
+                # Extract from typed config
+                model_families = [
+                    name for name, config in target_ranking_config.model_families.items()
+                    if config.get('enabled', False)
+                ]
+            elif multi_model_config:
                 model_families_dict = multi_model_config.get('model_families', {})
                 model_families = [
                     name for name, config in model_families_dict.items()
@@ -296,7 +331,8 @@ class IntelligentTrainer:
             model_families=model_families,
             multi_model_config=multi_model_config,
             output_dir=self.output_dir / "target_rankings",
-            top_n=None  # Get all rankings for caching
+            top_n=None,  # Get all rankings for caching
+            target_ranking_config=target_ranking_config  # Pass typed config if available
         )
         
         # Save to cache
@@ -317,7 +353,8 @@ class IntelligentTrainer:
         model_families_config: Optional[Dict[str, Any]] = None,
         multi_model_config: Optional[Dict[str, Any]] = None,
         force_refresh: bool = False,
-        use_cache: bool = True
+        use_cache: bool = True,
+        feature_selection_config: Optional['FeatureSelectionConfig'] = None  # New typed config (optional)
     ) -> List[str]:
         """
         Automatically select top M features for a target.
@@ -325,9 +362,11 @@ class IntelligentTrainer:
         Args:
             target: Target column name
             top_m: Number of top features to return
-            model_families_config: Optional model families config
-            multi_model_config: Optional multi-model config
+            model_families_config: Optional model families config [LEGACY]
+            multi_model_config: Optional multi-model config [LEGACY]
             force_refresh: If True, ignore cache and re-select
+            use_cache: If True, use cached features if available
+            feature_selection_config: Optional FeatureSelectionConfig object [NEW - preferred]
         
         Returns:
             List of top M feature names
@@ -341,8 +380,22 @@ class IntelligentTrainer:
                 logger.info(f"✅ Using cached features for {target} ({len(cached)} features)")
                 return cached[:top_m]
         
-        # Load config if not provided
-        if multi_model_config is None:
+        # NEW: Build feature selection config from experiment config if available
+        if feature_selection_config is None and self.experiment_config and _NEW_CONFIG_AVAILABLE:
+            # Create a temporary experiment config with this target
+            temp_exp = ExperimentConfig(
+                name=self.experiment_config.name,
+                data_dir=self.experiment_config.data_dir,
+                symbols=self.experiment_config.symbols,
+                target=target,
+                interval=self.experiment_config.interval,
+                max_samples_per_symbol=self.experiment_config.max_samples_per_symbol,
+                feature_selection_overrides={'top_n': top_m}
+            )
+            feature_selection_config = build_feature_selection_config(temp_exp)
+        
+        # LEGACY: Load config if not provided
+        if multi_model_config is None and feature_selection_config is None:
             multi_model_config = load_multi_model_config()
         
         # Select features
@@ -353,7 +406,8 @@ class IntelligentTrainer:
             model_families_config=model_families_config,
             multi_model_config=multi_model_config,
             top_n=top_m,
-            output_dir=self.output_dir / "feature_selections" / target
+            output_dir=self.output_dir / "feature_selections" / target,
+            feature_selection_config=feature_selection_config  # Pass typed config if available
         )
         
         # Save to cache

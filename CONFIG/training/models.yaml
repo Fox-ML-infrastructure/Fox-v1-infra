@@ -1,0 +1,35 @@
+# Training Model Configuration
+# Defines model families and hyperparameters for training (not feature selection/ranking)
+
+# Note: Model-specific hyperparameters are in CONFIG/model_config/
+# This file references those and adds training-specific settings
+
+model_families:
+  # Model families are loaded from CONFIG/model_config/ files
+  # Training can have different hyperparameters than ranking/feature selection
+  # (e.g., more iterations, different learning rates for final training)
+  
+  # Example structure (actual configs loaded from model_config/):
+  # lightgbm:
+  #   enabled: true
+  #   config_path: model_config/lightgbm.yaml
+  #   training_overrides:
+  #     n_estimators: 500  # More for training than ranking
+  #     learning_rate: 0.03
+  
+  # For now, we'll use the same multi_model config structure
+  # but training can override specific hyperparameters
+
+# Training-specific settings
+training:
+  cv_folds: 5
+  validation_split: 0.2
+  early_stopping: true
+  random_state: 42
+
+# Cross-validation settings
+cross_validation:
+  cv_folds: 5
+  shuffle: false
+  random_state: 42
+
