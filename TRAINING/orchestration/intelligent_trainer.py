@@ -387,7 +387,17 @@ class IntelligentTrainer:
             logger.info("="*80)
             targets = self.rank_targets_auto(top_n=top_n_targets, use_cache=use_cache)
             if not targets:
-                raise ValueError("No targets selected")
+                raise ValueError(
+                    "No targets selected after ranking. This usually means:\n"
+                    "  1. All targets have insufficient features (short-horizon targets need features with allowed_horizons)\n"
+                    "  2. All targets were degenerate (single class, zero variance, extreme imbalance)\n"
+                    "  3. All targets failed evaluation\n\n"
+                    "Consider:\n"
+                    "  - Using targets with longer horizons (more features available)\n"
+                    "  - Adding more features to CONFIG/feature_registry.yaml with shorter allowed_horizons\n"
+                    "  - Checking CONFIG/excluded_features.yaml (may be too restrictive)\n"
+                    "  - Using --no-auto-targets and providing manual --targets list"
+                )
         elif targets is None:
             # Fallback: discover all targets
             logger.info("Discovering all targets from data...")
