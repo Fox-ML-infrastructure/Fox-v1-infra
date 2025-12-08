@@ -13,19 +13,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Note**: Backward functionality remains fully operational. The ranking and intelligent training pipeline is currently being tested and improved. All existing training workflows continue to function as before.
 
+**TL;DR**:
+- **New**: Automated leakage detection + auto-fixer with production-grade backup system
+- **New**: Centralized safety configs and feature/target schema system
+- **New**: LightGBM GPU support in ranking + TRAINING module now self-contained
+- **New**: Full compliance documentation suite + commercial pricing update
+
 ### Added
+
+#### **Leakage Safety Suite**
 - **Production-grade backup system for auto-fixer**:
-  - **Per-target timestamped backup structure**: `CONFIG/backups/{target}/{timestamp}/files + manifest.json`
-  - **Automatic retention policy**: Keeps last N backups per target (configurable, default: 20)
-  - **High-resolution timestamps**: Uses microseconds to avoid collisions in concurrent scenarios
-  - **Manifest files with full provenance**: Includes backup_version, source, target_name, timestamp, git_commit, file paths
-  - **Atomic restore operations**: Writes to temp file first, then atomic rename (prevents partial writes)
-  - **Enhanced error handling**: Lists available timestamps on unknown timestamp, validates manifest structure
-  - **Comprehensive observability**: Logs backup creation, pruning, and restore operations with full context
-  - **Config-driven settings**: `max_backups_per_target` configurable via `system_config.yaml` (default: 20, 0 = no limit)
-  - **Restoration helpers**: `list_backups()` and `restore_backup()` static methods for backup management
-  - **Backward compatible**: Legacy flat structure still supported (with warning) when no target_name provided
-  - **Git commit tracking**: Captures git commit hash in manifest for debugging and provenance
+  - Per-target timestamped backup structure: `CONFIG/backups/{target}/{timestamp}/files + manifest.json`
+  - Automatic retention policy: Keeps last N backups per target (configurable, default: 20)
+  - High-resolution timestamps: Uses microseconds to avoid collisions in concurrent scenarios
+  - Manifest files with full provenance: Includes backup_version, source, target_name, timestamp, git_commit, file paths
+  - Atomic restore operations: Writes to temp file first, then atomic rename (prevents partial writes)
+  - Enhanced error handling: Lists available timestamps on unknown timestamp, validates manifest structure
+  - Comprehensive observability: Logs backup creation, pruning, and restore operations with full context
+  - Config-driven settings: `max_backups_per_target` configurable via `system_config.yaml` (default: 20, 0 = no limit)
+  - Restoration helpers: `list_backups()` and `restore_backup()` static methods for backup management
+  - Backward compatible: Legacy flat structure still supported (with warning) when no target_name provided
+  - Git commit tracking: Captures git commit hash in manifest for debugging and provenance
 - **Automated leakage detection and auto-fix system**:
   - `LeakageAutoFixer` class for automatic detection and remediation of data leakage
   - Integration with leakage sentinels (shifted-target, symbol-holdout, randomized-time tests)
@@ -40,47 +48,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Minimum confidence for auto-fix (default: 0.8)
     - Maximum features to fix per run (default: 20) - prevents overly aggressive fixes
     - Enable/disable auto-fixer flag
-- **Auto-rerun after leakage fixes**:
-  - Automatic rerun of target evaluation after auto-fixer modifies configs
-  - Configurable via `safety_config.yaml` (`auto_rerun` section):
-    - `enabled`: Enable/disable auto-rerun (default: `true`)
-    - `max_reruns`: Maximum reruns per target (default: `3`)
-    - `rerun_on_perfect_train_acc`: Rerun on perfect training accuracy (default: `true`)
-    - `rerun_on_high_auc_only`: Rerun on high AUC alone (default: `false`)
-  - Stops automatically when no leakage detected or no config changes
-  - Tracks attempt count and final status (`OK`, `SUSPICIOUS_STRONG`, `LEAKAGE_UNRESOLVED`, etc.)
-- **Pre-training leak scan**:
-  - Detects near-copy features before model training (catches obvious leaks early)
-  - Binary classification: detects features matching target with ≥99.9% accuracy
-  - Regression: detects features with ≥99.9% correlation with target
-  - Automatically removes leaky features before model training
-  - Configurable thresholds in `safety_config.yaml` (min_match, min_corr)
-- **Feature/Target Schema** (`CONFIG/feature_target_schema.yaml`):
-  - Explicit schema for classifying columns (metadata, targets, features)
-  - Feature families with mode-specific rules (ranking vs. training)
-  - Ranking mode: more permissive (allows basic OHLCV/TA features)
-  - Training mode: strict rules (enforces all leakage filters)
-- **Configurable leakage detection thresholds**:
-  - All hardcoded thresholds moved to `CONFIG/training_config/safety_config.yaml`
-  - Pre-scan thresholds (min_match, min_corr, min_valid_pairs)
-  - Ranking feature requirements (min_features_required, min_features_for_model)
-  - Warning thresholds (classification, regression with forward_return/barrier variants)
-  - Model alert thresholds (suspicious_score)
-- **Feature registry system** (`CONFIG/feature_registry.yaml`):
-  - Structural rules based on temporal metadata (`lag_bars`, `allowed_horizons`, `source`)
-  - Automatic filtering based on target horizon to prevent leakage
-  - Support for short-horizon targets (added horizon=2 for 10-minute targets)
+  - **Auto-rerun after leakage fixes**:
+    - Automatic rerun of target evaluation after auto-fixer modifies configs
+    - Configurable via `safety_config.yaml` (`auto_rerun` section):
+      - `enabled`: Enable/disable auto-rerun (default: `true`)
+      - `max_reruns`: Maximum reruns per target (default: `3`)
+      - `rerun_on_perfect_train_acc`: Rerun on perfect training accuracy (default: `true`)
+      - `rerun_on_high_auc_only`: Rerun on high AUC alone (default: `false`)
+    - Stops automatically when no leakage detected or no config changes
+    - Tracks attempt count and final status (`OK`, `SUSPICIOUS_STRONG`, `LEAKAGE_UNRESOLVED`, etc.)
+  - **Pre-training leak scan**:
+    - Detects near-copy features before model training (catches obvious leaks early)
+    - Binary classification: detects features matching target with ≥99.9% accuracy
+    - Regression: detects features with ≥99.9% correlation with target
+    - Automatically removes leaky features before model training
+    - Configurable thresholds in `safety_config.yaml` (min_match, min_corr)
+  - **Feature/Target Schema** (`CONFIG/feature_target_schema.yaml`):
+    - Explicit schema for classifying columns (metadata, targets, features)
+    - Feature families with mode-specific rules (ranking vs. training)
+    - Ranking mode: more permissive (allows basic OHLCV/TA features)
+    - Training mode: strict rules (enforces all leakage filters)
+  - **Configurable leakage detection thresholds**:
+    - All hardcoded thresholds moved to `CONFIG/training_config/safety_config.yaml`
+    - Pre-scan thresholds (min_match, min_corr, min_valid_pairs)
+    - Ranking feature requirements (min_features_required, min_features_for_model)
+    - Warning thresholds (classification, regression with forward_return/barrier variants)
+    - Model alert thresholds (suspicious_score)
+  - **Feature registry system** (`CONFIG/feature_registry.yaml`):
+    - Structural rules based on temporal metadata (`lag_bars`, `allowed_horizons`, `source`)
+    - Automatic filtering based on target horizon to prevent leakage
+    - Support for short-horizon targets (added horizon=2 for 10-minute targets)
+  - **Leakage sentinels** (`TRAINING/common/leakage_sentinels.py`):
+    - Shifted target test – detects features encoding future information
+    - Symbol holdout test – detects symbol-specific leakage
+    - Randomized time test – detects temporal information leakage
+  - **Feature importance diff detector** (`TRAINING/common/importance_diff_detector.py`):
+    - Compares feature importances between full vs. safe feature sets
+    - Identifies suspicious features with high importance in full model but low in safe model
 - **LightGBM GPU support** in target ranking:
   - Automatic GPU detection and usage (CUDA/OpenCL)
   - GPU verification diagnostics
   - Fallback to CPU if GPU unavailable
-- **Leakage sentinels** (`TRAINING/common/leakage_sentinels.py`):
-  - Shifted target test – detects features encoding future information
-  - Symbol holdout test – detects symbol-specific leakage
-  - Randomized time test – detects temporal information leakage
-- **Feature importance diff detector** (`TRAINING/common/importance_diff_detector.py`):
-  - Compares feature importances between full vs. safe feature sets
-  - Identifies suspicious features with high importance in full model but low in safe model
 - **TRAINING module self-contained**:
   - Moved all utility dependencies from `scripts/` to `TRAINING/utils/`
   - Moved `rank_target_predictability.py` to `TRAINING/ranking/`
@@ -100,16 +108,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced copyright headers across codebase (2025-2026 Fox ML Infrastructure LLC)
 
 ### Changed
-- **Leakage filtering now supports ranking mode**:
-  - `filter_features_for_target()` accepts `for_ranking` parameter
-  - Ranking mode: permissive rules, allows basic OHLCV/TA features even if in always_exclude
-  - Training mode: strict rules (default, backward compatible)
-  - Ensures ranking has sufficient features to evaluate target predictability
-- **Random Forest training accuracy no longer triggers critical leakage**:
-  - High training accuracy (≥99.9%) now logged as warning, not error
-  - Tree models can overfit to 100% training accuracy without leakage
-  - Real leakage defense: schema filters + pre-training scan + time-purged CV
-  - Prevents false positives from overfitting detection
+- **Leakage Safety Suite improvements**:
+  - **Leakage filtering now supports ranking mode**:
+    - `filter_features_for_target()` accepts `for_ranking` parameter
+    - Ranking mode: permissive rules, allows basic OHLCV/TA features even if in always_exclude
+    - Training mode: strict rules (default, backward compatible)
+    - Ensures ranking has sufficient features to evaluate target predictability
+  - **Random Forest training accuracy no longer triggers critical leakage**:
+    - High training accuracy (≥99.9%) now logged as warning, not error
+    - Tree models can overfit to 100% training accuracy without leakage
+    - Real leakage defense: schema filters + pre-training scan + time-purged CV
+    - Prevents false positives from overfitting detection
 - All model trainers updated to use centralized configs (preprocessing, callbacks, optimizers, safety guards)
 - Pipeline, threading, memory, GPU, and system settings integrated into centralized config system
 - Updated company address in Terms of Service (STE B 212 W. Troy St., Dothan, AL 36303)
@@ -156,7 +165,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Onboarding & Deployment: $15,000–$50,000 one-time
   - Private Slack / Direct Founder Access: $18,000–$60,000/year
   - Additional User Seats: $500–$2,000 per seat/year
-- Pricing aligned with market comps (Databricks, Hopsworks, QuantConnect Institution) and reflects value of replacing 4–8 engineers + MLOps team + compliance overhead
+- Pricing aligned with market comps for enterprise ML infrastructure and reflects value of replacing 4–8 engineers + MLOps team + compliance overhead
 
 ### Documentation
 - Updated `LEAKAGE_ANALYSIS.md` with pre-training leak scan and new config options
