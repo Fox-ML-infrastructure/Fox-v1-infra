@@ -94,6 +94,9 @@ Trains and validates ML models.
 - Automatic feature selection (per target)
 - Unified workflow: ranking → selection → training
 - Caching for faster iterative development
+- **Leakage detection & auto-fix**: Automatic detection and remediation of data leakage
+- **Config backup system**: Automatic backups of config files before auto-fix modifications
+- **Timestamped outputs**: Output directories automatically timestamped (format: `YYYYMMDD_HHMMSS`) for run tracking
 
 **Available Models:**
 - Core: LightGBM, XGBoost, Ensemble, MultiTask
@@ -143,15 +146,20 @@ Trains and validates ML models.
 
 ### Stage 4: Model Training
 - Input: Labeled datasets
-- Output: Trained models
-- Models: Saved to `models/` directory
+- Process: Intelligent training pipeline (ranking → selection → training)
+- **Leakage Detection**: Pre-training leak scan + auto-fixer with config backups
+- Output: Trained models + rankings + feature selections
+- Models: Saved to `{output_dir}_YYYYMMDD_HHMMSS/training_results/`
+- Rankings: Saved to `{output_dir}_YYYYMMDD_HHMMSS/target_rankings/`
+- Feature Selections: Saved to `{output_dir}_YYYYMMDD_HHMMSS/feature_selections/`
+- Config Backups: Saved to `CONFIG/backups/{target}/{timestamp}/` (when auto-fix runs)
 - Configs: Versioned in `CONFIG/model_config/`
 
 ### Stage 5: Evaluation
 - Input: Trained models
 - Output: Performance metrics
 - Metrics: Sharpe, drawdown, hit rate, profit factor
-- Location: `results/`
+- Location: `{output_dir}_YYYYMMDD_HHMMSS/training_results/`
 
 ## Design Principles
 
@@ -164,6 +172,9 @@ Trains and validates ML models.
 - Strict temporal validation
 - Walk-forward analysis
 - No future information leakage
+- **Pre-training leak scan**: Detects near-copy features before model training
+- **Auto-fixer with backups**: Automatically detects and fixes leakage, with config backups for rollback
+- **Config-driven safety**: All leakage thresholds configurable via `safety_config.yaml`
 
 ### 3. Modular Architecture
 - Independent components
