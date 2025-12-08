@@ -7,11 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.0.0] - 2025-12-08
+## [Unreleased]
 
-**Status**: Production-ready release - All core training and intelligence features operational
+**Status**: Testing in progress - Reproducibility validation underway
 
-**Note**: Backward functionality remains fully operational. The ranking and intelligent training pipeline is production-ready. All existing training workflows continue to function as before.
+**Note**: Backward functionality remains fully operational. The ranking and intelligent training pipeline is currently being tested for reproducibility. All existing training workflows continue to function as before.
 
 ### Stability Guarantees
 
@@ -225,6 +225,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cross-linking and navigation improved
 - Module reference documentation added
 - Configuration schema documentation added
+
+---
+
+## Future Work
+
+### Adaptive Intelligence Layer (Planned)
+
+The current intelligence layer provides automated target ranking, feature selection, leakage detection, and auto-fixing. Future enhancements will include:
+
+- **Adaptive learning over time**: System learns from historical leakage patterns and feature performance
+- **Dynamic threshold adjustment**: Automatically tunes detection thresholds based on observed patterns
+- **Predictive leakage prevention**: Proactively flags potential leakage before training begins
+- **Multi-target optimization**: Optimizes feature selection across multiple targets simultaneously
+
+See `docs/internal/planning/ADAPTIVE_LEAKAGE_CONTROLLER.md` for detailed design.
 
 ---
 
