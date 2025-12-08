@@ -169,6 +169,60 @@ class LeakageAutoFixer:
         # Track detected leaks across iterations
         self.detected_leaks: Dict[str, LeakageDetection] = {}
         self.iteration_count = 0
+        
+        # Cache of already-excluded features (loaded on demand)
+        self._excluded_features_cache: Optional[Set[str]] = None
+        self._excluded_prefixes_cache: Optional[Set[str]] = None
+    
+    def _load_excluded_features(self) -> Tuple[Set[str], Set[str]]:
+        """Load already-excluded features from config files."""
+        if self._excluded_features_cache is not None:
+            return self._excluded_features_cache, self._excluded_prefixes_cache
+        
+        excluded_exact = set()
+        excluded_prefixes = set()
+        
+        # Load from excluded_features.yaml
+        if self.excluded_features_path.exists():
+            try:
+                with open(self.excluded_features_path, 'r') as f:
+                    config = yaml.safe_load(f) or {}
+                    always_exclude = config.get('always_exclude', {})
+                    excluded_exact = set(always_exclude.get('exact_patterns', []))
+                    excluded_prefixes = set(always_exclude.get('prefix_patterns', []))
+            except Exception as e:
+                logger.debug(f"Could not load excluded_features.yaml: {e}")
+        
+        # Load from feature_registry.yaml (rejected features)
+        if self.feature_registry_path.exists():
+            try:
+                with open(self.feature_registry_path, 'r') as f:
+                    config = yaml.safe_load(f) or {}
+                    features = config.get('features', {})
+                    for feat_name, metadata in features.items():
+                        if metadata.get('rejected', False):
+                            excluded_exact.add(feat_name)
+            except Exception as e:
+                logger.debug(f"Could not load feature_registry.yaml: {e}")
+        
+        self._excluded_features_cache = excluded_exact
+        self._excluded_prefixes_cache = excluded_prefixes
+        return excluded_exact, excluded_prefixes
+    
+    def _is_already_excluded(self, feature_name: str) -> bool:
+        """Check if a feature is already excluded."""
+        excluded_exact, excluded_prefixes = self._load_excluded_features()
+        
+        # Check exact match
+        if feature_name in excluded_exact:
+            return True
+        
+        # Check prefix match
+        for prefix in excluded_prefixes:
+            if feature_name.startswith(prefix):
+                return True
+        
+        return False
     
     def detect_leaking_features(
         self,
@@ -186,9 +240,25 @@ class LeakageAutoFixer:
         """
         Detect leaking features using multiple methods.
         
+        Filters out features that are already excluded to avoid redundant detections.
+        
         Returns:
             List of LeakageDetection objects
         """
+        # Filter out already-excluded features from detection
+        # (These shouldn't be in feature_names if filtering worked, but check anyway)
+        excluded_exact, excluded_prefixes = self._load_excluded_features()
+        candidate_features = [
+            f for f in feature_names 
+            if not self._is_already_excluded(f)
+        ]
+        
+        if len(candidate_features) < len(feature_names):
+            logger.debug(
+                f"Filtered out {len(feature_names) - len(candidate_features)} "
+                f"already-excluded features from detection"
+            )
+        
         detections = []
         
         # Method 1: Perfect scores indicate leakage
@@ -201,7 +271,7 @@ class LeakageAutoFixer:
                 logger.debug(f"Method 1: Found {len(top_features)} top features from model_importance")
                 
                 for feat_name, importance in top_features:
-                    if feat_name in feature_names:
+                    if feat_name in candidate_features:
                         detections.append(LeakageDetection(
                             feature_name=feat_name,
                             confidence=min(0.9, importance),  # Scale importance to confidence
@@ -215,7 +285,7 @@ class LeakageAutoFixer:
                 # Even without importance, if we have perfect score, check for known leaky patterns in top features
                 # This is a fallback - check all features for known patterns
                 logger.debug("Method 1: Falling back to pattern-based detection for all features")
-                for feat_name in feature_names:
+                for feat_name in candidate_features:
                     if self._is_known_leaky_pattern(feat_name):
                         detections.append(LeakageDetection(
                             feature_name=feat_name,
@@ -273,7 +343,7 @@ class LeakageAutoFixer:
                     if model_importance:
                         top_suspicious = sorted(model_importance.items(), key=lambda x: x[1], reverse=True)[:5]
                         for feat_name, importance in top_suspicious:
-                            if feat_name in feature_names:
+                            if feat_name in candidate_features:
                                 detections.append(LeakageDetection(
                                     feature_name=feat_name,
                                     confidence=0.8,
@@ -309,7 +379,7 @@ class LeakageAutoFixer:
                                 if model_importance:
                                     top_suspicious = sorted(model_importance.items(), key=lambda x: x[1], reverse=True)[:5]
                                     for feat_name, importance in top_suspicious:
-                                        if feat_name in feature_names:
+                                        if feat_name in candidate_features:
                                             detections.append(LeakageDetection(
                                                 feature_name=feat_name,
                                                 confidence=0.7,
@@ -329,7 +399,7 @@ class LeakageAutoFixer:
                     if model_importance:
                         top_suspicious = sorted(model_importance.items(), key=lambda x: x[1], reverse=True)[:5]
                         for feat_name, importance in top_suspicious:
-                            if feat_name in feature_names:
+                            if feat_name in candidate_features:
                                 detections.append(LeakageDetection(
                                     feature_name=feat_name,
                                     confidence=0.75,
@@ -348,7 +418,7 @@ class LeakageAutoFixer:
         if not detections or (train_score is None or train_score < 0.99):
             logger.debug("Method 3: Checking for known leaky patterns")
             pattern_detections = []
-            for feat_name in feature_names:
+            for feat_name in candidate_features:
                 if self._is_known_leaky_pattern(feat_name):
                     pattern_detections.append(LeakageDetection(
                         feature_name=feat_name,
@@ -507,6 +577,10 @@ class LeakageAutoFixer:
         if not dry_run:
             self._apply_excluded_features_updates(updates['excluded_features_updates'])
             self._apply_feature_registry_updates(updates['feature_registry_updates'])
+            
+            # Invalidate cache so next detection reloads excluded features
+            self._excluded_features_cache = None
+            self._excluded_prefixes_cache = None
             
             # Track which files were modified
             if updates['excluded_features_updates'].get('exact_patterns') or updates['excluded_features_updates'].get('prefix_patterns'):
