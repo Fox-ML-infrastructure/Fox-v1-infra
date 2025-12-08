@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 
 # Add project root to path
-_REPO_ROOT = Path(__file__).resolve().parent
+_REPO_ROOT = Path(__file__).resolve().parents[1]  # Go up from SCRIPTS/ to repo root
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
