@@ -255,93 +255,138 @@ features:
     description: 20-bar momentum
   ret_future_1:
     source: price
-    lag_bars: -1
-    allowed_horizons: []
+    rejected: true
+    reason: Future return (looks into future - structurally leaky)
     description: 'REJECTED: Future return (looks into future)'
   tth_5m:
     source: derived
-    lag_bars: 0
-    allowed_horizons: []
     description: 'REJECTED: Time-to-hit requires future path'
+    rejected: true
+    reason: Time-to-hit requires future path
   barrier_5m_0.8:
     source: derived
-    lag_bars: 0
-    allowed_horizons: []
     description: 'REJECTED: Barrier features encode barrier logic'
+    rejected: true
+    reason: Barrier features encode barrier logic
   p_up_60m_0.8:
-    lag_bars: 0
-    allowed_horizons: []
     source: target_proxy
     description: 'REJECTED: Prediction/probability feature (leaky)'
+    rejected: true
+    reason: Prediction/probability feature (leaky)
   ts:
-    lag_bars: 0
-    allowed_horizons: []
     source: metadata
     description: 'REJECTED: Timestamp column - metadata, not a feature'
+    rejected: true
+    reason: Metadata column, not a feature
   symbol:
-    lag_bars: 0
-    allowed_horizons: []
     source: metadata
     description: 'REJECTED: Symbol column - metadata, not a feature'
+    rejected: true
+    reason: Metadata column, not a feature
   date:
-    lag_bars: 0
-    allowed_horizons: []
     source: metadata
     description: 'REJECTED: Date column - metadata, not a feature'
+    rejected: true
+    reason: Metadata column, not a feature
   ret_zscore_5m:
-    lag_bars: 0
-    allowed_horizons: []
     source: unknown
     description: 'AUTO-REJECTED: Detected as leaky feature'
+    rejected: true
+    reason: Auto-detected as leaky feature
+    allowed_horizons: []
   flipcount_10m:
-    lag_bars: 0
-    allowed_horizons: []
     source: unknown
     description: 'AUTO-REJECTED: Detected as leaky feature'
+    rejected: true
+    reason: Auto-detected as leaky feature
   time_in_profit_10m:
-    lag_bars: 0
-    allowed_horizons: []
     source: unknown
     description: 'AUTO-REJECTED: Detected as leaky feature'
+    rejected: true
+    reason: Auto-detected as leaky feature
   time_in_profit_5m:
-    lag_bars: 0
-    allowed_horizons: []
     source: unknown
     description: 'AUTO-REJECTED: Detected as leaky feature'
+    rejected: true
+    reason: Auto-detected as leaky feature
   flipcount_5m:
-    lag_bars: 0
-    allowed_horizons: []
     source: unknown
     description: 'AUTO-REJECTED: Detected as leaky feature'
+    rejected: true
+    reason: Auto-detected as leaky feature
   ret_zscore_10m:
-    lag_bars: 0
-    allowed_horizons: []
     source: unknown
     description: 'AUTO-REJECTED: Detected as leaky feature'
+    rejected: true
+    reason: Auto-detected as leaky feature
+    allowed_horizons: []
   hour_of_day:
-    lag_bars: 0
-    allowed_horizons: []
     source: unknown
     description: 'AUTO-REJECTED: Detected as leaky feature'
+    rejected: true
+    reason: Auto-detected as leaky feature
   time_in_profit_15m:
-    lag_bars: 0
-    allowed_horizons: []
     source: unknown
     description: 'AUTO-REJECTED: Detected as leaky feature'
+    rejected: true
+    reason: Auto-detected as leaky feature
   flipcount_15m:
-    lag_bars: 0
-    allowed_horizons: []
     source: unknown
     description: 'AUTO-REJECTED: Detected as leaky feature'
+    rejected: true
+    reason: Auto-detected as leaky feature
   vol_15m:
-    lag_bars: 0
-    allowed_horizons: []
     source: unknown
     description: 'AUTO-REJECTED: Detected as leaky feature'
+    rejected: true
+    reason: Auto-detected as leaky feature
   ret_zscore_30m:
+    source: unknown
+    description: 'AUTO-REJECTED: Detected as leaky feature'
+    rejected: true
+    reason: Auto-detected as leaky feature
+    allowed_horizons: []
+  ret_zscore_60m:
     lag_bars: 0
     allowed_horizons: []
     source: unknown
+    rejected: true
+    description: 'AUTO-REJECTED: Detected as leaky feature'
+  ret_zscore_15m:
+    lag_bars: 0
+    allowed_horizons: []
+    source: unknown
+    rejected: true
+    description: 'AUTO-REJECTED: Detected as leaky feature'
+  time_in_profit_60m:
+    lag_bars: 0
+    allowed_horizons: []
+    source: unknown
+    rejected: true
+    description: 'AUTO-REJECTED: Detected as leaky feature'
+  vol_clustering_15m:
+    lag_bars: 0
+    allowed_horizons: []
+    source: unknown
+    rejected: true
+    description: 'AUTO-REJECTED: Detected as leaky feature'
+  vol_over_vol_15m:
+    lag_bars: 0
+    allowed_horizons: []
+    source: unknown
+    rejected: true
+    description: 'AUTO-REJECTED: Detected as leaky feature'
+  flipcount_60m:
+    lag_bars: 0
+    allowed_horizons: []
+    source: unknown
+    rejected: true
+    description: 'AUTO-REJECTED: Detected as leaky feature'
+  vol_over_vol_60m:
+    lag_bars: 0
+    allowed_horizons: []
+    source: unknown
+    rejected: true
     description: 'AUTO-REJECTED: Detected as leaky feature'
 feature_families:
   lagged_returns:
