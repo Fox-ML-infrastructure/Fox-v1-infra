@@ -48,6 +48,16 @@ The system uses multiple layers to prevent data leakage:
 
 Features are automatically filtered based on target horizon to prevent leakage.
 
+### Feature/Target Schema
+
+`CONFIG/feature_target_schema.yaml` (new) provides an explicit schema for classifying columns:
+- **Metadata columns**: `symbol`, `ts`, `interval`, `source`, etc.
+- **Target patterns**: `^y_*`, `^fwd_ret_*`, `^barrier_*`, etc.
+- **Feature families**: OHLCV, returns, volatility, moving averages, oscillators, etc.
+- **Mode-specific rules**: Different rules for ranking vs. training modes
+
+This schema ensures consistent classification and allows ranking mode to use more permissive rules (allowing basic OHLCV/TA features) while training mode uses strict rules.
+
 ### Excluded Features Config
 
 `CONFIG/excluded_features.yaml` lists patterns for features to exclude:
@@ -98,16 +108,57 @@ The system automatically detects leakage during training and can auto-fix it:
 ```yaml
 safety:
   leakage_detection:
+    # Auto-fixer thresholds
     auto_fix_thresholds:
       cv_score: 0.99              # CV score threshold (99%)
       training_accuracy: 0.999     # Training accuracy threshold (99.9%)
       training_r2: 0.999           # Training R² threshold (99.9%)
       perfect_correlation: 0.999   # Perfect correlation threshold (99.9%)
     auto_fix_min_confidence: 0.8   # Minimum confidence to auto-fix (80%)
+    auto_fix_max_features_per_run: 20  # Max features to fix per run
     auto_fix_enabled: true         # Enable/disable auto-fixer
+    
+    # Pre-training leak scan (catches obvious leaks before model training)
+    pre_scan:
+      min_match: 0.999             # Minimum match ratio for binary classification (99.9%)
+      min_corr: 0.999               # Minimum correlation for regression (99.9%)
+      min_valid_pairs: 10           # Minimum valid pairs needed for correlation check
+    
+    # Feature count requirements for ranking
+    ranking:
+      min_features_required: 2     # Minimum features after filtering
+      min_features_for_model: 3     # Minimum features for model training
+      min_features_after_leak_removal: 2  # Minimum after removing leaks
+    
+    # Leakage warning thresholds
+    warning_thresholds:
+      classification:
+        high: 0.90                  # ROC-AUC/Accuracy > 0.90 is suspicious
+        very_high: 0.95             # ROC-AUC/Accuracy > 0.95 is extremely suspicious
+      regression:
+        forward_return:
+          high: 0.50                # R² > 0.50 is suspicious for forward returns
+          very_high: 0.60           # R² > 0.60 is extremely suspicious
+        barrier:
+          high: 0.70                # R² > 0.70 is suspicious for barrier targets
+          very_high: 0.80           # R² > 0.80 is extremely suspicious
+    
+    # Model-specific alert thresholds
+    model_alerts:
+      suspicious_score: 0.99       # Score >= 0.99 triggers leakage alert
 ```
 
 You can adjust these thresholds to be more or less sensitive to leakage detection.
+
+### Pre-Training Leak Scan
+
+Before training models, the system performs a **pre-training leak scan** that detects features that are near-copies of the target:
+
+- **Binary Classification**: Detects features that match the target (or 1 - target) with ≥99.9% accuracy
+- **Regression**: Detects features with ≥99.9% correlation with the target
+- **Automatic Removal**: Leaky features are automatically removed before model training
+
+This catches obvious leaks (like a feature that's literally the target column) before wasting compute on model training.
 
 ## Impact
 

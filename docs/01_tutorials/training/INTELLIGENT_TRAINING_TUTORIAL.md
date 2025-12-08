@@ -99,10 +99,18 @@ The pipeline automatically discovers and ranks all available targets using multi
 
 **Automatic Leakage Detection:**
 The pipeline automatically detects and fixes data leakage:
-- Detects perfect scores (≥99% CV, ≥99.9% training accuracy)
-- Identifies leaking features using multiple methods
-- Auto-updates exclusion configs and re-runs until clean
-- Configurable thresholds in `CONFIG/training_config/safety_config.yaml`
+- **Pre-training scan**: Detects near-copy features before model training
+- **During training**: Detects perfect scores (≥99% CV, ≥99.9% training accuracy)
+- **Auto-fixer**: Identifies leaking features and auto-updates exclusion configs
+- **Configurable**: All thresholds configurable in `CONFIG/training_config/safety_config.yaml`
+
+**Configuration Options:**
+- Pre-scan thresholds (min_match, min_corr)
+- Feature count requirements (min_features_required, min_features_for_model)
+- Warning thresholds (classification, regression)
+- Auto-fixer settings (enabled, min_confidence, max_features_per_run)
+
+See [Leakage Analysis](../../03_technical/research/LEAKAGE_ANALYSIS.md) for complete configuration details.
 
 **Output:**
 - `output_dir/target_rankings/target_predictability_rankings.csv` - Full rankings

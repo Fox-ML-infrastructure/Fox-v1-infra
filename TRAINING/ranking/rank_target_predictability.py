@@ -382,7 +382,8 @@ def prepare_features_and_target(
         target_column, 
         verbose=True,
         use_registry=True,  # Enable registry validation
-        data_interval_minutes=detected_interval
+        data_interval_minutes=detected_interval,
+        for_ranking=True  # Use permissive rules for ranking (allow basic OHLCV/TA)
     )
     
     # Log filtering summary
@@ -451,6 +452,115 @@ def get_model_config(model_name: str, multi_model_config: Dict[str, Any]) -> Dic
         return {}
     
     return config
+
+
+def find_near_copy_features(
+    X: pd.DataFrame,
+    y: pd.Series,
+    task_type: TaskType,
+    tol: float = 1e-4,
+    min_match: Optional[float] = None,
+    min_corr: Optional[float] = None
+) -> List[str]:
+    """
+    Find features that are basically copies of y (or 1 - y) for binary targets,
+    or highly correlated for regression targets.
+    
+    This is a pre-training leak scan that catches obvious leaks before models are trained.
+    
+    Args:
+        X: Feature DataFrame
+        y: Target Series
+        task_type: TaskType enum (BINARY_CLASSIFICATION, REGRESSION, etc.)
+        tol: Tolerance for numerical comparison
+        min_match: For binary classification, minimum match ratio (default: 99.9%)
+        min_corr: For regression, minimum absolute correlation (default: 99.9%)
+    
+    Returns:
+        List of feature names that are near-copies of the target
+    """
+    # Load thresholds from config if not provided
+    if min_match is None or min_corr is None:
+        if _CONFIG_AVAILABLE:
+            try:
+                safety_cfg = get_safety_config()
+                pre_scan_cfg = safety_cfg.get('leakage_detection', {}).get('pre_scan', {})
+                if min_match is None:
+                    min_match = float(pre_scan_cfg.get('min_match', 0.999))
+                if min_corr is None:
+                    min_corr = float(pre_scan_cfg.get('min_corr', 0.999))
+                min_valid_pairs = int(pre_scan_cfg.get('min_valid_pairs', 10))
+            except Exception:
+                if min_match is None:
+                    min_match = 0.999
+                if min_corr is None:
+                    min_corr = 0.999
+                min_valid_pairs = 10
+        else:
+            if min_match is None:
+                min_match = 0.999
+            if min_corr is None:
+                min_corr = 0.999
+            min_valid_pairs = 10
+    else:
+        min_valid_pairs = 10  # Default if config not available
+    
+    leaky = []
+    y_arr = y.to_numpy()
+    
+    for col in X.columns:
+        try:
+            x = X[col].to_numpy()
+            
+            # Ignore rows where either is NaN
+            mask = ~np.isnan(x) & ~np.isnan(y_arr)
+            if mask.sum() < min_valid_pairs:
+                continue
+            
+            x_valid = x[mask]
+            y_valid = y_arr[mask]
+            
+            # Binary classification: check if feature matches target (or inverse)
+            if task_type == TaskType.BINARY_CLASSIFICATION:
+                # Check if feature is exactly (or almost) the target
+                same = (np.abs(x_valid - y_valid) < tol).mean()
+                # Check if feature is exactly (or almost) 1 - target (inverted)
+                inv_same = (np.abs(x_valid - (1 - y_valid)) < tol).mean()
+                
+                if same >= min_match or inv_same >= min_match:
+                    leaky.append(col)
+                    logger.error(
+                        f"  🚨 PRE-TRAINING LEAK: {col} is a near-copy of target "
+                        f"(match: {same:.1%}, inverse: {inv_same:.1%}, threshold: {min_match:.1%})"
+                    )
+            
+            # Regression: check correlation
+            elif task_type == TaskType.REGRESSION:
+                try:
+                    corr = np.corrcoef(x_valid, y_valid)[0, 1]
+                    if not np.isnan(corr) and abs(corr) >= min_corr:
+                        leaky.append(col)
+                        logger.error(
+                            f"  🚨 PRE-TRAINING LEAK: {col} has {abs(corr):.4f} correlation with target "
+                            f"(threshold: {min_corr:.4f})"
+                        )
+                except Exception:
+                    pass
+            
+            # Multiclass: check if feature matches target exactly
+            elif task_type == TaskType.MULTICLASS_CLASSIFICATION:
+                same = (np.abs(x_valid - y_valid) < tol).mean()
+                if same >= min_match:
+                    leaky.append(col)
+                    logger.error(
+                        f"  🚨 PRE-TRAINING LEAK: {col} is a near-copy of target "
+                        f"(match: {same:.1%}, threshold: {min_match:.1%})"
+                    )
+        except Exception as e:
+            # Skip features that cause errors (e.g., non-numeric)
+            continue
+    
+    return leaky
 
 
 def _detect_leaking_features(
@@ -561,8 +671,9 @@ def train_and_evaluate_models(
         all_suspicious_features: Dict of {model_name: [(feature, importance), ...]}
         all_feature_importances: Dict of {model_name: {feature: importance}}
         fold_timestamps: List of {fold_idx, train_start, train_end, test_start, test_end} per fold
+        perfect_correlation_models: Set of model names that triggered perfect correlation warnings
     
-    Always returns 6 values, even on error (returns empty dicts, 0.0, and empty list)
+    Always returns 7 values, even on error (returns empty dicts, 0.0, empty list, and empty set)
     """
     # Initialize return values (ensures we always return 6 values)
     model_metrics = {}
@@ -881,39 +992,91 @@ def train_and_evaluate_models(
     # Track which models had perfect correlation warnings (for auto-fixer)
     _perfect_correlation_models = set()
     
-    # Load correlation threshold from config (used by _check_for_perfect_correlation)
+    # Load thresholds from config
     if _CONFIG_AVAILABLE:
         try:
             safety_cfg = get_safety_config()
-            _correlation_threshold = float(safety_cfg.get('leakage_detection', {}).get('auto_fix_thresholds', {}).get('perfect_correlation', 0.999))
-        except:
+            leakage_cfg = safety_cfg.get('leakage_detection', {})
+            _correlation_threshold = float(leakage_cfg.get('auto_fix_thresholds', {}).get('perfect_correlation', 0.999))
+            _suspicious_score_threshold = float(leakage_cfg.get('model_alerts', {}).get('suspicious_score', 0.99))
+        except Exception:
             _correlation_threshold = 0.999
+            _suspicious_score_threshold = 0.99
     else:
         _correlation_threshold = 0.999
+        _suspicious_score_threshold = 0.99
+    
+    # NOTE: Removed _critical_leakage_detected flag - training accuracy alone is not
+    # a reliable leakage signal for tree-based models. Real defense: schema filters + pre-scan.
     
     def _check_for_perfect_correlation(y_true: np.ndarray, y_pred: np.ndarray, model_name: str) -> bool:
         """
-        Check if predictions are perfectly correlated with targets (indicates leakage).
-        Returns True if perfect correlation detected.
+        Check if predictions are perfectly correlated with targets.
+        
+        NOTE: High training accuracy alone is NOT a reliable signal for leakage, especially
+        for tree-based models (Random Forest, LightGBM) which can overfit to 100% training
+        accuracy through memorization even without leakage.
+        
+        This function now only logs a warning for debugging purposes. Real leakage defense
+        comes from:
+        - Explicit feature filters (schema, pattern-based exclusions)
+        - Pre-training near-copy scan
+        - Time-purged cross-validation
+        
+        Returns True if perfect correlation detected (for tracking), but does NOT trigger
+        early exit or mark target as LEAKAGE_DETECTED.
         """
         try:
+            # Tree-based models can easily overfit to 100% training accuracy
+            tree_models = {'random_forest', 'lightgbm', 'xgboost', 'catboost'}
+            is_tree_model = model_name.lower() in tree_models
+            
             # For classification, check if predictions match exactly
             if task_type in {TaskType.BINARY_CLASSIFICATION, TaskType.MULTICLASS_CLASSIFICATION}:
                 if len(y_true) == len(y_pred):
                     accuracy = np.mean(y_true == y_pred)
                     if accuracy >= _correlation_threshold:  # Configurable threshold (default: 99.9%)
-                        metric_name = "training accuracy"  # Clarify this is training, not CV
-                        logger.warning(f"  LEAKAGE WARNING: {model_name} has {accuracy:.1%} {metric_name} (threshold: {_correlation_threshold:.1%}) - likely data leakage!")
-                        _perfect_correlation_models.add(model_name)  # Track for auto-fixer
-                        return True
+                        metric_name = "training accuracy"
+                        
+                        if is_tree_model:
+                            # Tree models: This is likely just overfitting, not leakage
+                            logger.warning(
+                                f"  ⚠️  {model_name} reached {accuracy:.1%} {metric_name} "
+                                f"(threshold: {_correlation_threshold:.1%}). "
+                                f"This may just be overfitting - tree ensembles can memorize training data. "
+                                f"Check CV metrics instead. Real leakage defense: schema filters + pre-scan."
+                            )
+                        else:
+                            # Non-tree models: Still suspicious but less likely to be false positive
+                            logger.warning(
+                                f"  ⚠️  {model_name} reached {accuracy:.1%} {metric_name} "
+                                f"(threshold: {_correlation_threshold:.1%}). "
+                                f"High training accuracy detected - investigate if CV metrics are also suspiciously high."
+                            )
+                        
+                        _perfect_correlation_models.add(model_name)  # Track for debugging/auto-fixer
+                        return True  # Return True for tracking, but don't trigger early exit
             
             # For regression, check correlation
             elif task_type == TaskType.REGRESSION:
                 if len(y_true) == len(y_pred):
                     corr = np.corrcoef(y_true, y_pred)[0, 1]
                     if not np.isnan(corr) and abs(corr) >= _correlation_threshold:
-                        logger.warning(f"  LEAKAGE WARNING: {model_name} has correlation {corr:.4f} (threshold: {_correlation_threshold:.4f}) - likely data leakage!")
-                        return True
+                        if is_tree_model:
+                            logger.warning(
+                                f"  ⚠️  {model_name} has correlation {corr:.4f} "
+                                f"(threshold: {_correlation_threshold:.4f}). "
+                                f"This may just be overfitting - check CV metrics instead."
+                            )
+                        else:
+                            logger.warning(
+                                f"  ⚠️  {model_name} has correlation {corr:.4f} "
+                                f"(threshold: {_correlation_threshold:.4f}). "
+                                f"High correlation detected - investigate if CV metrics are also suspiciously high."
+                            )
+                        
+                        _perfect_correlation_models.add(model_name)  # Track for debugging
+                        return True  # Return True for tracking, but don't trigger early exit
         except Exception:
             pass
         return False
@@ -948,9 +1111,11 @@ def train_and_evaluate_models(
         try:
             if task_type == TaskType.REGRESSION:
                 y_pred = model.predict(X)
-                # Check for perfect correlation (leakage)
+                # Check for perfect correlation (leakage) - this sets _critical_leakage_detected flag
                 if _check_for_perfect_correlation(y, y_pred, model_name):
                     logger.error(f"  CRITICAL: {model_name} shows signs of data leakage! Check feature filtering.")
+                    # Early exit: don't compute more metrics, return immediately
+                    return
                 full_metrics = evaluate_by_task(task_type, y, y_pred, return_ic=True)
             elif task_type == TaskType.BINARY_CLASSIFICATION:
                 if hasattr(model, 'predict_proba'):
@@ -960,9 +1125,8 @@ def train_and_evaluate_models(
                     # Fallback for models without predict_proba
                     y_pred = model.predict(X)
                     y_proba = np.clip(y_pred, 0, 1)  # Assume predictions are probabilities
-                # Check for perfect correlation (leakage)
-                if _check_for_perfect_correlation(y, y_pred, model_name):
-                    logger.error(f"  CRITICAL: {model_name} shows signs of data leakage! Check feature filtering.")
+                # Check for perfect correlation (for debugging/tracking only - not a leakage signal)
+                _check_for_perfect_correlation(y, y_pred, model_name)
                 full_metrics = evaluate_by_task(task_type, y, y_proba)
             else:  # MULTICLASS_CLASSIFICATION
                 if hasattr(model, 'predict_proba'):
@@ -973,9 +1137,8 @@ def train_and_evaluate_models(
                     y_pred = model.predict(X)
                     n_classes = len(np.unique(y[~np.isnan(y)]))
                     y_proba = np.eye(n_classes)[y_pred.astype(int)]
-                # Check for perfect correlation (leakage)
-                if _check_for_perfect_correlation(y, y_pred, model_name):
-                    logger.error(f"  CRITICAL: {model_name} shows signs of data leakage! Check feature filtering.")
+                # Check for perfect correlation (for debugging/tracking only - not a leakage signal)
+                _check_for_perfect_correlation(y, y_pred, model_name)
                 full_metrics = evaluate_by_task(task_type, y, y_proba)
             
             # Store full metrics
@@ -1002,7 +1165,7 @@ def train_and_evaluate_models(
     unique_vals = np.unique(y[~np.isnan(y)])
     if len(unique_vals) < 2:
         logger.debug(f"    Skipping: Target has only {len(unique_vals)} unique value(s)")
-        return {}, {}, 0.0, {}, {}, []  # model_metrics, model_scores, mean_importance, suspicious_features, feature_importances, fold_timestamps
+        return {}, {}, 0.0, {}, {}, [], set()  # model_metrics, model_scores, mean_importance, suspicious_features, feature_importances, fold_timestamps, perfect_correlation_models
     
     # For classification, check class balance
     if is_binary or is_multiclass:
@@ -1010,7 +1173,7 @@ def train_and_evaluate_models(
         min_class_count = class_counts[class_counts > 0].min()
         if min_class_count < 2:
             logger.debug(f"    Skipping: Smallest class has only {min_class_count} sample(s)")
-            return {}, {}, 0.0, {}, {}, []  # model_metrics, model_scores, mean_importance, suspicious_features, feature_importances, fold_timestamps
+            return {}, {}, 0.0, {}, {}, [], set()  # model_metrics, model_scores, mean_importance, suspicious_features, feature_importances, fold_timestamps, perfect_correlation_models
     
     # LightGBM
     if 'lightgbm' in model_families:
@@ -1126,7 +1289,7 @@ def train_and_evaluate_models(
             
             # CRITICAL: Check for suspiciously high scores (likely leakage)
             has_leak = False
-            if not np.isnan(primary_score) and primary_score >= 0.99:
+            if not np.isnan(primary_score) and primary_score >= _suspicious_score_threshold:
                 # Use task-appropriate metric name
                 if task_type == TaskType.REGRESSION:
                     metric_name = "R²"
@@ -1156,6 +1319,7 @@ def train_and_evaluate_models(
             
             # Compute and store full task-aware metrics
             _compute_and_store_metrics('lightgbm', model, X, y, primary_score, task_type)
+            
             # Use percentage of total importance in top 10% features (0-1 scale, interpretable)
             total_importance = np.sum(importances)
             if total_importance > 0:
@@ -1194,7 +1358,7 @@ def train_and_evaluate_models(
             model.fit(X, y)
             
             # Check for suspicious scores
-            has_leak = not np.isnan(primary_score) and primary_score >= 0.99
+            has_leak = not np.isnan(primary_score) and primary_score >= _suspicious_score_threshold
             
             # LEAK DETECTION: Analyze feature importance
             importances = model.feature_importances_
@@ -1212,6 +1376,7 @@ def train_and_evaluate_models(
             
             # Compute and store full task-aware metrics
             _compute_and_store_metrics('random_forest', model, X, y, primary_score, task_type)
+            
             # Use percentage of total importance in top 10% features (0-1 scale, interpretable)
             total_importance = np.sum(importances)
             if total_importance > 0:
@@ -1392,7 +1557,7 @@ def train_and_evaluate_models(
                 )
                 
                 # Check for suspicious scores
-                has_leak = primary_score >= 0.99
+                has_leak = primary_score >= _suspicious_score_threshold
                 
                 # Compute and store full task-aware metrics
                 _compute_and_store_metrics('xgboost', model, X, y, primary_score, task_type)
@@ -1887,7 +2052,7 @@ def train_and_evaluate_models(
     # model_metrics contains full metrics dict
     # all_suspicious_features contains leak detection results (aggregated across all models)
     # all_feature_importances contains detailed per-feature importances for export
-    return model_metrics, model_scores, mean_importance, all_suspicious_features, all_feature_importances, fold_timestamps
+    return model_metrics, model_scores, mean_importance, all_suspicious_features, all_feature_importances, fold_timestamps, _perfect_correlation_models
 
 
 def _save_feature_importances(
@@ -2004,28 +2169,42 @@ def detect_leakage(
     """
     flags = []
     
+    # Load thresholds from config
+    if _CONFIG_AVAILABLE:
+        try:
+            safety_cfg = get_safety_config()
+            warning_cfg = safety_cfg.get('leakage_detection', {}).get('warning_thresholds', {})
+        except Exception:
+            warning_cfg = {}
+    else:
+        warning_cfg = {}
+    
     # Determine threshold based on task type and target name
     if task_type == TaskType.REGRESSION:
         is_forward_return = target_name.startswith('fwd_ret_')
         if is_forward_return:
             # For forward returns: R² > 0.50 is suspicious
-            high_threshold = 0.50
-            very_high_threshold = 0.60
+            reg_cfg = warning_cfg.get('regression', {}).get('forward_return', {})
+            high_threshold = float(reg_cfg.get('high', 0.50))
+            very_high_threshold = float(reg_cfg.get('very_high', 0.60))
             metric_name = "R²"
         else:
             # For barrier targets: R² > 0.70 is suspicious
-            high_threshold = 0.70
-            very_high_threshold = 0.80
+            reg_cfg = warning_cfg.get('regression', {}).get('barrier', {})
+            high_threshold = float(reg_cfg.get('high', 0.70))
+            very_high_threshold = float(reg_cfg.get('very_high', 0.80))
             metric_name = "R²"
     elif task_type == TaskType.BINARY_CLASSIFICATION:
         # ROC-AUC > 0.95 is suspicious (near-perfect classification)
-        high_threshold = 0.90
-        very_high_threshold = 0.95
+        class_cfg = warning_cfg.get('classification', {})
+        high_threshold = float(class_cfg.get('high', 0.90))
+        very_high_threshold = float(class_cfg.get('very_high', 0.95))
         metric_name = "ROC-AUC"
     else:  # MULTICLASS_CLASSIFICATION
         # Accuracy > 0.95 is suspicious
-        high_threshold = 0.90
-        very_high_threshold = 0.95
+        class_cfg = warning_cfg.get('classification', {})
+        high_threshold = float(class_cfg.get('high', 0.90))
+        very_high_threshold = float(class_cfg.get('very_high', 0.95))
         metric_name = "Accuracy"
     
     # Check 1: Suspiciously high mean score
@@ -2211,14 +2390,25 @@ def evaluate_target_predictability(
         target_column, 
         verbose=True,
         use_registry=True,  # Enable registry validation
-        data_interval_minutes=detected_interval
+        data_interval_minutes=detected_interval,
+        for_ranking=True  # Use permissive rules for ranking (allow basic OHLCV/TA)
     )
     
     excluded_count = len(all_columns) - len(safe_columns) - 1  # -1 for target itself
     logger.info(f"Filtered out {excluded_count} potentially leaking features (kept {len(safe_columns)} safe features)")
     
     # CRITICAL: Check if we have enough features to train
-    MIN_FEATURES_REQUIRED = 5  # Minimum features needed for meaningful training
+    # Load from config
+    if _CONFIG_AVAILABLE:
+        try:
+            safety_cfg = get_safety_config()
+            ranking_cfg = safety_cfg.get('leakage_detection', {}).get('ranking', {})
+            MIN_FEATURES_REQUIRED = int(ranking_cfg.get('min_features_required', 2))
+        except Exception:
+            MIN_FEATURES_REQUIRED = 2
+    else:
+        MIN_FEATURES_REQUIRED = 2
+    
     if len(safe_columns) < MIN_FEATURES_REQUIRED:
         horizon_info = f"horizon={target_horizon_bars} bars" if target_horizon_bars is not None else "this horizon"
         logger.error(
@@ -2268,9 +2458,96 @@ def evaluate_target_predictability(
     logger.info(f"Cross-sectional data: {len(X)} samples, {X.shape[1]} features")
     logger.info(f"Symbols: {len(set(symbols_array))} unique symbols")
     
-    # Infer task type from data
+    # Infer task type from data (needed for leak scan)
     y_sample = pd.Series(y).dropna()
     task_type = TaskType.from_target_column(target_column, y_sample.to_numpy())
+    
+    # PRE-TRAINING LEAK SCAN: Detect and remove near-copy features before model training
+    logger.info("🔍 Pre-training leak scan: Checking for near-copy features...")
+    X_df = pd.DataFrame(X, columns=feature_names)
+    y_series = pd.Series(y)
+    leaky_features = find_near_copy_features(X_df, y_series, task_type)
+    
+    if leaky_features:
+        logger.error(
+            f"  ❌ CRITICAL: Found {len(leaky_features)} leaky features that are near-copies of target: {leaky_features}"
+        )
+        logger.error(
+            f"  Removing leaky features and continuing with {X.shape[1] - len(leaky_features)} features..."
+        )
+        
+        # Remove leaky features
+        leaky_indices = [i for i, name in enumerate(feature_names) if name in leaky_features]
+        X = np.delete(X, leaky_indices, axis=1)
+        feature_names = [name for name in feature_names if name not in leaky_features]
+        
+        logger.info(f"  After leak removal: {X.shape[1]} features remaining")
+        
+        # If we removed too many features, mark as insufficient
+        # Load from config
+        if _CONFIG_AVAILABLE:
+            try:
+                safety_cfg = get_safety_config()
+                ranking_cfg = safety_cfg.get('leakage_detection', {}).get('ranking', {})
+                MIN_FEATURES_AFTER_LEAK_REMOVAL = int(ranking_cfg.get('min_features_after_leak_removal', 2))
+            except Exception:
+                MIN_FEATURES_AFTER_LEAK_REMOVAL = 2
+        else:
+            MIN_FEATURES_AFTER_LEAK_REMOVAL = 2
+        
+        if X.shape[1] < MIN_FEATURES_AFTER_LEAK_REMOVAL:
+            logger.error(
+                f"  ❌ Too few features remaining after leak removal ({X.shape[1]}). "
+                f"Marking target as LEAKAGE_DETECTED."
+            )
+            return TargetPredictabilityScore(
+                target_name=target_name,
+                target_column=target_column,
+                task_type=task_type,
+                mean_score=-999.0,
+                std_score=0.0,
+                mean_importance=0.0,
+                consistency=0.0,
+                n_models=0,
+                model_scores={},
+                composite_score=0.0,
+                leakage_flag="LEAKAGE_DETECTED"
+            )
+    else:
+        logger.info("  ✅ No obvious leaky features detected in pre-training scan")
+    
+    # CRITICAL: Early exit if too few features (before wasting time training models)
+    # Load from config
+    if _CONFIG_AVAILABLE:
+        try:
+            safety_cfg = get_safety_config()
+            ranking_cfg = safety_cfg.get('leakage_detection', {}).get('ranking', {})
+            MIN_FEATURES_FOR_MODEL = int(ranking_cfg.get('min_features_for_model', 3))
+        except Exception:
+            MIN_FEATURES_FOR_MODEL = 3
+    else:
+        MIN_FEATURES_FOR_MODEL = 3
+    
+    if X.shape[1] < MIN_FEATURES_FOR_MODEL:
+        logger.warning(
+            f"Too few features ({X.shape[1]}) after filtering (minimum: {MIN_FEATURES_FOR_MODEL}); "
+            f"marking target as degenerate and skipping model training."
+        )
+        return TargetPredictabilityScore(
+            target_name=target_name,
+            target_column=target_column,
+            task_type=TaskType.REGRESSION,  # Default, will be updated if we get further
+            mean_score=-999.0,  # Flag for filtering
+            std_score=0.0,
+            mean_importance=0.0,
+            consistency=0.0,
+            n_models=0,
+            model_scores={},
+            composite_score=0.0,
+            leakage_flag="INSUFFICIENT_FEATURES"
+        )
+    
+    # Task type already inferred above for leak scan
     
     # Validate target
     is_valid, error_msg = validate_target(y, task_type=task_type)
@@ -2353,7 +2630,7 @@ def evaluate_target_predictability(
             time_vals=time_vals  # Pass timestamps for fold tracking
         )
         
-        if result is None or len(result) != 6:
+        if result is None or len(result) != 7:
             logger.warning(f"train_and_evaluate_models returned unexpected value: {result}")
             return TargetPredictabilityScore(
                 target_name=target_name,
@@ -2367,7 +2644,17 @@ def evaluate_target_predictability(
                 model_scores={}
             )
         
-        model_metrics, primary_scores, importance, suspicious_features, feature_importances, fold_timestamps = result
+        model_metrics, primary_scores, importance, suspicious_features, feature_importances, fold_timestamps, _perfect_correlation_models = result
+        
+        # NOTE: _perfect_correlation_models is now only for tracking/debugging.
+        # High training accuracy alone is NOT a reliable leakage signal (especially for tree models),
+        # so we no longer mark targets as LEAKAGE_DETECTED based on this.
+        # Real leakage defense: schema filters + pre-training scan + time-purged CV.
+        if _perfect_correlation_models:
+            logger.debug(
+                f"  Models with high training accuracy (may be overfitting): {_perfect_correlation_models}. "
+                f"Check CV metrics to assess real predictive power."
+            )
         
         # Save aggregated feature importances (cross-sectional, not per-symbol)
         if feature_importances and output_dir:
@@ -2391,6 +2678,7 @@ def evaluate_target_predictability(
                 correlation_threshold = float(auto_fix_cfg.get('perfect_correlation', 0.999))
                 auto_fix_enabled = leakage_cfg.get('auto_fix_enabled', True)
                 auto_fix_min_confidence = float(leakage_cfg.get('auto_fix_min_confidence', 0.8))
+                auto_fix_max_features = int(leakage_cfg.get('auto_fix_max_features_per_run', 20))
             except Exception as e:
                 logger.debug(f"Failed to load leakage detection config: {e}, using defaults")
                 cv_threshold = 0.99
@@ -2399,6 +2687,7 @@ def evaluate_target_predictability(
                 correlation_threshold = 0.999
                 auto_fix_enabled = True
                 auto_fix_min_confidence = 0.8
+                auto_fix_max_features = 20
         else:
             # Hardcoded defaults
             cv_threshold = 0.99
@@ -2444,6 +2733,8 @@ def evaluate_target_predictability(
                                 break
             
             # Check 3: Models that triggered perfect correlation warnings (fallback check)
+            # Note: _perfect_correlation_models is populated inside train_and_evaluate_models,
+            # but we check model_metrics above which covers the same cases, so this is just a safety check
             if not should_auto_fix and _perfect_correlation_models:
                 should_auto_fix = True
                 logger.warning(f"🚨 Perfect correlation detected in models: {', '.join(_perfect_correlation_models)} (>= {correlation_threshold:.1%}) - enabling auto-fix mode")
@@ -2522,7 +2813,12 @@ def evaluate_target_predictability(
                 if detections:
                     logger.warning(f"🔧 Auto-detected {len(detections)} leaking features")
                     # Apply fixes (with high confidence threshold to avoid false positives)
-                    updates = fixer.apply_fixes(detections, min_confidence=0.8, dry_run=False)
+                    updates = fixer.apply_fixes(
+                        detections, 
+                        min_confidence=auto_fix_min_confidence, 
+                        max_features=auto_fix_max_features,
+                        dry_run=False
+                    )
                     logger.info(f"✅ Auto-fixed leaks. Configs updated. Please re-run ranking to verify.")
                     logger.info(f"   Updated: {len(updates.get('excluded_features_updates', {}).get('exact_patterns', []))} exact patterns, "
                               f"{len(updates.get('excluded_features_updates', {}).get('prefix_patterns', []))} prefix patterns")
@@ -2737,6 +3033,19 @@ def save_rankings(
 ):
     """Save target predictability rankings"""
     output_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Handle empty results
+    if not results:
+        logger.warning("No valid targets to rank - all targets were skipped (insufficient features, degenerate, or failed)")
+        # Create empty CSV file with headers
+        empty_df = pd.DataFrame(columns=[
+            'rank', 'target_name', 'target_column', 'composite_score', 'task_type',
+            'mean_score', 'std_score', 'mean_r2', 'std_r2', 'mean_importance',
+            'consistency', 'n_models', 'leakage_flag', 'recommendation'
+        ])
+        empty_df.to_csv(output_dir / "target_predictability_rankings.csv", index=False)
+        logger.info(f"Saved empty rankings file to {output_dir / 'target_predictability_rankings.csv'}")
+        return
     
     # Sort by composite score
     results = sorted(results, key=lambda x: x.composite_score, reverse=True)

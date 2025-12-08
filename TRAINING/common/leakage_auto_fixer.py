@@ -346,6 +346,7 @@ class LeakageAutoFixer:
         self,
         detections: List[LeakageDetection],
         min_confidence: float = 0.7,
+        max_features: Optional[int] = None,
         dry_run: bool = False
     ) -> Dict[str, Any]:
         """
@@ -354,6 +355,7 @@ class LeakageAutoFixer:
         Args:
             detections: List of detected leaks
             min_confidence: Minimum confidence to auto-fix (default: 0.7)
+            max_features: Maximum number of features to fix per run (default: None = no limit)
             dry_run: If True, don't actually modify files, just return what would be done
         
         Returns:
@@ -366,7 +368,19 @@ class LeakageAutoFixer:
             logger.info(f"No leaks detected with confidence >= {min_confidence}")
             return {'excluded_features_updates': {}, 'feature_registry_updates': {}}
         
-        logger.info(f"Auto-fixing {len(high_confidence)} leaks (confidence >= {min_confidence})")
+        # Sort by confidence (descending) and limit to max_features
+        high_confidence.sort(key=lambda x: x.confidence, reverse=True)
+        if max_features is not None and len(high_confidence) > max_features:
+            logger.info(
+                f"Limiting auto-fix to top {max_features} features (by confidence) "
+                f"out of {len(high_confidence)} detected leaks"
+            )
+            high_confidence = high_confidence[:max_features]
+        
+        logger.info(
+            f"Auto-fixing {len(high_confidence)} leaks "
+            f"(confidence >= {min_confidence}, max_features={max_features})"
+        )
         
         # Backup configs if requested
         if self.backup_configs and not dry_run:
