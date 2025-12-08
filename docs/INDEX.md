@@ -151,7 +151,3 @@ Research notes, design rationale, advanced topics.
 ## Documentation Architecture
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the documentation structure and maintenance policy.
-
-## Migration Status
-
-This documentation structure is now complete. All planned documentation files have been created. See [MIGRATION_PLAN.md](MIGRATION_PLAN.md) for migration details.
