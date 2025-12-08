@@ -28,6 +28,36 @@ from typing import List, Dict, Any, Optional
 
 
 @dataclass
+class DataConfig:
+    """Data loading configuration"""
+    timestamp_column: str = "ts"
+    bar_interval: Optional[str] = "5m"  # Normalized interval string (e.g., "5m", "15m", "1h")
+    max_samples_per_symbol: int = 50000
+    validation_split: float = 0.2
+    random_state: int = 42
+    
+    def __post_init__(self):
+        """Validate and normalize bar_interval"""
+        if self.bar_interval is not None:
+            # Validate format using regex (avoid circular import)
+            import re
+            interval_str = str(self.bar_interval).lower().strip()
+            
+            # Check format: "5m", "15m", "1h", "300s", or integer
+            valid_patterns = [
+                r'^\d+[mh]$',  # "5m", "15m", "1h"
+                r'^\d+s$',     # "300s"
+                r'^\d+$'       # integer
+            ]
+            
+            if not any(re.match(pattern, interval_str) for pattern in valid_patterns):
+                raise ValueError(
+                    f"Invalid bar_interval format '{self.bar_interval}'. "
+                    f"Expected: '5m', '15m', '1h', '300s', or integer"
+                )
+
+
+@dataclass
 class ExperimentConfig:
     """Experiment-level configuration (what are we running?)"""
     name: str
@@ -200,34 +230,4 @@ class SystemConfig:
     logging: Dict[str, Any] = field(default_factory=dict)
     defaults: Dict[str, Any] = field(default_factory=dict)
     backup: Dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass
-class DataConfig:
-    """Data loading configuration"""
-    timestamp_column: str = "ts"
-    bar_interval: Optional[str] = "5m"  # Normalized interval string (e.g., "5m", "15m", "1h")
-    max_samples_per_symbol: int = 50000
-    validation_split: float = 0.2
-    random_state: int = 42
-    
-    def __post_init__(self):
-        """Validate and normalize bar_interval"""
-        if self.bar_interval is not None:
-            # Validate format using regex (avoid circular import)
-            import re
-            interval_str = str(self.bar_interval).lower().strip()
-            
-            # Check format: "5m", "15m", "1h", "300s", or integer
-            valid_patterns = [
-                r'^\d+[mh]$',  # "5m", "15m", "1h"
-                r'^\d+s$',     # "300s"
-                r'^\d+$'       # integer
-            ]
-            
-            if not any(re.match(pattern, interval_str) for pattern in valid_patterns):
-                raise ValueError(
-                    f"Invalid bar_interval format '{self.bar_interval}'. "
-                    f"Expected: '5m', '15m', '1h', '300s', or integer"
-                )
 

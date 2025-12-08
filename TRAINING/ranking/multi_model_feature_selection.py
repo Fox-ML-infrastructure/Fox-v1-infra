@@ -817,9 +817,6 @@ def process_single_symbol(
         
         # CRITICAL: Use already-detected interval (detected above at line 773)
         # No need to detect again - use the same detected_interval from above
-            explicit_interval=explicit_interval,
-            experiment_config=experiment_config
-        )
         if detected_interval != 5:
             logger.info(f"  Detected data interval: {detected_interval}m (was assuming 5m)")
         
