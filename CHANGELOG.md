@@ -7,11 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [1.0.0] - 2025-12-08
 
-**Status**: Testing in progress - All changes merged to main and ready for validation
+**Status**: Production-ready release - All core training and intelligence features operational
 
-**Note**: Backward functionality remains fully operational. The ranking and intelligent training pipeline is currently being tested and improved. All existing training workflows continue to function as before.
+**Note**: Backward functionality remains fully operational. The ranking and intelligent training pipeline is production-ready. All existing training workflows continue to function as before.
+
+### Stability Guarantees
+
+- **Training results reproducible** across hardware (deterministic seeds, config-driven hyperparameters)
+- **Config schema backward compatible** (existing configs continue to work)
+- **Auto-fixer non-destructive by design** (atomic backups, manifest tracking, restore capabilities)
+- **Leakage detection thresholds configurable** (no hardcoded magic numbers)
+- **Modular architecture** (self-contained TRAINING module, zero external script dependencies)
+
+### Known Issues & Limitations
+
+- **Trading execution modules** (IBKR/Alpaca live trading) are not currently operational and require additional development
+- **Feature engineering** still requires human review and validation (initial feature set was for testing)
+- **Adaptive intelligence layer** in early phase (leakage detection and auto-fixer are production-ready, but adaptive learning over time is planned)
+- **Ranking pipeline** may occasionally log false-positive leakage warnings for tree models (RF overfitting detection is conservative by design)
+- **Phase 2-3 of experiments workflow** (core models and sequential models) require implementation beyond Phase 1
 
 **TL;DR**:
 - **New**: Automated leakage detection + auto-fixer with production-grade backup system
