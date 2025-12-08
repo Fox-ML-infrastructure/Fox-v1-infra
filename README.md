@@ -1,6 +1,13 @@
 # FoxML Core — ML & Quantitative Systems Infrastructure
 
-> **📋 See [ROADMAP.md](ROADMAP.md) for most recent updates, current development focus, and status of modules (including known broken/untested components).**
+> **📋 See [ROADMAP.md](ROADMAP.md) for most recent updates, current development focus, and status of modules (including known broken/untested components).**  
+> **📝 See [CHANGELOG.md](CHANGELOG.md) for recent technical and compliance changes.**
+
+FoxML Core is:
+
+- A leakage-safe ML research and training infrastructure stack for cross-sectional trading
+- A reference architecture for high-throughput, config-driven ML pipelines
+- Designed for quant desks, infra teams, and researchers (architecture, not alpha)
 
 FoxML Core is a high-performance research and machine learning infrastructure stack.  
 It provides a reference-grade architecture for ML pipelines, quantitative workflows, reproducible experiments, and HPC-optimized engineering without exposing proprietary signals or production-ready trading systems.
@@ -49,7 +56,7 @@ FoxML Core provides **architecture**, not alpha.
 
 ## Licensing & Commercial Use
 
-FoxML Core is released under the **AGPL-3.0** license for open-source use.
+FoxML Core is released under the **AGPL-3.0** license. Personal / academic research uses AGPL. Organizations using FoxML Core in production or revenue-generating environments should obtain a commercial license.
 
 That means:
 
@@ -109,7 +116,7 @@ See:
 I provide advanced engineering and research infrastructure consulting for organizations requiring specialized ML, quantitative, or HPC systems.
 
 For full policies and contracting information:  
-(https://github.com/Fox-ML-infrastructure/Contracting_Docs) 
+[Fox ML Infrastructure — Contracting Docs](https://github.com/Fox-ML-infrastructure/Contracting_Docs) 
 
 ### Core Expertise
 
@@ -174,14 +181,17 @@ For full policies and contracting information:
 
 ## Repository Structure
 
+FoxML Core repository structure:
+
+```
 FoxML_Core/
 ├── trading/               (Paper trading integrations, if applicable)
 ├── data_processing/       (Pipelines & feature engineering)
-├── training/              (Model training & research workflows)
-├── config/                (Configuration management system)
+├── TRAINING/              (Model training & research workflows)
+├── CONFIG/                (Configuration management system)
 ├── docs/                  (Technical documentation)
-├── scripts/               (Utilities & tools)
-└── consulting/            (Provided upon request)
+└── scripts/               (Utilities & tools)
+```
 
 ---------------------------------------------------------------------
 
