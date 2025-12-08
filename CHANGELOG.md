@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+**Status**: Testing in progress - All changes merged to main and ready for validation
+
 ### Added
 - **Automated leakage detection and auto-fix system**:
   - `LeakageAutoFixer` class for automatic detection and remediation of data leakage
@@ -21,7 +23,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Training R² threshold (default: 0.999)
     - Perfect correlation threshold (default: 0.999)
     - Minimum confidence for auto-fix (default: 0.8)
+    - Maximum features to fix per run (default: 20) - prevents overly aggressive fixes
     - Enable/disable auto-fixer flag
+- **Pre-training leak scan**:
+  - Detects near-copy features before model training (catches obvious leaks early)
+  - Binary classification: detects features matching target with ≥99.9% accuracy
+  - Regression: detects features with ≥99.9% correlation with target
+  - Automatically removes leaky features before model training
+  - Configurable thresholds in `safety_config.yaml` (min_match, min_corr)
+- **Feature/Target Schema** (`CONFIG/feature_target_schema.yaml`):
+  - Explicit schema for classifying columns (metadata, targets, features)
+  - Feature families with mode-specific rules (ranking vs. training)
+  - Ranking mode: more permissive (allows basic OHLCV/TA features)
+  - Training mode: strict rules (enforces all leakage filters)
+- **Configurable leakage detection thresholds**:
+  - All hardcoded thresholds moved to `CONFIG/training_config/safety_config.yaml`
+  - Pre-scan thresholds (min_match, min_corr, min_valid_pairs)
+  - Ranking feature requirements (min_features_required, min_features_for_model)
+  - Warning thresholds (classification, regression with forward_return/barrier variants)
+  - Model alert thresholds (suspicious_score)
 - **Feature registry system** (`CONFIG/feature_registry.yaml`):
   - Structural rules based on temporal metadata (`lag_bars`, `allowed_horizons`, `source`)
   - Automatic filtering based on target horizon to prevent leakage
@@ -56,11 +76,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced copyright headers across codebase (2025-2026 Fox ML Infrastructure LLC)
 
 ### Changed
+- **Leakage filtering now supports ranking mode**:
+  - `filter_features_for_target()` accepts `for_ranking` parameter
+  - Ranking mode: permissive rules, allows basic OHLCV/TA features even if in always_exclude
+  - Training mode: strict rules (default, backward compatible)
+  - Ensures ranking has sufficient features to evaluate target predictability
+- **Random Forest training accuracy no longer triggers critical leakage**:
+  - High training accuracy (≥99.9%) now logged as warning, not error
+  - Tree models can overfit to 100% training accuracy without leakage
+  - Real leakage defense: schema filters + pre-training scan + time-purged CV
+  - Prevents false positives from overfitting detection
 - All model trainers updated to use centralized configs (preprocessing, callbacks, optimizers, safety guards)
 - Pipeline, threading, memory, GPU, and system settings integrated into centralized config system
 - Updated company address in Terms of Service (STE B 212 W. Troy St., Dothan, AL 36303)
 
 ### Fixed
+- Fixed `_perfect_correlation_models` NameError in target ranking
+- Fixed insufficient features handling (now properly filters targets with <2 features)
+- Fixed early exit logic when leakage detected (removed false positive triggers)
+- Improved error messages when no targets selected after ranking
 - **Auto-fixer import path** — fixed `parents[3]` to `parents[2]` in `leakage_auto_fixer.py` for correct repo root detection
 - **Auto-fixer training accuracy detection** — now passes actual training accuracy (from `model_metrics`) instead of CV scores to auto-fixer
 - **Auto-fixer pattern-based fallback** — added fallback detection when `model_importance` is missing
@@ -100,6 +134,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pricing aligned with market comps (Databricks, Hopsworks, QuantConnect Institution) and reflects value of replacing 4–8 engineers + MLOps team + compliance overhead
 
 ### Documentation
+- Updated `LEAKAGE_ANALYSIS.md` with pre-training leak scan and new config options
+- Updated `INTELLIGENT_TRAINING_TUTORIAL.md` with configuration details
+- Marked target ranking integration as completed in planning docs
+- Added comprehensive configuration documentation for all leakage detection thresholds
 - 55+ new documentation files created
 - 50+ existing files rewritten and standardized
 - Enterprise-grade legal and commercial materials established
