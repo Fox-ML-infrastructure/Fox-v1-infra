@@ -133,12 +133,23 @@ Research notes, design rationale, advanced topics.
 
 ## Additional Documentation
 
-### Existing Guides
+### Training Workflows
+- [Experiments Workflow](01_tutorials/training/EXPERIMENTS_WORKFLOW.md) - 3-phase optimized training workflow
+- [Experiments Quick Start](01_tutorials/training/EXPERIMENTS_QUICK_START.md) - Quick start guide
+- [Experiments Operations](01_tutorials/training/EXPERIMENTS_OPERATIONS.md) - Step-by-step operations
+- [Phase 1: Feature Engineering](01_tutorials/training/PHASE1_FEATURE_ENGINEERING.md) - Phase 1 documentation
+
+### Implementation Guides
+- [Feature Selection Implementation](03_technical/implementation/FEATURE_SELECTION_GUIDE.md) - Feature selection implementation details
+- [Training Optimization](03_technical/implementation/TRAINING_OPTIMIZATION_GUIDE.md) - Training optimization guide
+- [Safe Target Pattern](03_technical/implementation/SAFE_TARGET_PATTERN_IMPLEMENTATION.md) - Safe target pattern implementation
+- [First Batch Specs](03_technical/implementation/FIRST_BATCH_SPECS_IMPLEMENTATION.md) - First batch specifications
+- [Strategy Updates](03_technical/implementation/STRATEGY_UPDATES.md) - Training strategy updates
+- [Experiments Implementation](03_technical/implementation/EXPERIMENTS_IMPLEMENTATION.md) - Experiments implementation summary
+
+### Additional Documentation
 - [Data Pipeline Guide](../INFORMATION/04_DATA_PIPELINE.md) - Complete data processing workflow
 - [Model Training Guide](../INFORMATION/05_MODEL_TRAINING.md) - Complete model training guide
-- [Feature Selection Guide](../TRAINING/FEATURE_SELECTION_GUIDE.md) - Feature selection workflow
-- [Training Optimization](../TRAINING/TRAINING_OPTIMIZATION_GUIDE.md) - Training optimization
-- [3-Phase Workflow](../TRAINING/EXPERIMENTS/README.md) - Optimized training workflow
 - [Comprehensive Feature Ranking](COMPREHENSIVE_FEATURE_RANKING.md) - Feature ranking methodology
 
 ### System Documentation

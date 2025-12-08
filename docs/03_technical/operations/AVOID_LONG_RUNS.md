@@ -96,5 +96,5 @@ tail -f logs/training.log | grep "memory\|duration"
 ## See Also
 
 - [Performance Optimization](../implementation/PERFORMANCE_OPTIMIZATION.md) - Optimization tips
-- [Training Optimization Guide](../../../TRAINING/TRAINING_OPTIMIZATION_GUIDE.md) - Training optimization
+- [Training Optimization Guide](../implementation/TRAINING_OPTIMIZATION_GUIDE.md) - Training optimization
 

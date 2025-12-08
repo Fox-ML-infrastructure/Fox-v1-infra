@@ -192,5 +192,5 @@ This catches obvious leaks (like a feature that's literally the target column) b
 ## See Also
 
 - [Leakage Fix README](../../../dep/LEAKAGE_FIX_README.md) - Detailed fix documentation
-- [Safe Target Pattern](../../../TRAINING/SAFE_TARGET_PATTERN_IMPLEMENTATION.md) - Implementation details
+- [Safe Target Pattern](../implementation/SAFE_TARGET_PATTERN_IMPLEMENTATION.md) - Implementation details
 

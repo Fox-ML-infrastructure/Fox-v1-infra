@@ -86,5 +86,5 @@ config = {
 ## See Also
 
 - [Walk-Forward Validation](../../01_tutorials/training/WALKFORWARD_VALIDATION.md) - Tutorial
-- [Training Optimization Guide](../../../TRAINING/TRAINING_OPTIMIZATION_GUIDE.md) - Optimization tips
+- [Training Optimization Guide](../implementation/TRAINING_OPTIMIZATION_GUIDE.md) - Optimization tips
 

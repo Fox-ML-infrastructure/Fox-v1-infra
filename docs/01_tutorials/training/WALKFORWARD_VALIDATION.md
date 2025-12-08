@@ -108,5 +108,5 @@ print(f"Number of folds: {len(cv_scores)}")
 ## Next Steps
 
 - [Model Training Guide](MODEL_TRAINING_GUIDE.md) - Training basics
-- [3-Phase Training Workflow](../../../TRAINING/EXPERIMENTS/README.md) - Optimized workflow
+- [Experiments Workflow](EXPERIMENTS_WORKFLOW.md) - 3-phase optimized training workflow
 
