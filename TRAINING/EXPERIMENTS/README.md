@@ -22,5 +22,5 @@ This directory contains the optimized 3-phase training workflow.
 python phase1_feature_engineering/run_phase1.py --data-dir /path/to/data
 ```
 
-For complete documentation, see the [Training Tutorials](../../../docs/01_tutorials/training/).
+For complete documentation, see the [Training Tutorials](../../../DOCS/01_tutorials/training/).
 

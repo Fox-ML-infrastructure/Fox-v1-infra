@@ -244,8 +244,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated main docs index to link to modular config guide
   - Updated `CONFIG_BASICS.md`, `CONFIG_EXAMPLES.md`, `MODEL_TRAINING_GUIDE.md`, and `FEATURE_TARGET_CONFIGS.md` to emphasize experiment configs
 - **Documentation cleanup and consolidation**:
-  - Integrated `INFORMATION/` and `NOTES/` folders into `docs/` folder
-  - Moved `COLUMN_REFERENCE.md` to `docs/02_reference/data/` (proper location)
+  - Integrated `INFORMATION/` and `NOTES/` folders into `DOCS/` folder
+  - Moved `COLUMN_REFERENCE.md` to `DOCS/02_reference/data/` (proper location)
   - Removed outdated documentation referencing deprecated scripts and old workflows
   - Updated all cross-references to point to current documentation locations
   - Deleted `INFORMATION/` and `NOTES/` folders (content outdated or already in docs)

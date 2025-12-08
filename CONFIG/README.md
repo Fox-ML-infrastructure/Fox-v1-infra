@@ -90,7 +90,7 @@ Training still uses `CONFIG/training_config/` for pipeline, GPU, memory, etc. se
 
 ## Documentation
 
-- **Configuration Reference:** See `docs/02_reference/configuration/`
+- **Configuration Reference:** See `DOCS/02_reference/configuration/`
 - **Experiment Configs:** See `CONFIG/experiments/README.md`
 - **Feature Selection:** See `CONFIG/feature_selection/README.md`
 

@@ -11,41 +11,41 @@ This bundle includes the following documents (available as Markdown, ready for P
 ### Core Legal Documents
 
 - **Commercial License** — `../COMMERCIAL_LICENSE.md`
-- **Commercial License Agreement (CLA)** — `../legal/CLA.md`
-- **Terms of Service** — `../legal/TOS.md`
+- **Commercial License Agreement (CLA)** — `../LEGAL/CLA.md`
+- **Terms of Service** — `../LEGAL/TOS.md`
 
 ### Enterprise Documentation
 
-- **Support Policy** — `../legal/SUPPORT_POLICY.md`
-- **Service Level Agreement (SLA)** — `../legal/SERVICE_LEVEL_AGREEMENT.md`
-- **Security Statement** — `../legal/SECURITY.md`
-- **Data Processing Addendum (DPA)** — `../legal/DATA_PROCESSING_ADDENDUM.md`
-- **Export Compliance** — `../legal/EXPORT_COMPLIANCE.md`
-- **Acceptable Use Policy (AUP)** — `../legal/ACCEPTABLE_USE_POLICY.md`
-- **Indemnification** — `../legal/INDEMNIFICATION.md`
-- **Warranty & Liability Addendum** — `../legal/WARRANTY_LIABILITY_ADDENDUM.md`
-- **IP Ownership Clarification** — `../legal/IP_OWNERSHIP_CLARIFICATION.md`
-- **InfoSec Self-Assessment** — `../legal/INFOSEC_SELF_ASSESSMENT.md`
+- **Support Policy** — `../LEGAL/SUPPORT_POLICY.md`
+- **Service Level Agreement (SLA)** — `../LEGAL/SERVICE_LEVEL_AGREEMENT.md`
+- **Security Statement** — `../LEGAL/SECURITY.md`
+- **Data Processing Addendum (DPA)** — `../LEGAL/DATA_PROCESSING_ADDENDUM.md`
+- **Export Compliance** — `../LEGAL/EXPORT_COMPLIANCE.md`
+- **Acceptable Use Policy (AUP)** — `../LEGAL/ACCEPTABLE_USE_POLICY.md`
+- **Indemnification** — `../LEGAL/INDEMNIFICATION.md`
+- **Warranty & Liability Addendum** — `../LEGAL/WARRANTY_LIABILITY_ADDENDUM.md`
+- **IP Ownership Clarification** — `../LEGAL/IP_OWNERSHIP_CLARIFICATION.md`
+- **InfoSec Self-Assessment** — `../LEGAL/INFOSEC_SELF_ASSESSMENT.md`
 
 ### Operational Documents
 
-- **Release Policy** — `../legal/RELEASE_POLICY.md`
-- **Enterprise Delivery Model** — `../legal/ENTERPRISE_DELIVERY.md`
-- **Client Onboarding Guide** — `../legal/CLIENT_ONBOARDING.md`
-- **Enterprise Checklist** — `../legal/ENTERPRISE_CHECKLIST.md`
-- **Trademark Policy** — `../legal/TRADEMARK_POLICY.md`
+- **Release Policy** — `../LEGAL/RELEASE_POLICY.md`
+- **Enterprise Delivery Model** — `../LEGAL/ENTERPRISE_DELIVERY.md`
+- **Client Onboarding Guide** — `../LEGAL/CLIENT_ONBOARDING.md`
+- **Enterprise Checklist** — `../LEGAL/ENTERPRISE_CHECKLIST.md`
+- **Trademark Policy** — `../LEGAL/TRADEMARK_POLICY.md`
 
 ### Pricing and Subscriptions
 
-- **Subscriptions** — `../legal/SUBSCRIPTIONS.md`
-- **Licensing Overview** — `../legal/LICENSING.md`
+- **Subscriptions** — `../LEGAL/SUBSCRIPTIONS.md`
+- **Licensing Overview** — `../LEGAL/LICENSING.md`
 
 ### Consulting Documents (If Applicable)
 
-- **Master Consulting Agreement** — `../legal/consulting/MASTER_CONSULTING_AGREEMENT.md`
-- **Statement of Work Template** — `../legal/consulting/STATEMENT_OF_WORK_TEMPLATE.md`
-- **Consulting Pricing** — `../legal/consulting/CONSULTING_PRICING.md`
-- **IP Terms Addendum** — `../legal/consulting/IP_TERMS_ADDENDUM.md`
+- **Master Consulting Agreement** — `../LEGAL/consulting/MASTER_CONSULTING_AGREEMENT.md`
+- **Statement of Work Template** — `../LEGAL/consulting/STATEMENT_OF_WORK_TEMPLATE.md`
+- **Consulting Pricing** — `../LEGAL/consulting/CONSULTING_PRICING.md`
+- **IP Terms Addendum** — `../LEGAL/consulting/IP_TERMS_ADDENDUM.md`
 
 ---
 
@@ -61,10 +61,10 @@ To convert Markdown files to PDF:
 # On Linux: sudo apt-get install pandoc
 
 # Convert a single file
-pandoc ../legal/SECURITY.md -o SECURITY.pdf
+pandoc ../LEGAL/SECURITY.md -o SECURITY.pdf
 
 # Convert all files (example script)
-for file in ../legal/*.md; do
+for file in ../LEGAL/*.md; do
     pandoc "$file" -o "$(basename "$file" .md).pdf"
 done
 ```
@@ -129,7 +129,7 @@ Subject: *Enterprise Bundle Inquiry — Fox ML Infrastructure*
 
 ## Related Documents
 
-- `../legal/README.md` — Complete legal documentation index
+- `../LEGAL/README.md` — Complete legal documentation index
 - `../docs/INDEX.md` — Complete documentation navigation
 - `../README.md` — Project overview and getting started
 

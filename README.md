@@ -128,9 +128,9 @@ For trading desks and infra teams that need more than a license, optional servic
 
 See:
 
-- [`legal/COMMERCIAL_USE.md`](legal/COMMERCIAL_USE.md) for commercial license terms
-- [`legal/SUBSCRIPTIONS.md`](legal/SUBSCRIPTIONS.md) for detailed pricing and add-ons
-- [`legal/COMMERCIAL_LICENSE.md`](legal/COMMERCIAL_LICENSE.md) for the full FoxML Core Commercial License text
+- [`LEGAL/COMMERCIAL_USE.md`](LEGAL/COMMERCIAL_USE.md) for commercial license terms
+- [`LEGAL/SUBSCRIPTIONS.md`](LEGAL/SUBSCRIPTIONS.md) for detailed pricing and add-ons
+- [`LEGAL/COMMERCIAL_LICENSE.md`](LEGAL/COMMERCIAL_LICENSE.md) for the full FoxML Core Commercial License text
 
 ---------------------------------------------------------------------
 
@@ -138,7 +138,7 @@ See:
 
 I provide advanced engineering and research infrastructure consulting for organizations requiring specialized ML, quantitative, or HPC systems.
 
-For full policies and contracting information, see the [`legal/`](legal/) directory in this repository. 
+For full policies and contracting information, see the [`LEGAL/`](LEGAL/) directory in this repository. 
 
 ### Core Expertise
 
@@ -184,20 +184,20 @@ For full policies and contracting information, see the [`legal/`](legal/) direct
 ## Documentation
 
 **New users start here:**
-- **[Quick Start](docs/00_executive/QUICKSTART.md)** - Get running in 5 minutes
-- **[Getting Started](docs/00_executive/GETTING_STARTED.md)** - Complete onboarding guide
-- **[Architecture Overview](docs/00_executive/ARCHITECTURE_OVERVIEW.md)** - System at a glance
+- **[Quick Start](DOCS/00_executive/QUICKSTART.md)** - Get running in 5 minutes
+- **[Getting Started](DOCS/00_executive/GETTING_STARTED.md)** - Complete onboarding guide
+- **[Architecture Overview](DOCS/00_executive/ARCHITECTURE_OVERVIEW.md)** - System at a glance
 
 **Complete documentation:**
-- **[Documentation Index](docs/INDEX.md)** - Full documentation navigation
-- **[Tutorials](docs/01_tutorials/)** - Step-by-step guides
-- **[Reference Docs](docs/02_reference/)** - Technical reference
-- **[Technical Appendices](docs/03_technical/)** - Deep technical topics
+- **[Documentation Index](DOCS/INDEX.md)** - Full documentation navigation
+- **[Tutorials](DOCS/01_tutorials/)** - Step-by-step guides
+- **[Reference Docs](DOCS/02_reference/)** - Technical reference
+- **[Technical Appendices](DOCS/03_technical/)** - Deep technical topics
 
 **Documentation structure:**
-- **[Architecture](docs/ARCHITECTURE.md)** - Documentation organization
-- **[Style Guide](docs/STYLE_GUIDE.md)** - Writing guidelines
-- **[Migration Plan](docs/MIGRATION_PLAN.md)** - Migration status  
+- **[Architecture](DOCS/ARCHITECTURE.md)** - Documentation organization
+- **[Style Guide](DOCS/STYLE_GUIDE.md)** - Writing guidelines
+- **[Migration Plan](DOCS/MIGRATION_PLAN.md)** - Migration status  
 
 ---------------------------------------------------------------------
 
@@ -211,7 +211,7 @@ FoxML_Core/
 ├── data_processing/       (Pipelines & feature engineering)
 ├── TRAINING/              (Model training & research workflows)
 ├── CONFIG/                (Configuration management system)
-├── docs/                  (Technical documentation)
+├── DOCS/                  (Technical documentation)
 └── scripts/               (Utilities & tools)
 ```
 

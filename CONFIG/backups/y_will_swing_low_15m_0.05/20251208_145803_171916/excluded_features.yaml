@@ -68,7 +68,6 @@ always_exclude:
   - time_in_profit_5m
   - time_in_profit_60m
   - vol_15m
-  - vol_60m
   - vol_clustering_15m
   - vol_over_vol_15m
   - vol_over_vol_60m

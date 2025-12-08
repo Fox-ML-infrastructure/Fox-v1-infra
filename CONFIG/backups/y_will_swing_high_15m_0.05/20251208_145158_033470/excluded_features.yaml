@@ -39,7 +39,6 @@ always_exclude:
   keyword_patterns:
   - first_touch
   exact_patterns:
-  - _day
   - _hour
   - _month
   - adx_14
@@ -68,7 +67,6 @@ always_exclude:
   - time_in_profit_5m
   - time_in_profit_60m
   - vol_15m
-  - vol_60m
   - vol_clustering_15m
   - vol_over_vol_15m
   - vol_over_vol_60m

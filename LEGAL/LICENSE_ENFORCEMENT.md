@@ -1,0 +1,238 @@
+# Fox ML Infrastructure — License Enforcement & Compliance
+
+This document outlines license enforcement procedures, compliance requirements, and what to expect if you use FoxML Core in production or for commercial purposes.
+
+---
+
+## 1. Overview
+
+**FoxML Core is dual-licensed:**
+- **AGPL-3.0** — For non-commercial academic and personal research use
+- **Commercial License** — Required for any organizational, commercial, or production use
+
+**If you use this software in production, you MUST have a commercial license.**
+
+---
+
+## 2. Production Use Requirements
+
+### 2.1 What Requires a Commercial License
+
+**You MUST purchase a commercial license if you:**
+
+- Use FoxML Core in any business, organization, or institution
+- Deploy the software internally for operational purposes
+- Use it for trading, investment analysis, or financial decision-making
+- Integrate it into proprietary systems or workflows
+- Use it in any revenue-generating activity
+- Modify it for internal commercial use
+- Deploy it in production environments
+- Use it to provide services to third parties
+
+**See `COMMERCIAL_LICENSE.md` and `LEGAL/CLA.md` for detailed terms.**
+
+### 2.2 Production Use Notification
+
+**If you are using FoxML Core in production, you must:**
+
+1. **Purchase a commercial license** — Contact jenn.lewis5789@gmail.com
+2. **Complete the compliance form** — See `LEGAL/PRODUCTION_USE_NOTIFICATION.md`
+3. **Maintain license compliance** — Ensure all use is covered by your license
+
+**Failure to obtain a commercial license for production use is a violation of the AGPL-3.0 license terms.**
+
+---
+
+## 3. Fork Notification Requirements
+
+### 3.1 Internal Forks
+
+**If you fork this repository internally:**
+
+- You must have a commercial license
+- Internal forks are permitted under commercial license terms
+- You must maintain copyright notices and license headers
+- You may not redistribute or publish your fork
+
+### 3.2 Public Forks
+
+**If you create a public fork:**
+
+- You must comply with AGPL-3.0 requirements
+- You must maintain all copyright notices
+- You must include the original LICENSE file
+- You must disclose all modifications if deployed over a network
+- **Commercial use of public forks still requires a commercial license**
+
+**See `DUAL_LICENSE.md` for details on dual licensing.**
+
+---
+
+## 4. SaaS / Hosted Service Restrictions
+
+### 4.1 Prohibited Use
+
+**You MAY NOT:**
+
+- Host FoxML Core as a Software-as-a-Service (SaaS) without explicit written permission
+- Provide it as a Platform-as-a-Service (PaaS) without a commercial license
+- Offer hosted access to third parties without a commercial license
+- Create multi-tenant hosted environments without a commercial license
+
+**See `COMMERCIAL_LICENSE.md` Section 4 (Restrictions) for details.**
+
+### 4.2 SaaS Licensing
+
+**If you want to offer FoxML Core as a hosted service:**
+
+- Contact jenn.lewis5789@gmail.com for custom licensing terms
+- SaaS deployments require separate commercial agreements
+- Pricing is based on usage, scale, and deployment model
+
+---
+
+## 5. Compliance Verification
+
+### 5.1 Audit Rights
+
+**Fox ML Infrastructure LLC reserves the right to:**
+
+- Audit license compliance (see `LEGAL/CLA.md` Section 13)
+- Verify production use and deployment
+- Request compliance documentation
+- Terminate licenses for non-compliance
+
+**Audits are conducted with 30 days' written notice and are limited to compliance verification.**
+
+### 5.2 Self-Reporting
+
+**If you discover non-compliance:**
+
+- Contact jenn.lewis5789@gmail.com immediately
+- Self-reporting may result in reduced penalties
+- We will work with you to achieve compliance
+- Retroactive licensing may be available
+
+---
+
+## 6. Enforcement Procedures
+
+### 6.1 Violation Detection
+
+**Violations may be detected through:**
+
+- Public code audits
+- GitHub fork analysis
+- Compliance audits
+- Self-reporting
+- Third-party reports
+
+### 6.2 Enforcement Steps
+
+**If a violation is detected:**
+
+1. **Initial contact** — We will contact you to discuss compliance
+2. **Remediation period** — You will have 30 days to achieve compliance
+3. **License purchase** — You may purchase a commercial license retroactively
+4. **Termination** — Continued non-compliance may result in license termination
+
+**We prefer to resolve violations through licensing rather than legal action.**
+
+---
+
+## 7. Common Violations
+
+### 7.1 Typical Violations
+
+**Common license violations include:**
+
+- Using FoxML Core in production without a commercial license
+- Hosting as SaaS without permission
+- Removing copyright notices
+- Redistributing without proper licensing
+- Using in high-risk environments without authorization
+
+### 7.2 How to Avoid Violations
+
+**To ensure compliance:**
+
+- Purchase a commercial license before production use
+- Read and understand the license terms
+- Contact us with questions about your use case
+- Maintain copyright notices in all files
+- Do not redistribute or host as SaaS without permission
+
+---
+
+## 8. Legal Consequences
+
+### 8.1 AGPL Violations
+
+**Violating AGPL-3.0 terms may result in:**
+
+- Loss of license rights
+- Requirement to cease use
+- Potential copyright infringement claims
+- Legal action for willful violations
+
+### 8.2 Commercial License Violations
+
+**Violating commercial license terms may result in:**
+
+- Immediate license termination
+- Loss of access to updates and support
+- Potential breach of contract claims
+- Legal action for material breaches
+
+---
+
+## 9. Getting Help
+
+### 9.1 Questions About Compliance
+
+**If you have questions about compliance:**
+
+- Email: jenn.lewis5789@gmail.com
+- Subject: License Compliance Inquiry
+- Include: Your use case, deployment model, and organization size
+
+### 9.2 Purchasing a License
+
+**To purchase a commercial license:**
+
+- See `LEGAL/SUBSCRIPTIONS.md` for pricing
+- Email: jenn.lewis5789@gmail.com
+- Subject: Commercial License Request
+- Include: Organization name, size, and use case
+
+---
+
+## 10. Summary
+
+**Key Points:**
+
+1. **Production use requires a commercial license**
+2. **SaaS hosting requires explicit permission**
+3. **Forks must maintain copyright notices**
+4. **Compliance audits may be conducted**
+5. **Self-reporting is encouraged**
+6. **We prefer licensing over legal action**
+
+**This document is designed to help you understand compliance requirements and avoid violations. If you have questions, contact us.**
+
+---
+
+## Related Documents
+
+- `COMMERCIAL_LICENSE.md` — Commercial license terms
+- `LEGAL/CLA.md` — Commercial License Agreement
+- `DUAL_LICENSE.md` — Dual licensing overview
+- `LEGAL/SUBSCRIPTIONS.md` — Pricing and licensing process
+- `LEGAL/PRODUCTION_USE_NOTIFICATION.md` — Production use notification form
+- `LEGAL/COMPLIANCE_FAQ.md` — Frequently asked compliance questions
+
+---
+
+**Contact:** jenn.lewis5789@gmail.com  
+**Subject:** License Compliance Inquiry
+
