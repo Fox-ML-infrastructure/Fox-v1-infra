@@ -124,3 +124,10 @@ After Phase 1 completes:
    cd ../phase2_core_models
    python run_phase2.py --metadata-dir ../metadata ...
    ```
+
+## Related Documentation
+
+- [Experiments Workflow](EXPERIMENTS_WORKFLOW.md) - Complete workflow overview
+- [Experiments Quick Start](EXPERIMENTS_QUICK_START.md) - Quick start guide
+- [Experiments Operations](EXPERIMENTS_OPERATIONS.md) - Detailed operations guide
+- [Feature Selection Tutorial](FEATURE_SELECTION_TUTORIAL.md) - General feature selection tutorial

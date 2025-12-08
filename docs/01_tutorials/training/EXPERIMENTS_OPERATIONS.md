@@ -456,5 +456,8 @@ After each phase:
 
 ## Related Documentation
 
-- `../TRAINING_OPTIMIZATION_GUIDE.md`: Optimization guide
-- `../FEATURE_SELECTION_GUIDE.md`: Feature selection guide
+- [Experiments Workflow](EXPERIMENTS_WORKFLOW.md) - Workflow overview
+- [Experiments Quick Start](EXPERIMENTS_QUICK_START.md) - Quick start guide
+- [Phase 1: Feature Engineering](PHASE1_FEATURE_ENGINEERING.md) - Phase 1 documentation
+- [Training Optimization](../../03_technical/implementation/TRAINING_OPTIMIZATION_GUIDE.md) - Optimization guide
+- [Feature Selection Implementation](../../03_technical/implementation/FEATURE_SELECTION_GUIDE.md) - Feature selection guide

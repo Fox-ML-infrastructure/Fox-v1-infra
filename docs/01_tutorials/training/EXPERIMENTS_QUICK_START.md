@@ -160,10 +160,10 @@ feature_selection:
 
 ## Related Documentation
 
-- Overview: `README.md`
-- Detailed Guide: `OPERATIONS_GUIDE.md`
-- Implementation: `IMPLEMENTATION_SUMMARY.md`
-- Phase 1: `phase1_feature_engineering/README.md`
+- [Experiments Workflow](EXPERIMENTS_WORKFLOW.md) - Complete workflow overview
+- [Experiments Operations](EXPERIMENTS_OPERATIONS.md) - Detailed step-by-step guide
+- [Phase 1: Feature Engineering](PHASE1_FEATURE_ENGINEERING.md) - Phase 1 documentation
+- [Experiments Implementation](../../03_technical/implementation/EXPERIMENTS_IMPLEMENTATION.md) - Implementation details
 
 ## Performance Comparison
 
