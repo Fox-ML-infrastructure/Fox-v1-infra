@@ -115,8 +115,7 @@ See:
 
 I provide advanced engineering and research infrastructure consulting for organizations requiring specialized ML, quantitative, or HPC systems.
 
-For full policies and contracting information:  
-[Fox ML Infrastructure — Contracting Docs](https://github.com/Fox-ML-infrastructure/Contracting_Docs) 
+For full policies and contracting information, see the [`legal/`](legal/) directory in this repository. 
 
 ### Core Expertise
 
