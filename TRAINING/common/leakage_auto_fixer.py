@@ -404,8 +404,9 @@ class LeakageAutoFixer:
         )
         
         # Backup configs if requested
+        backup_files = []
         if self.backup_configs and not dry_run:
-            self._backup_configs()
+            backup_files = self._backup_configs()
         
         # Group by action type
         exact_matches = []
@@ -449,14 +450,7 @@ class LeakageAutoFixer:
             if updates['feature_registry_updates'].get('rejected_features'):
                 modified_files.append(str(self.feature_registry_path))
             
-            # Get backup files if backups were created
-            if self.backup_configs:
-                import datetime
-                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                backup_files = [
-                    str(self.excluded_features_path.parent / f"{self.excluded_features_path.name}.backup_{timestamp}"),
-                    str(self.feature_registry_path.parent / f"{self.feature_registry_path.name}.backup_{timestamp}")
-                ]
+            # Backup files are already created by _backup_configs() above
         
         # Create AutoFixInfo
         autofix_info = AutoFixInfo(
@@ -475,17 +469,29 @@ class LeakageAutoFixer:
         import shutil
         from datetime import datetime
         
+        # Create backups subdirectory in CONFIG folder
+        backup_dir = self.excluded_features_path.parent / "backups"
+        backup_dir.mkdir(exist_ok=True)
+        
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
+        backup_files = []
+        
         if self.excluded_features_path.exists():
-            backup_path = self.excluded_features_path.with_suffix(f'.yaml.backup_{timestamp}')
+            backup_filename = f"excluded_features.yaml.backup_{timestamp}"
+            backup_path = backup_dir / backup_filename
             shutil.copy2(self.excluded_features_path, backup_path)
+            backup_files.append(str(backup_path))
             logger.info(f"Backed up excluded_features.yaml to {backup_path}")
         
         if self.feature_registry_path.exists():
-            backup_path = self.feature_registry_path.with_suffix(f'.yaml.backup_{timestamp}')
+            backup_filename = f"feature_registry.yaml.backup_{timestamp}"
+            backup_path = backup_dir / backup_filename
             shutil.copy2(self.feature_registry_path, backup_path)
+            backup_files.append(str(backup_path))
             logger.info(f"Backed up feature_registry.yaml to {backup_path}")
+        
+        return backup_files
     
     def _apply_excluded_features_updates(self, updates: Dict[str, Any]):
         """Apply updates to excluded_features.yaml."""
