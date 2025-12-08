@@ -2197,6 +2197,14 @@ def evaluate_target_predictability(
     from TRAINING.utils.data_interval import detect_interval_from_dataframe
     detected_interval = detect_interval_from_dataframe(sample_df, timestamp_column='ts', default=5)
     
+    # Extract target horizon for error messages
+    from TRAINING.utils.leakage_filtering import _load_leakage_config, _extract_horizon
+    leakage_config = _load_leakage_config()
+    target_horizon_minutes = _extract_horizon(target_column, leakage_config) if target_column else None
+    target_horizon_bars = None
+    if target_horizon_minutes is not None and detected_interval > 0:
+        target_horizon_bars = int(target_horizon_minutes // detected_interval)
+    
     # Use target-aware filtering with registry validation
     safe_columns = filter_features_for_target(
         all_columns, 
@@ -2212,12 +2220,13 @@ def evaluate_target_predictability(
     # CRITICAL: Check if we have enough features to train
     MIN_FEATURES_REQUIRED = 5  # Minimum features needed for meaningful training
     if len(safe_columns) < MIN_FEATURES_REQUIRED:
+        horizon_info = f"horizon={target_horizon_bars} bars" if target_horizon_bars is not None else "this horizon"
         logger.error(
             f"❌ INSUFFICIENT FEATURES: Only {len(safe_columns)} features remain after filtering "
             f"(minimum required: {MIN_FEATURES_REQUIRED}). "
             f"This target may not be predictable with current feature set. "
             f"Consider:\n"
-            f"  1. Adding more features to CONFIG/feature_registry.yaml with allowed_horizons including {target_horizon_bars}\n"
+            f"  1. Adding more features to CONFIG/feature_registry.yaml with allowed_horizons including {horizon_info}\n"
             f"  2. Relaxing feature registry rules for short-horizon targets\n"
             f"  3. Checking if excluded_features.yaml is too restrictive\n"
             f"  4. Skipping this target and focusing on targets with longer horizons"
