@@ -168,7 +168,7 @@ FoxML_Core/
 ---------------------------------------------------------------------
 
 ## Contact
-linkedin: https://www.linkedin.com/in/jennifer-lewis-382b46392?utm_source=share_via&utm_content=profile&utm_medium=member_ios
+linkedin: https://www.linkedin.com/in/jennifer-lewis-3434b3315/
 
 For consulting, enterprise licensing, or organizational engagements:  
 **jenn.lewis5789@gmail.com**
