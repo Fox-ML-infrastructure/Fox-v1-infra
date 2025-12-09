@@ -21,7 +21,7 @@ Commercial license pricing is aligned with enterprise quant infrastructure stand
 
 **Any business or internal use by or for a commercial organization requires a commercial license**, regardless of whether the use directly generates revenue, is experimental, is a proof of concept, or is claimed to be "non-commercial" or "research-only." See `COMMERCIAL_LICENSE.md` Section 1 for the complete definition of "Commercial Use."
 
-**FOR THE AVOIDANCE OF DOUBT:** There is no "free trial" or "evaluation period" for commercial use. Any use within a business context requires a commercial license from the start. The 30-day evaluation period described in `LEGAL/SUPPORT_POLICY.md` is for non-commercial evaluation only and does not permit commercial use.
+**FOR THE AVOIDANCE OF DOUBT:** There is no "free trial" or "evaluation period" for Commercial Use (as defined in `COMMERCIAL_LICENSE.md` Section 1). Any use within a business context requires a commercial license from the start. The 30-day evaluation period described in `LEGAL/SUPPORT_POLICY.md` is for non-commercial evaluation only and does not permit Commercial Use.
 
 ### Academic & Personal Use (AGPL-3.0 Only)
 
