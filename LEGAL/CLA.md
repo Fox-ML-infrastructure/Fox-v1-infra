@@ -46,6 +46,14 @@ Material Breach
 
 A breach that is significant, substantial, or has a material adverse effect on the other party's rights or interests under this Agreement, including but not limited to: unauthorized distribution, reverse engineering, benchmarking without consent, or use in violation of export controls.
 
+Competing Infrastructure Service
+
+Any software, platform, hosted service, or product whose primary purpose is to allow third parties to design, run, or manage their own machine learning, quantitative research, or trading workflows, including experiment orchestration, feature/target management, model training, evaluation, and related infrastructure.
+
+Commercial Use
+
+Any use of the Software by or for the benefit of a business, organization, or other legal entity, including: (a) internal use in any environment (development, testing, staging, or production), including but not limited to: operational tools, dashboards, research pipelines, proofs of concept, evaluations, pilot projects, or experimental use; (b) use that directly or indirectly supports revenue-generating activities, products, or services, including but not limited to: trading, investment analysis, financial decision-making, client services, or any for-profit activity; or (c) use by employees, contractors, interns, or Affiliates in the scope of their work for such entity, regardless of whether such use directly generates revenue or is labeled as "non-revenue," "experimental," or "research-only."
+
 2. Grant of Rights
 
 Upon receipt of payment and subject to compliance with this Agreement, Licensor grants Licensee a non-exclusive, non-transferable, non-sublicensable, revocable license to:
@@ -82,9 +90,11 @@ This license DOES NOT permit Licensee to:
 
 Redistribute the Software or any Derivative Works.
 
-Provide the Software, or any substantially similar functionality, as a hosted service to third parties (including SaaS, PaaS, or multi-tenant environments) where external users access functionality primarily provided by the Software.
+Provide the Software, or any Competing Infrastructure Service built using the Software, as a hosted or managed service to third parties (including SaaS, PaaS, or multi-tenant platforms).
 
-Build or market a product whose primary purpose is to offer FoxML-like ML/quant infrastructure as a general-purpose platform to third parties.
+Build, market, or operate a Competing Infrastructure Service that uses the Software or any derivative of the Software.
+
+Use the Software to offer a product or service whose primary purpose is to allow third parties to run their own experiments, models, or workflows on infrastructure powered by the Software.
 
 Provide the Software or derivatives to clients or external users.
 
@@ -95,18 +105,6 @@ Publish or disclose performance benchmarks or comparative tests involving the So
 Sublicense, rent, lease, sell, share, loan, or otherwise make the Software available to any third party (including but not limited to: clients, partners, vendors, or other entities) unless such third party has its own valid commercial license. Each legal entity that uses the Software must have its own license. Sharing a single license across multiple entities, even if related, is prohibited and constitutes a Material Breach.
 
 Reverse engineer, decompile, disassemble, or otherwise attempt to derive or access the source code, underlying ideas, algorithms, file formats, or non-public APIs of the Software, or any trade secrets embodied therein, except to the extent expressly permitted by applicable law notwithstanding a contractual restriction.
-
-Use the Software to build a competing ML/quant infrastructure product.
-
-**No Competing Service.**
-
-Licensee shall not use the Software to develop, host, or provide any software-as-a-service, managed service, platform, or other offering that exposes to third parties functionality that is substantially similar to the Software, including without limitation:
-
-(a) a hosted quantitative research or model-training platform for third parties;
-
-(b) a multi-tenant or shared service that allows third parties to run experiments, training, or feature selection workflows powered by the Software; or
-
-(c) an API, SDK, or other interface that provides third parties with direct or indirect access to the Software's core infrastructure capabilities.
 
 For clarity, Licensee may use the Software to build and operate its own internal trading, research, or analytics systems and to provide outputs (e.g., analytics, reports, trading decisions) to its own clients, provided such clients do not receive direct or indirect access to the Software itself, including but not limited to: (i) access to the Software's APIs, (ii) ability to execute code or workflows within the Software, (iii) access to the Software's user interface, or (iv) any other means of interacting with or controlling the Software. Licensee may provide data inputs to the Software and receive outputs from the Software for delivery to clients, but clients may not themselves interact with the Software.
 

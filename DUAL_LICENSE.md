@@ -25,7 +25,7 @@ FoxML Core is dual-licensed under two distinct options. This document is a **hig
 - You are willing and able to comply with AGPL-3.0 source code disclosure requirements.
 
 **IMPORTANT RESTRICTIONS:**
-- **NO COMMERCIAL USE:** The AGPL-3.0 version may NOT be used for any commercial purpose, including but not limited to: business operations, trading, investment decisions, client services, freelance work, consulting, or any revenue-generating activity. Commercial use of the AGPL-3.0 version is a violation of the license terms and may result in copyright infringement claims.
+- **NO COMMERCIAL USE:** The AGPL-3.0 version may NOT be used for any Commercial Use (as defined in `COMMERCIAL_LICENSE.md` Section 1), including but not limited to: business operations, trading, investment decisions, client services, freelance work, consulting, or any revenue-generating activity. Commercial Use of the AGPL-3.0 version is a violation of the license terms and may result in copyright infringement claims.
 - **NO BUSINESS CONTEXT:** The AGPL-3.0 version may NOT be used within any business, organization, or commercial entity, even for "research" or "experimental" purposes.
 - **RETROACTIVE PAYMENT:** If you have used the Software commercially under AGPL-3.0, you must immediately obtain a commercial license and may be required to pay retroactive licensing fees.
 
