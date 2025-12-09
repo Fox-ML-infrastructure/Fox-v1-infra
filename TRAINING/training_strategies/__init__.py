@@ -64,8 +64,10 @@ from TRAINING.training_strategies.setup import (
     TF_FAMS,
     TORCH_FAMS,
     CPU_FAMS,
-    ALL_FAMILIES,
     FAMILY_CAPS,
+)
+from TRAINING.training_strategies.utils import (
+    ALL_FAMILIES,
 )
 
 __all__ = [
