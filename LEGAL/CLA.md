@@ -48,7 +48,7 @@ A breach that is significant, substantial, or has a material adverse effect on t
 
 2. Grant of Rights
 
-Upon receipt of payment and subject to compliance with this Agreement, Licensor grants Licensee a non-exclusive, non-transferable, revocable license to:
+Upon receipt of payment and subject to compliance with this Agreement, Licensor grants Licensee a non-exclusive, non-transferable, non-sublicensable, revocable license to:
 
 Use the Software for Internal Use.
 

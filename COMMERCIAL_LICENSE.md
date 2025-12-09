@@ -40,15 +40,20 @@ This Commercial License is intended for trading firms, hedge funds, financial in
 
 **Business / Internal Use:** Any use of the Software within a company, organization, or other legal entity (including internal tools, proofs of concept, evaluations, pilot projects, or use by employees, contractors, interns, or affiliates) requires a commercial license, regardless of whether the use directly generates revenue. See `LEGAL/SUBSCRIPTIONS.md` for complete definitions.
 
-Non-commercial academic or personal research use of the open-source version remains available under the AGPL-3.0 license, subject to the definitions in `LEGAL/SUBSCRIPTIONS.md`. Academic research conducted for, funded by, or operationally integrated into a commercial organization's activities requires a commercial license. This Commercial License is intended for organizations that wish to:
+Non-commercial academic or personal research use of the open-source version remains available under the AGPL-3.0 license, subject to the definitions in `LEGAL/SUBSCRIPTIONS.md`. Academic research conducted for, funded by, sponsored by, or operationally integrated into a commercial organization's activities requires a commercial license.
+
+**IMPORTANT — AGPL-3.0 Commercial Use Prohibition:**
+The AGPL-3.0 version of the Software may NOT be used for any commercial purpose. Commercial use of the AGPL-3.0 version is a violation of the AGPL-3.0 license terms and may result in copyright infringement claims. If you have used the Software commercially under AGPL-3.0, you must immediately obtain a commercial license and may be required to pay retroactive licensing fees for the entire period of unauthorized commercial use.
+
+This Commercial License is intended for organizations that wish to:
   (a) avoid AGPL copyleft obligations in commercial / internal systems, or
   (b) obtain additional rights or assurances not provided by AGPL-3.0.
 
-Nothing in this Commercial License limits any rights granted under AGPL-3.0 for copies of the Software obtained and used under that license.
+Nothing in this Commercial License limits any rights granted under AGPL-3.0 for copies of the Software obtained and used **solely** for qualifying non-commercial academic or personal research use as defined in `LEGAL/SUBSCRIPTIONS.md`. Any commercial use requires this Commercial License.
 
 ## 2. GRANT OF LICENSE
 
-Subject to payment of applicable fees and execution of a commercial agreement, the Licensor grants the Licensee a non-exclusive, non-transferable, worldwide right to:
+Subject to payment of applicable fees and execution of a commercial agreement, the Licensor grants the Licensee a non-exclusive, non-transferable, non-sublicensable, worldwide right to:
 
 - Use the Software for Commercial Use
 - Modify the Software for internal commercial use
@@ -74,7 +79,8 @@ Authorized Users may include Licensee's employees and individual contractors (in
 
 For the avoidance of doubt, a Contractor may not use a single instance of the Software, or the same credentials or license, to provide services to multiple clients unless each such client is itself a separately licensed customer of Licensor under its own agreement.
 
-No sublicensing rights are granted unless explicitly permitted in a separate SOW.
+**No License Sharing or Transfer.**
+No sublicensing rights are granted unless explicitly permitted in a separate SOW. Licensee may not share, loan, rent, lease, or otherwise make the Software available to any third party (including but not limited to: clients, partners, vendors, or other entities) unless such third party has its own valid commercial license. Each legal entity that uses the Software must have its own license. Sharing a single license across multiple entities, even if related, is prohibited and constitutes a Material Breach.
 
 **Open-Source Use Unaffected.**
 

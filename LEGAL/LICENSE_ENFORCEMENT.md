@@ -110,8 +110,10 @@ This document outlines license enforcement procedures, compliance requirements, 
 
 - Contact jenn.lewis5789@gmail.com immediately (within 24 hours of discovery)
 - Self-reporting within 30 days of the violation may result in reduced penalties (typically limited to payment of retroactive licensing fees plus a compliance fee of up to 25% of the retroactive fees, rather than full enforcement actions)
+- **Retroactive payment required:** If you have used the Software commercially without a license, you must pay retroactive licensing fees for the entire period of unauthorized commercial use, calculated from the date commercial use began
 - We will work with you to achieve compliance
-- Retroactive licensing may be available for the period of non-compliance, subject to payment of applicable fees and execution of a commercial license agreement
+- Retroactive licensing is available for the period of non-compliance, subject to payment of applicable fees (including retroactive fees) and execution of a commercial license agreement
+- **No free trial:** There is no grace period or "free trial" for commercial use. Payment is required from the first day of commercial use
 
 ---
 
