@@ -37,7 +37,7 @@ Phase 1 functioning properly - Ranking and selection pipelines unified with cons
 - **Unified CatBoost builder** — CatBoost in ranking now uses same target type detection and loss function selection as feature selection. Auto-detects classification vs regression and sets appropriate `loss_function` (`Logloss`/`MultiClass`/`RMSE`) with YAML override support.
 - **Shared target utilities** — New `TRAINING/utils/target_utils.py` module with reusable helpers (`is_classification_target()`, `is_binary_classification_target()`, `is_multiclass_target()`) used consistently across ranking and selection.
 
-See [`docs/01_tutorials/training/RANKING_SELECTION_CONSISTENCY.md`](../01_tutorials/training/RANKING_SELECTION_CONSISTENCY.md) for complete details.
+See [`DOCS/01_tutorials/training/RANKING_SELECTION_CONSISTENCY.md`](../01_tutorials/training/RANKING_SELECTION_CONSISTENCY.md) for complete details.
 
 **Boruta Statistical Gatekeeper**
 
@@ -99,7 +99,7 @@ See [`docs/01_tutorials/training/RANKING_SELECTION_CONSISTENCY.md`](../01_tutori
   - Type checking (paths converted to `Path` objects)
   - Clear error messages for invalid configs
 
-See [`docs/02_reference/configuration/MODULAR_CONFIG_SYSTEM.md`](configuration/MODULAR_CONFIG_SYSTEM.md) for complete documentation.
+See [`DOCS/02_reference/configuration/MODULAR_CONFIG_SYSTEM.md`](configuration/MODULAR_CONFIG_SYSTEM.md) for complete documentation.
 
 **Structured Logging Configuration**
 
@@ -206,7 +206,7 @@ See [`docs/02_reference/configuration/MODULAR_CONFIG_SYSTEM.md`](configuration/M
   - Compares feature importances between full vs. safe feature sets
   - Identifies suspicious features with high importance in full model but low in safe model
 
-See [`docs/03_technical/research/LEAKAGE_ANALYSIS.md`](../03_technical/research/LEAKAGE_ANALYSIS.md) and [`docs/02_reference/configuration/SAFETY_LEAKAGE_CONFIGS.md`](configuration/SAFETY_LEAKAGE_CONFIGS.md) for complete documentation.
+See [`DOCS/03_technical/research/LEAKAGE_ANALYSIS.md`](../03_technical/research/LEAKAGE_ANALYSIS.md) and [`DOCS/02_reference/configuration/SAFETY_LEAKAGE_CONFIGS.md`](configuration/SAFETY_LEAKAGE_CONFIGS.md) for complete documentation.
 
 #### Documentation & Legal
 
@@ -246,7 +246,7 @@ See [`ROADMAP.md`](../../ROADMAP.md) for complete roadmap.
 - `PRODUCTION_USE_NOTIFICATION.md` – Production use notification form
 - `COPYRIGHT_NOTICE.md` – Copyright notice requirements
 
-See [`docs/LEGAL_INDEX.md`](../LEGAL_INDEX.md) for complete legal documentation index.
+See [`DOCS/LEGAL_INDEX.md`](../LEGAL_INDEX.md) for complete legal documentation index.
 
 #### Commercial
 
@@ -384,7 +384,7 @@ See [`COMMERCIAL_LICENSE.md`](../../COMMERCIAL_LICENSE.md) for complete pricing 
 ### Documentation
 
 - Roadmap restructured for external consumption (see [`ROADMAP.md`](../../ROADMAP.md))
-- Modular configuration system documentation (see [`docs/02_reference/configuration/MODULAR_CONFIG_SYSTEM.md`](configuration/MODULAR_CONFIG_SYSTEM.md))
+- Modular configuration system documentation (see [`DOCS/02_reference/configuration/MODULAR_CONFIG_SYSTEM.md`](configuration/MODULAR_CONFIG_SYSTEM.md))
 - Documentation cleanup and consolidation — Integrated old folders, fixed cross-references, reorganized structure
 - Comprehensive cross-linking and navigation improvements
 
