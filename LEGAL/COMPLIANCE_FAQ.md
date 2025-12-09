@@ -243,11 +243,11 @@
 ### Q9.1: How much does a commercial license cost?
 
 **A:** Pricing is based on organization size:
-- 1–10 employees: $90,000/year
-- 11–50 employees: $250,000/year
-- 51–250 employees: $500,000/year
-- 251–1000 employees: $1,000,000/year
-- 1000+ employees: $2,500,000–$10,000,000/year (custom quote)
+- 1–10 employees: $150,000/year
+- 11–50 employees: $350,000/year
+- 51–250 employees: $750,000/year
+- 251–1000 employees: $1,500,000–$2,500,000/year
+- 1000+ employees: $5,000,000–$12,000,000+ /year (custom enterprise quote)
 
 **See `LEGAL/SUBSCRIPTIONS.md` for complete pricing information.**
 

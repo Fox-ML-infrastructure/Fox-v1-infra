@@ -295,18 +295,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commercial
 - Commercial license pricing updated to enterprise quant infrastructure standards:
-  - 1–10 employees: $90,000/year
-  - 11–50 employees: $250,000/year
-  - 51–250 employees: $500,000/year
-  - 251–1000 employees: $1,000,000/year
-  - 1000+ employees: $2,500,000–$10,000,000/year (custom quote)
+  - 1–10 employees: $150,000/year
+  - 11–50 employees: $350,000/year
+  - 51–250 employees: $750,000/year
+  - 251–1000 employees: $1,500,000–$2,500,000/year
+  - 1000+ employees: $5,000,000–$12,000,000+ /year (custom enterprise quote)
 - Optional enterprise add-ons:
-  - Dedicated Support SLA: $3,500–$12,000/month
-  - Custom Integration & On-Prem Deployment: $50,000–$300,000 one-time
-  - Onboarding & Implementation: $15,000–$50,000 one-time
-  - Private Slack / Direct Founder Access: $18,000–$60,000/year
+  - Dedicated Support SLA: $5,000–$20,000/month
+  - Integration & On-Prem Setup: $100,000–$500,000 one-time
+  - Onboarding: $25,000–$75,000 one-time
+  - Private Slack / Direct Founder Access: $30,000–$120,000/year
   - Additional User Seats: $500–$2,000 per seat/year
-  - Adaptive Intelligence Layer (Tier 5 only): +$1,000,000/year
+  - Adaptive Intelligence Layer (Tier 5 only): +$2,000,000–$5,000,000/year
 
 ### Documentation
 - **Modular configuration system documentation**:
