@@ -125,7 +125,7 @@ See:
 
 - [`LEGAL/COMMERCIAL_USE.md`](LEGAL/COMMERCIAL_USE.md) for commercial license terms
 - [`LEGAL/SUBSCRIPTIONS.md`](LEGAL/SUBSCRIPTIONS.md) for detailed pricing and add-ons
-- [`LEGAL/COMMERCIAL_LICENSE.md`](LEGAL/COMMERCIAL_LICENSE.md) for the full FoxML Core Commercial License text
+- [`COMMERCIAL_LICENSE.md`](COMMERCIAL_LICENSE.md) for the full FoxML Core Commercial License text
 
 ---------------------------------------------------------------------
 
