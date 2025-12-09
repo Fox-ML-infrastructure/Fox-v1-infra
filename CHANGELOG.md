@@ -310,6 +310,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Adaptive Intelligence Layer (Tier 5 only): +$2,000,000–$5,000,000/year
 
 ### Documentation
+- **Roadmap restructured for external consumption**:
+  - Added "What Works Today" section highlighting immediate production-ready capabilities
+  - Renamed Phase 3.5 to Phase 4 (multi-GPU & NVLink exploration)
+  - Reorganized development priorities into near-term focus and longer-term/R&D categories
+  - Removed date-specific targets in favor of general development guidelines
+  - Added branding clarification (FoxML Core vs Fox ML Infrastructure)
+  - Refined wording throughout for external/enterprise consumption:
+    - "Production-ready" → "production-grade ML infrastructure"
+    - "Testing GPU models" → "GPU + ranking regression testing"
+    - Updated Module Status focus to match current priorities
+    - Added general "ahead of schedule" note in Development Approach
+  - Roadmap now clearly communicates that Phases 0–2 are complete/substantially complete, with remaining work strategically sequenced
 - **Modular configuration system documentation**:
   - Created `MODULAR_CONFIG_SYSTEM.md` - Complete guide to new config system
   - Updated `CLI_REFERENCE.md` with `--max-targets-to-evaluate` and `--experiment-config` options
