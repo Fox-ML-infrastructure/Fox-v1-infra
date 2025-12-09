@@ -39,8 +39,8 @@ if conda_prefix:
 # os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")  # Removed - show warnings
 # os.environ.setdefault("TF_LOGGING_VERBOSITY", "ERROR")  # Removed - show warnings
 
-# project root likely: .../secure/trader (parent of TRAINING)
-_PROJECT_ROOT = Path(__file__).resolve().parents[1]
+# project root: TRAINING/training_strategies/utils.py -> parents[2] = repo root
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 # Make sure Python can import `common`, `model_fun`, etc.
 if str(_PROJECT_ROOT) not in sys.path:
