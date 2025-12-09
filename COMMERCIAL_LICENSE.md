@@ -305,14 +305,66 @@ This License, together with any separate signed commercial agreement or Statemen
 
 ## 23. SURVIVAL
 
-Sections 4 (Restrictions), 6 (No Warranty / Limitation of Liability), 7 (Indemnity), 11 (Audit Rights), 12 (Export Control Compliance), 17 (Dispute Resolution), 18 (Governing Law), 20 (Data Handling and Confidentiality), 21 (Severability), 22 (Entire Agreement), and this Section 23 (Survival) will survive termination or expiration of this License.
+Sections 4 (Restrictions), 6 (No Warranty / Limitation of Liability), 7 (Indemnity), 10 (Fees), 11 (Audit Rights), 12 (Export Control Compliance), 17 (Dispute Resolution), 18 (Governing Law), 20 (Data Handling and Confidentiality), 21 (Severability), 22 (Entire Agreement), 24 (Notices), and this Section 23 (Survival) will survive termination or expiration of this License.
 
-## 24. CONTACT
+## 24. NOTICES
+
+All notices, requests, consents, claims, demands, and other communications under this License ("Notices") must be in writing and addressed to the parties at the addresses set forth below (or to such other address that may be designated by the receiving party from time to time in accordance with this section).
+
+**To Licensor:**
+Jennifer Lewis  
+Fox ML Infrastructure LLC  
+Email: jenn.lewis5789@gmail.com  
+Subject: Fox Infrastructure Licensing Inquiry
+
+**To Licensee:**
+The address specified in the Ordering Documents or as otherwise provided by Licensee in writing.
+
+Notices sent:
+- By email will be deemed received on the date sent (if sent during business hours) or the next business day
+- By certified mail, return receipt requested, will be deemed received on the date of delivery shown on the return receipt
+- By overnight courier will be deemed received on the next business day after deposit with the courier
+
+## 25. MISCELLANEOUS
+
+**Relationship of Parties.**
+
+The parties are independent contractors. This License does not create a partnership, franchise, joint venture, agency, fiduciary, or employment relationship between the parties.
+
+**Headings.**
+
+The headings in this License are for convenience only and do not affect the interpretation of this License.
+
+**Language.**
+
+This License is executed in the English language. Any translation of this License is for convenience only and the English version shall control in the event of any conflict.
+
+**Third-Party Beneficiaries.**
+
+This License is for the sole benefit of the parties and their respective successors and permitted assigns. Nothing in this License, express or implied, is intended to or shall confer upon any other person or entity any legal or equitable right, benefit, or remedy of any nature whatsoever under or by reason of this License.
+
+**Counterparts.**
+
+This License may be executed in counterparts, each of which will be deemed an original, but all of which together will constitute one and the same instrument. Electronic signatures (including signatures delivered by email in PDF format) will be deemed original signatures for all purposes.
+
+**Waiver of Jury Trial.**
+
+TO THE EXTENT PERMITTED BY APPLICABLE LAW, EACH PARTY IRREVOCABLY WAIVES ANY AND ALL RIGHT TO TRIAL BY JURY IN ANY LEGAL PROCEEDING ARISING OUT OF OR RELATING TO THIS LICENSE OR THE TRANSACTIONS CONTEMPLATED HEREBY.
+
+**Taxes.**
+
+All fees and charges payable by Licensee are exclusive of applicable sales, use, value-added, withholding, or other taxes, duties, or governmental charges. Licensee is responsible for paying all such taxes, duties, and charges (excluding taxes based on Licensor's income), and Licensee will reimburse Licensor for any such taxes, duties, or charges that Licensor is required to collect or pay.
+
+**Third-Party Components.**
+
+The Software may include or be distributed with third-party open-source components that are subject to their own licenses (e.g., MIT, Apache, BSD). Such components are identified in documentation or attribution files. Licensee's rights and obligations with respect to such third-party components are governed by the applicable third-party licenses, not this License. Licensor makes no representations or warranties regarding such third-party components.
+
+## 26. CONTACT
 
 For commercial licensing, enterprise usage, or SOW negotiation, contact:
 
 **Jennifer Lewis**  
-Fox ML Infrastructure  
+Fox ML Infrastructure LLC  
 Email: **jenn.lewis5789@gmail.com**  
 Subject: *Fox Infrastructure Licensing Inquiry*
 
