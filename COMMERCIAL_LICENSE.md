@@ -19,6 +19,8 @@ This Commercial License is intended for trading firms, hedge funds, financial in
 
 "Ordering Documents" means one or more Order Forms or Statements of Work executed by the parties that specify fees, term length, payment schedule, seat limits, and other commercial terms.
 
+"Effective Date" means the earlier of (a) the date payment is received by Licensor, or (b) the date this License is executed by both parties.
+
 "Affiliate" means any entity that directly or indirectly Controls, is Controlled by, or is under common Control with a party, where "Control" means ownership of more than fifty percent (50%) of the voting interests of such entity or the contractual power to direct its management and policies.
 
 "Direct Competitor" means any third party whose primary business includes developing, licensing, or providing machine learning or quantitative trading infrastructure products or services that are substantially similar to the Software (for example, commercial platforms primarily marketed as quantitative research, ML pipeline, or trading infrastructure solutions).
@@ -122,13 +124,25 @@ A material breach of Section 4.1 (Benchmarking) shall be grounds for immediate t
 
 ## 5. TERM AND TERMINATION
 
-This License is effective upon payment and execution of a commercial agreement.
+**Term.**
+
+This License is effective upon payment and execution of a commercial agreement. The initial term is one (1) year from the Effective Date, unless otherwise specified in the Ordering Documents.
+
+**Renewal.**
+
+This License renews automatically for successive one (1) year terms at Licensor's then-current pricing unless either party provides written notice of non-renewal at least thirty (30) days prior to the end of the then-current term. Licensee may cancel renewal by providing written notice as set forth above.
+
+**Termination.**
 
 The Licensor may terminate this License if:
-- the Licensee violates any term of this License,
-- the Licensee fails to pay required fees,
+- the Licensee materially breaches any term of this License and fails to cure such breach within thirty (30) days after written notice from Licensor specifying the breach (except as set forth below),
+- the Licensee fails to pay required fees when due and fails to cure such non-payment within fifteen (15) days after written notice from Licensor,
 - the Licensee attempts unauthorized distribution or sublicensing,
 - the Licensee materially breaches Section 4.1 (Benchmarking), which shall be grounds for immediate termination upon written notice without a cure period.
+
+**Suspension for Non-Payment.**
+
+Licensor may suspend Licensee's access to the Software immediately upon any failure to pay fees when due, without limiting Licensor's right to terminate. Suspension will be lifted upon payment of all overdue amounts plus any applicable late fees.
 
 Upon termination of this Commercial License:
 - all rights granted under this Commercial License revert to Licensor,
@@ -178,6 +192,13 @@ Commercial licensing fees are based on Licensee's organization size, usage tier,
 Specific fees, term length, and payment schedule will be set forth in one or more **Order Forms** or **Statements of Work** executed by the parties (collectively, "Ordering Documents"). If there is any conflict between this License and an Ordering Document regarding fees, the Ordering Document will control.
 
 Standard pricing tiers are published in `LEGAL/SUBSCRIPTIONS.md` for reference, but actual fees are determined by the Ordering Documents.
+
+**Payment Terms.**
+
+Unless otherwise specified in the Ordering Documents:
+- Payment is due within thirty (30) days of invoice date
+- Late payments may incur interest at the rate of one and one-half percent (1.5%) per month, or the maximum rate permitted by law, whichever is lower
+- Failure to pay may result in suspension or termination of rights under this License as set forth in Section 5
 
 ## 11. AUDIT RIGHTS
 
