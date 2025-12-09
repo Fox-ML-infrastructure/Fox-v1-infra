@@ -28,7 +28,6 @@ FoxML Core demonstrates:
 - **Scalable ML workflow design** with config-driven orchestration
 - **High-throughput data processing** with Polars-optimized pipelines
 - **Multi-model training systems** with 20+ model families (GPU-accelerated)
-- **Hybrid C++/Python infrastructure** for performance-critical paths
 - **HPC-compatible orchestration patterns** (NVLink-ready architecture planned)
 
 This is a **research infrastructure system**, not a trading bot or financial product.
@@ -159,7 +158,6 @@ For full policies and contracting information, see the [`LEGAL/`](LEGAL/) direct
 - Feature engineering at scale with registry-based temporal rules  
 
 #### High-Performance Computing
-- C++ inference engines  
 - Multi-node and GPU workflows  
 - **NVLink-ready architecture** (planned: device group abstraction, multi-GPU scheduling)
 - System-level throughput optimization  
@@ -167,7 +165,6 @@ For full policies and contracting information, see the [`LEGAL/`](LEGAL/) direct
 - GPU topology detection and logging  
 
 #### Systems Architecture
-- Hybrid C++/Python system design  
 - Reproducible, config-driven workflows  
 - Enterprise deployment patterns  
 - Code correctness and architecture review  
