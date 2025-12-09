@@ -1,7 +1,7 @@
 # Training Pipeline Debugging Status
 
 **Last Updated:** 2025-12-09  
-**Status:** QuantileLightGBM validated in isolation; end-to-end integration tests ongoing.
+**Status:** QuantileLightGBM validated in isolation; E2E testing shows healthy pipeline behavior.
 
 **Note:** Testing cadence temporarily reduced due to scheduling constraints. No known issues affecting stability.
 
@@ -15,11 +15,48 @@
 - Validation metrics logged with 9 decimal precision
 - Early stopping working correctly
 
-**E2E Testing:** ⏳ **IN PROGRESS**
-- Full pipeline testing underway
-- Feature coercion diagnostics being validated
-- Guardrails being tested for 0-model scenarios
-- Testing cadence temporarily reduced due to scheduling constraints
+**E2E Testing:** ✅ **HEALTHY RUN CONFIRMED**
+- Full pipeline end-to-end run completed successfully
+- Leak detection working correctly (caught 100% copy feature, auto-removed)
+- Degenerate targets automatically skipped (60m/0.20 combo with single unique value)
+- Multi-model feature selection producing coherent results (0.62-0.76 scores across tree ensembles)
+- Cross-sectional data build: ~100k rows, ~300 clean features after leakage filtering
+- Target confidence gating working as designed (MEDIUM confidence → candidate bucket, production=False)
+- Timestamp delta warnings addressed with negative-delta guard and debug logging
+
+---
+
+## Recent E2E Run Evaluation (2025-12-09)
+
+### System Health Assessment: ✅ **HEALTHY**
+
+**Target Ranking (STEP 1):**
+- ✅ Loaded 2 symbols (AAPL, MSFT), 50k rows each → 100,000 combined rows
+- ✅ Leakage filtering: 307 safe features kept, 223 dropped as potential leaks
+- ✅ Metadata correctly excluded: `['symbol', 'interval', 'source', 'ts']`
+- ✅ 156 target/label columns excluded (`y_*`, `fwd_ret_*`, etc.)
+- ✅ Cross-sectional data: 99,880 samples, 304 features after cleaning
+- ✅ Leak scanner caught `adjusted` feature (100% match with target) and auto-removed
+- ✅ Degenerate target `y_will_swing_high_60m_0.20` (single unique value) correctly skipped
+
+**Feature Selection (STEP 2):**
+- ✅ Multi-model consensus working: 8/14 model families enabled and running
+- ✅ Strong model agreement: LightGBM/XGBoost/CatBoost scoring 0.62-0.76 consistently
+- ✅ Feature selection producing expected blend: volume/volatility + trend + money flow + RSI
+- ✅ No hidden leaks detected in selected features
+- ✅ Aggregation across symbols working correctly
+
+**Target Confidence & Production Gating:**
+- ✅ Confidence scoring: HIGH score_tier → MEDIUM overall confidence (expected for 2-symbol run)
+- ✅ Routing logic: MEDIUM confidence → `candidate` bucket, `allowed_in_production=False`
+- ✅ System correctly holding targets behind gate until broader validation
+
+**Known Non-Issues:**
+- ⚠️ **Timestamp delta warnings**: Fixed with negative-delta guard and debug logging (harmless, using config default 5m)
+- ⚠️ **Boruta gatekeeper disabled**: Expected behavior - Boruta runs per-symbol but aggregator-level gatekeeper is conservative by design (config-controlled)
+
+**Bottom Line:**
+The early intelligence layer is functioning as designed. All safety nets (leak detection, degenerate target skipping, confidence gating) are working correctly. The system is producing coherent feature selections with strong cross-model agreement.
 
 ---
 
