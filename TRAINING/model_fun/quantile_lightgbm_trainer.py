@@ -186,10 +186,18 @@ class QuantileLightGBMTrainer(BaseModelTrainer):
             """Callback to record validation scores for diagnostics"""
             if env.iteration % 50 == 0 or env.iteration < 10:  # Log first 10 iterations, then every 50
                 if env.evaluation_result_list:
-                    for eval_name, eval_value, _ in env.evaluation_result_list:
-                        if 'valid_0' in eval_name:
+                    # Modern LightGBM returns 4-tuple: (data_name, eval_name, result, is_higher_better)
+                    # or 5-tuple with stddev: (data_name, eval_name, result, is_higher_better, stdv)
+                    # Use indexing instead of unpacking to handle both cases safely
+                    for item in env.evaluation_result_list:
+                        data_name = item[0]  # e.g., 'valid_0'
+                        eval_name = item[1]  # e.g., 'quantile'
+                        eval_value = item[2]  # The actual metric value
+                        # item[3] is is_higher_better (bool), item[4] is stddev if present
+                        
+                        if 'valid_0' in data_name:
                             validation_scores.append((env.iteration, eval_value))
-                            logger.info(f"[QuantileLGBM] Iter {env.iteration}: {eval_name}={eval_value:.6f}")
+                            logger.info(f"[QuantileLGBM] Iter {env.iteration}: {data_name} {eval_name}={eval_value:.6f}")
         
         callbacks = []
         if esr and esr > 0:

@@ -43,9 +43,11 @@ WARNING - ❌ QuantileLightGBM failed (too many values to unpack (expected 3)) �
 INFO - ✅ Huber fallback trained | best_iter=10
 ```
 
-**Root Cause:**
-- QuantileLightGBM trainer has a bug: unpacking error `too many values to unpack (expected 3)`
-- Likely in return value handling from `lgb.train()` or callback processing
+**Root Cause:** ✅ **IDENTIFIED**
+- QuantileLightGBM trainer has a bug in `_record_validation` callback (line 189)
+- **Exact issue**: Trying to unpack 3 values from `env.evaluation_result_list`, but modern LightGBM returns 4-tuple `(data_name, eval_name, result, is_higher_better)` or 5-tuple with stddev
+- Old code: `for eval_name, eval_value, _ in env.evaluation_result_list:` ❌
+- Fixed code: Uses indexing `item[0], item[1], item[2]` to handle both 4 and 5-tuple cases ✅
 - Fallback silently replaces quantile model with Huber regression
 - **Semantic mismatch**: downstream code expects quantile behavior but gets L2 regression
 
@@ -61,9 +63,9 @@ INFO - ✅ Huber fallback trained | best_iter=10
 
 **Next Steps:**
 - ✅ **DONE**: Added full stack trace logging (`logger.exception`) to identify exact line causing the error
-- Fix the unpacking error in `quantile_lightgbm_trainer.py` (once stack trace shows the exact location)
-- Consider temporarily disabling Huber fallback to force hard failure until quantile is fixed
-- Verify LightGBM version compatibility with return value signatures
+- ✅ **FIXED**: Updated `_record_validation` callback to use indexing instead of unpacking (handles 4 or 5-tuple from modern LightGBM)
+- ⏳ **TODO**: Test quantile training to verify it works without falling back to Huber
+- ⏳ **TODO**: Consider temporarily disabling Huber fallback to force hard failure if quantile still has issues
 
 ---
 
