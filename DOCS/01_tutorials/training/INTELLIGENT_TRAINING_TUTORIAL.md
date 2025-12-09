@@ -440,7 +440,7 @@ python TRAINING/train.py \
 The intelligent training pipeline is **fully backward compatible** with existing workflows:
 
 - **Manual targets/features**: Can still provide manual lists
-- **Existing training pipeline**: Uses same `train_with_strategies.py` functions
+- **Existing training pipeline**: Uses same `training_strategies/` module functions (backward compatible with `train_with_strategies.py` imports)
 - **Same output format**: Produces same model artifacts and metrics
 
 ### Migration Path
@@ -448,14 +448,16 @@ The intelligent training pipeline is **fully backward compatible** with existing
 **Old workflow:**
 ```bash
 # Step 1: Rank targets manually (deprecated)
-python TRAINING/ranking/rank_target_predictability.py ...
+python -m TRAINING.ranking.predictability.main ...
 
 # Step 2: Select features manually (deprecated)
 python TRAINING/ranking/multi_model_feature_selection.py ...
 
 # Step 3: Train with results
-python TRAINING/train_with_strategies.py --targets ... --features ...
+python -m TRAINING.training_strategies.main --targets ... --features ...
 ```
+
+**Note**: The original files (`rank_target_predictability.py`, `train_with_strategies.py`) are now thin wrappers that import from the modular structure. All imports remain backward compatible.
 
 **New workflow:**
 ```bash

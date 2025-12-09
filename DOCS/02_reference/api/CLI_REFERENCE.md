@@ -140,7 +140,7 @@ python TRAINING/train.py \
 **Legacy standalone script** (deprecated, use intelligent training pipeline):
 ```bash
 # OLD WAY - Still works but not recommended
-python TRAINING/ranking/rank_target_predictability.py \
+python -m TRAINING.ranking.predictability.main \
     --symbols AAPL,MSFT,GOOGL,TSLA,JPM \
     --output-dir results/target_rankings
 ```
