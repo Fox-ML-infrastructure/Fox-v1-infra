@@ -155,8 +155,27 @@ CPU_FAMS = {"LightGBM", "QuantileLightGBM", "RewardBased", "NGBoost", "GMMRegime
 
 """Strategy functions for training."""
 
-# Import dependencies
-from TRAINING.training_strategies.data_preparation import load_mtf_data, discover_targets, prepare_training_data
+# Standard library imports
+import logging
+from typing import Dict, List, Any, Optional
+
+# Third-party imports
+import pandas as pd
+
+# Import USE_POLARS and polars if available
+import os
+USE_POLARS = os.getenv("USE_POLARS", "1") == "1"
+if USE_POLARS:
+    try:
+        import polars as pl
+    except ImportError:
+        USE_POLARS = False
+
+# Setup logger
+logger = logging.getLogger(__name__)
+
+# Import dependencies (these functions are defined in strategies.py, not data_preparation.py)
+# Remove circular import - functions are defined below
 
 def load_mtf_data(data_dir: str, symbols: List[str], max_rows_per_symbol: int = None) -> Dict[str, pd.DataFrame]:
     """Load MTF data for specified symbols with polars optimization (matches original script behavior)"""

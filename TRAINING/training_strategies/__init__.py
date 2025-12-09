@@ -37,6 +37,9 @@ from TRAINING.training_strategies.utils import (
 
 from TRAINING.training_strategies.data_preparation import (
     prepare_training_data_cross_sectional,
+)
+
+from TRAINING.training_strategies.strategies import (
     load_mtf_data,
     discover_targets,
     prepare_training_data,

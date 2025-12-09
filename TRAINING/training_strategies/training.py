@@ -159,6 +159,9 @@ CPU_FAMS = {"LightGBM", "QuantileLightGBM", "RewardBased", "NGBoost", "GMMRegime
 from TRAINING.training_strategies.family_runners import _run_family_inproc, _run_family_isolated
 from TRAINING.training_strategies.data_preparation import prepare_training_data_cross_sectional
 
+# Standard library imports
+from typing import Dict, List, Any, Optional, Tuple
+
 def train_models_for_interval_comprehensive(interval: str, targets: List[str], 
                                            mtf_data: Dict[str, pd.DataFrame],
                                            families: List[str],

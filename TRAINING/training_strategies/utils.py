@@ -292,11 +292,12 @@ random.seed(42)
 warnings.filterwarnings("ignore", message=r"Protobuf gencode version .* is exactly one major version older")
 
 # Import modular training system
-from strategies import SingleTaskStrategy, MultiTaskStrategy, CascadeStrategy
+# Note: Strategy classes (SingleTaskStrategy, MultiTaskStrategy, CascadeStrategy) are not currently defined
+# They may have been removed during refactoring or are defined elsewhere
 # Removed unused imports: ModelFactory, DataPreprocessor, TargetResolver, ValidationUtils
 
 # Import target router for enhanced target support
-from target_router import route_target, spec_from_target, TaskSpec
+from TRAINING.target_router import route_target, spec_from_target, TaskSpec
 
 # Import existing utilities
 try:

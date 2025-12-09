@@ -152,6 +152,38 @@ TF_FAMS = {"MLP", "VAE", "GAN", "MetaLearning", "MultiTask"}
 TORCH_FAMS = {"CNN1D", "LSTM", "Transformer", "TabCNN", "TabLSTM", "TabTransformer"}
 CPU_FAMS = {"LightGBM", "QuantileLightGBM", "RewardBased", "NGBoost", "GMMRegime", "ChangePoint", "FTRLProximal", "Ensemble"}
 
+# Standard library imports
+import logging
+import warnings
+from typing import Dict, List, Optional, Tuple, Any
+
+# Third-party imports
+import numpy as np
+import pandas as pd
+
+# Import USE_POLARS - defined in utils.py, but we need it here
+# Use environment variable directly to avoid circular import
+import os
+USE_POLARS = os.getenv("USE_POLARS", "1") == "1"
+
+# Import target router utilities from TRAINING root
+from TRAINING.target_router import route_target
+# safe_target_extraction may be in utils or defined elsewhere
+try:
+    from TRAINING.training_strategies.utils import safe_target_extraction
+except ImportError:
+    # Fallback definition
+    def safe_target_extraction(df, target):
+        if target in df.columns:
+            return df[target], target
+        # Try common variations
+        for col in df.columns:
+            if col.endswith(target) or target in col:
+                return df[col], col
+        raise ValueError(f"Target {target} not found in dataframe")
+
+# Setup logger
+logger = logging.getLogger(__name__)
 
 """Data preparation functions for training strategies."""
 
@@ -159,7 +191,7 @@ def prepare_training_data_cross_sectional(mtf_data: Dict[str, pd.DataFrame],
                                        target: str, 
                                        feature_names: List[str] = None,
                                        min_cs: int = 10,
-                                       max_cs_samples: int = None) -> Eight:
+                                       max_cs_samples: int = None) -> Tuple[np.ndarray, np.ndarray, List[str], np.ndarray, np.ndarray, List[str], Optional[np.ndarray], Dict[str, Any]]:
     """Prepare cross-sectional training data with polars optimization for memory efficiency."""
     
     logger.info(f"🎯 Building cross-sectional training data for target: {target}")
@@ -184,7 +216,7 @@ def _prepare_training_data_polars(mtf_data: Dict[str, pd.DataFrame],
                                  target: str, 
                                  feature_names: List[str] = None,
                                  min_cs: int = 10,
-                                 max_cs_samples: int = None) -> Eight:
+                                 max_cs_samples: int = None) -> Tuple[np.ndarray, np.ndarray, List[str], np.ndarray, np.ndarray, List[str], Optional[np.ndarray], Dict[str, Any]]:
     """Polars-based data preparation for memory efficiency with cross-sectional sampling."""
     
     logger.info(f"🎯 Building cross-sectional training data (polars, memory-efficient) for target: {target}")
@@ -332,7 +364,7 @@ def _prepare_training_data_pandas(mtf_data: Dict[str, pd.DataFrame],
                                  target: str, 
                                  feature_names: List[str] = None,
                                  min_cs: int = 10,
-                                 max_cs_samples: int = None) -> Eight:
+                                 max_cs_samples: int = None) -> Tuple[np.ndarray, np.ndarray, List[str], np.ndarray, np.ndarray, List[str], Optional[np.ndarray], Dict[str, Any]]:
     """Pandas-based data preparation (fallback)."""
     
     # Combine all symbol data
@@ -402,7 +434,7 @@ def _prepare_training_data_pandas(mtf_data: Dict[str, pd.DataFrame],
     
     return _process_combined_data_pandas(combined_df, target, feature_names)
 
-def _process_combined_data_pandas(combined_df: pd.DataFrame, target: str, feature_names: List[str]) -> Eight:
+def _process_combined_data_pandas(combined_df: pd.DataFrame, target: str, feature_names: List[str]) -> Tuple[np.ndarray, np.ndarray, List[str], np.ndarray, np.ndarray, List[str], Optional[np.ndarray], Dict[str, Any]]:
     """Process combined data using pandas."""
     
     # Route target to get task specification
