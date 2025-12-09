@@ -214,7 +214,7 @@ Please include:
 5. **Supply chain integrity** — No hidden dependencies, fully auditable
 6. **No production access** — Vendor does not access client production systems
 
-**This architecture ensures that Fox ML Infrastructure operates as a secure, client-controlled platform with no vendor access to client data or systems.**
+**This architecture is designed to operate as a client-controlled platform with no vendor access to client data or systems. This statement is provided for informational purposes only and does not create any warranty or guarantee.**
 
 ---
 
