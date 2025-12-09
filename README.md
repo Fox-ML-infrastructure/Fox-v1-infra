@@ -72,7 +72,7 @@ This positions FoxML Core as **serious infrastructure** (not a one-off HFT tool)
 - Commercial use without a license  
 - Unmodified production HFT or revenue-generating systems  
 
-FoxML Core provides **architecture**, not alpha.
+**FoxML Core provides infrastructure and architecture, not investment advice, signals, or plug-and-play trading strategies.**
 
 ---------------------------------------------------------------------
 
@@ -95,13 +95,9 @@ Commercial licensing gives your organization the right to:
 - Integrate FoxML into proprietary systems without AGPL disclosure obligations
 - Get access to **enterprise-focused terms** and optional support / integration work
 
-**Annual License Tiers**
+**Indicative annual pricing** starts in the low six figures for small teams and scales to multi-million-dollar enterprise agreements for large institutions.
 
-- 1–10 employees — $150,000 / year  
-- 11–50 employees — $350,000 / year  
-- 51–250 employees — $750,000 / year  
-- 251–1000 employees — $1,500,000–$2,500,000 / year  
-- 1000+ employees — $5,000,000–$12,000,000+ / year (custom enterprise quote)
+See [`LEGAL/SUBSCRIPTIONS.md`](LEGAL/SUBSCRIPTIONS.md) for detailed tiers and examples.
 
 To begin the licensing process, email:
 
@@ -112,7 +108,7 @@ Please include:
 
 - Your name and role
 - Organization name + website or LinkedIn
-- Organization size (from the tiers above)
+- Organization size
 - Primary use case (1–3 sentences)
 - Desired start timeline
 

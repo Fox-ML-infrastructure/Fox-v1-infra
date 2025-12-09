@@ -1,9 +1,9 @@
-# Fox ML Infrastructure Licensing Model
+# FoxML Core Licensing Model
 
-Fox ML Infrastructure is dual-licensed:
+FoxML Core is dual-licensed:
 
 1. **AGPL-3.0** for academic, personal, or open-source research.
-   - You may use, study, and modify Fox ML Infrastructure under AGPL terms.
+   - You may use, study, and modify FoxML Core under AGPL terms.
    - Any network-deployed modifications must be open-sourced.
 
 2. **Commercial License** for any revenue-generating or organizational use.
