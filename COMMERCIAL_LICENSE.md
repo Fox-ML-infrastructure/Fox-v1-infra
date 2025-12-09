@@ -329,13 +329,22 @@ Fox ML Infrastructure LLC
 Email: jenn.lewis5789@gmail.com  
 Subject: Fox Infrastructure Licensing Inquiry
 
+**IMPORTANT — Physical Mail Requirements:**
+- **Email notification required first:** Before sending any physical mail (including certified mail, overnight courier, or any other physical delivery method) to Licensor, the sending party MUST first send an email to jenn.lewis5789@gmail.com with the subject line "Physical Mail Notification" describing the nature of the physical mail and the expected delivery date. Physical mail sent without prior email notification may not be deemed received.
+- **Registered Agent address prohibited:** Do NOT send mail to any registered agent address or corporate filing address. Mail sent to registered agent addresses will not be accepted and will not be deemed received.
+- **Physical mail address:** Physical mail (if required after email notification) should be sent only to an address that Licensor designates in writing after receiving the email notification. Contact jenn.lewis5789@gmail.com to obtain the appropriate physical mailing address.
+
 **To Licensee:**
 The address specified in the Ordering Documents or as otherwise provided by Licensee in writing.
 
+**Preferred Method:**
+Email is the preferred and most reliable method of communication. All Notices should be sent via email unless physical mail is specifically required by law or court order.
+
+**Deemed Receipt:**
 Notices sent:
-- By email will be deemed received on the date sent (if sent during business hours) or the next business day
-- By certified mail, return receipt requested, will be deemed received on the date of delivery shown on the return receipt
-- By overnight courier will be deemed received on the next business day after deposit with the courier
+- By email will be deemed received on the date sent (if sent during business hours on a business day) or the next business day
+- By certified mail, return receipt requested, will be deemed received on the date of delivery shown on the return receipt, provided that prior email notification was sent as required above
+- By overnight courier will be deemed received on the next business day after deposit with the courier, provided that prior email notification was sent as required above
 
 ## 25. MISCELLANEOUS
 
