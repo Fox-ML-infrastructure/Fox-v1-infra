@@ -160,6 +160,7 @@ import logging
 from typing import Dict, List, Any, Optional
 
 # Third-party imports
+import numpy as np
 import pandas as pd
 
 # Import USE_POLARS and polars if available

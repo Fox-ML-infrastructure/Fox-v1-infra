@@ -155,6 +155,15 @@ CPU_FAMS = {"LightGBM", "QuantileLightGBM", "RewardBased", "NGBoost", "GMMRegime
 
 """Family runner functions for in-process and isolated execution."""
 
+# Standard library imports
+import logging
+
+# Third-party imports
+import numpy as np
+
+# Setup logger
+logger = logging.getLogger(__name__)
+
 def _run_family_inproc(family: str, X, y, total_threads: int = 12, trainer_kwargs: dict | None = None):
     """
     Runs a family trainer in the main process with unified threading control.
