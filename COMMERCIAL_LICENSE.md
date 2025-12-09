@@ -60,7 +60,7 @@ Subject to payment of applicable fees and execution of a commercial agreement, t
 
 Use of the Software is limited to the number and type of Authorized Users specified in the applicable Ordering Document ("Seats"). Licensee shall ensure that only Authorized Users use the Software and that such use does not exceed the purchased Seats.
 
-If Licensee exceeds the purchased Seats, Licensor may (without limiting its other rights and remedies) invoice Licensee for the excess usage at Licensor's then-current rates, and Licensee shall pay such invoice within thirty (30) days.
+If Licensee exceeds the purchased Seats, Licensor may (without limiting its other rights and remedies) invoice Licensee for the excess usage at Licensor's then-current rates, and Licensee shall pay such invoice within thirty (30) days. Repeated or material excess usage (exceeding purchased Seats by more than ten percent (10%) for more than thirty (30) consecutive days) may constitute a Material Breach and grounds for termination under Section 5.
 
 **External Contractors.**
 
@@ -84,7 +84,7 @@ Non-commercial use of the Software remains available under the AGPL-3.0 license.
 
 The Software is licensed, not sold. As between Licensor and Licensee, Licensor retains all right, title, and interest in and to the Software and all related intellectual property rights, whether registered or unregistered.
 
-**Licensee Developments.** Licensee retains ownership of its own internal configurations, scripts, and integrations created to interface with the Software ("Licensee Developments"), provided that such items do not include source code from the Software other than code allowed to be modified under this License.
+**Licensee Developments.** Licensee retains ownership of its own internal configurations, scripts, and integrations created to interface with the Software ("Licensee Developments"), provided that such items do not include source code from the Software other than code allowed to be modified under this License. For the avoidance of doubt, Licensee Developments do not include: (i) any modifications to the Software's core functionality, (ii) any derivative works that incorporate substantial portions of the Software's source code, or (iii) any works that would be considered derivative works under applicable copyright law. Licensee Developments must be clearly separable from the Software and must not infringe upon Licensor's intellectual property rights.
 
 **Feedback License.** Licensee grants Licensor a non-exclusive, perpetual, irrevocable, worldwide, royalty-free license to use, modify, and incorporate any feedback, suggestions, error reports, or improvements provided by Licensee regarding the Software, without any obligation to Licensee and without giving Licensee ownership of any improvements or modifications made by Licensor.
 
@@ -148,20 +148,21 @@ Licensor may suspend Licensee's access to the Software immediately upon any fail
 
 Upon termination of this Commercial License:
 - all rights granted under this Commercial License revert to Licensor,
-- Licensee must cease all Commercial Use and destroy or disable all copies of the Software used under this Commercial License,
+- Licensee must immediately cease all Commercial Use and destroy or permanently disable all copies of the Software used under this Commercial License (including all backups, archives, and derivative works),
+- within thirty (30) days of termination, Licensee must provide Licensor with written certification signed by an authorized officer of Licensee confirming that all copies have been destroyed or disabled,
 - any continued Commercial Use without a valid license will constitute unlicensed use and violation of Licensor's copyright.
 
 Termination of this Commercial License does not terminate any rights Licensee may have under AGPL-3.0 for copies of the Software obtained and used solely under that license.
 
 ## 6. NO WARRANTY / LIMITATION OF LIABILITY
 
-THE SOFTWARE IS PROVIDED "AS IS," WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+THE SOFTWARE IS PROVIDED "AS IS," WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, UNINTERRUPTED USE, ERROR-FREE OPERATION, OR THAT THE SOFTWARE WILL MEET LICENSEE'S REQUIREMENTS.
 
 THE LICENSOR IS NOT LIABLE FOR ANY DAMAGES, INCLUDING BUT NOT LIMITED TO:
 LOSS OF PROFITS, MODELING ERRORS, DATA LOSS, BUSINESS INTERRUPTION,
-OR ANY CONSEQUENTIAL DAMAGES ARISING FROM USE OF THE SOFTWARE.
+OR ANY CONSEQUENTIAL, INCIDENTAL, INDIRECT, SPECIAL, OR PUNITIVE DAMAGES ARISING FROM USE OF THE SOFTWARE.
 
-**Liability Cap:** IN NO EVENT WILL LICENSOR'S TOTAL AGGREGATE LIABILITY ARISING OUT OF OR RELATED TO THIS LICENSE EXCEED THE FEES PAID BY LICENSEE TO LICENSOR FOR THE SOFTWARE IN THE TWELVE (12) MONTHS PRECEDING THE EVENT GIVING RISE TO THE CLAIM.
+**Liability Cap:** IN NO EVENT WILL LICENSOR'S TOTAL AGGREGATE LIABILITY ARISING OUT OF OR RELATED TO THIS LICENSE EXCEED THE FEES PAID BY LICENSEE TO LICENSOR FOR THE SOFTWARE IN THE TWELVE (12) MONTHS PRECEDING THE EVENT GIVING RISE TO THE CLAIM. THE FOREGOING LIMITATION SHALL NOT APPLY TO: (i) LIABILITY ARISING FROM LICENSOR'S WILLFUL MISCONDUCT OR GROSS NEGLIGENCE, (ii) LICENSOR'S INDEMNIFICATION OBLIGATIONS (IF ANY), OR (iii) BREACH OF CONFIDENTIALITY OBLIGATIONS.
 
 ## 7. INDEMNITY
 
@@ -186,6 +187,8 @@ Unless explicitly set out in a separate written agreement:
 - Licensee must purchase separate licenses or upgrade agreements for new versions
 
 **No Obligation.** Licensor has no obligation to provide updates, upgrades, or new versions of the Software.
+
+**Right to Continue Using Licensed Version.** Licensee may continue using the version of the Software licensed under this License even if newer versions become available, provided that: (i) Licensee remains in compliance with this License, (ii) Licensor may discontinue support for older versions as set forth in the Support Policy, and (iii) older versions may not include security patches or bug fixes available in newer versions.
 
 ## 10. FEES
 
@@ -281,6 +284,10 @@ This License is governed by the laws of the State of Delaware, United States, wi
 
 Neither party shall be liable for any failure or delay in performance under this License due to circumstances beyond its reasonable control, including but not limited to: acts of God, war, terrorism, riots, embargoes, acts of civil or military authorities, fire, floods, accidents, network or infrastructure failures, strikes, or shortages of transportation facilities, fuel, energy, labor, or materials.
 
+**Notice Requirement.** The party affected by a force majeure event must provide written notice to the other party within ten (10) days of becoming aware of such event, describing the nature of the event and its expected duration.
+
+**Duration Limits.** If a force majeure event continues for more than sixty (60) days, either party may terminate this License upon written notice to the other party, and Licensee will be entitled to a pro-rata refund of any prepaid fees for the period after termination.
+
 ## 20. DATA HANDLING AND CONFIDENTIALITY
 
 **Licensee Confidentiality Obligations:**
@@ -295,7 +302,10 @@ Licensee agrees to maintain the confidentiality of:
 Licensee must implement reasonable technical and administrative safeguards (consistent with industry-standard practices for protecting proprietary software) to protect the Software and prevent unauthorized access, use, or disclosure. Such safeguards shall include, at minimum: (i) access controls limiting Software access to Authorized Users, (ii) secure storage of Software and related credentials, and (iii) measures to prevent unauthorized copying or distribution.
 
 **Breach Notification:**
-Licensee must notify Licensor immediately upon discovery of any unauthorized use, disclosure, or breach of security related to the Software.
+Licensee must notify Licensor immediately (and in any event within twenty-four (24) hours) upon discovery of any unauthorized use, disclosure, or breach of security related to the Software.
+
+**Return or Destruction on Termination.**
+Upon termination or expiration of this License, Licensee must, at Licensor's option, either return or destroy all confidential information and materials provided by Licensor, including but not limited to: source code, documentation marked as confidential, proprietary algorithms, and any other materials containing Licensor's confidential information. Licensee must provide written certification of such return or destruction within thirty (30) days of termination.
 
 ## 21. SEVERABILITY
 
