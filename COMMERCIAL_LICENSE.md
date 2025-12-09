@@ -61,10 +61,13 @@ This License covers the use case(s) and scope specified in the Ordering Document
 Subject to payment of applicable fees and execution of a commercial agreement, the Licensor grants the Licensee a non-exclusive, non-transferable, non-sublicensable, worldwide right to:
 
 - Use the Software for Commercial Use
-- Modify the Software for internal commercial use
+- Modify the Software for internal commercial use (subject to the restrictions in Section 4), provided that: (i) modifications are limited to configuration, integration, and interface layers, (ii) Licensee may NOT modify the core functionality, algorithms, or architecture of the Software, and (iii) any modifications that alter core functionality require Licensor's prior written consent
 - Deploy the Software internally without AGPL disclosure obligations
 - Integrate the Software into proprietary systems, stacks, or workflows
 - Use the Software solely for use by Authorized Users, up to the limits set forth in the applicable Ordering Documents
+
+**IMPORTANT — No Source Code Access Rights:**
+This License does NOT grant Licensee any right to access, view, or receive the source code of the Software. Licensee receives only object code, compiled binaries, or executable versions of the Software. Source code access, if available, is provided separately and subject to additional terms and restrictions. Licensee has no right to demand, request, or require source code access as part of this License.
 
 **Authorized Users and Seat Limits.**
 
@@ -160,7 +163,11 @@ The Licensor may terminate this License if:
 - the Licensee commits a Material Breach (as defined in Section 1) of any term of this License and fails to cure such breach within thirty (30) days after written notice from Licensor specifying the breach (except as set forth below),
 - the Licensee fails to pay required fees when due and fails to cure such non-payment within fifteen (15) days after written notice from Licensor,
 - the Licensee attempts unauthorized distribution or sublicensing,
-- the Licensee commits a Material Breach of Section 4.1 (Benchmarking), which shall be grounds for immediate termination upon written notice without a cure period.
+- the Licensee commits a Material Breach of Section 4.1 (Benchmarking), which shall be grounds for immediate termination upon written notice without a cure period,
+- the Licensee becomes insolvent, files for bankruptcy, enters into receivership, or undergoes any similar insolvency proceeding.
+
+**Licensee Termination Rights.**
+Licensee may terminate this License at any time by providing written notice to Licensor. Upon termination by Licensee: (i) all fees paid are non-refundable, (ii) Licensee must immediately cease all use and destroy all copies as set forth in Section 5, and (iii) Licensee remains liable for all fees accrued through the date of termination.
 
 **Suspension for Non-Payment.**
 
@@ -168,7 +175,7 @@ Licensor may suspend Licensee's access to the Software immediately upon any fail
 
 Upon termination of this Commercial License:
 - all rights granted under this Commercial License revert to Licensor,
-- Licensee must immediately cease all Commercial Use and destroy or permanently disable all copies of the Software used under this Commercial License (including all backups, archives, and derivative works),
+- Licensee must immediately cease all Commercial Use and destroy or permanently disable all copies of the Software used under this Commercial License (including all backups, archives, snapshots, disaster recovery copies, derivative works, and any copies stored in any location, including but not limited to: local storage, cloud storage, backup systems, or third-party hosting providers),
 - within thirty (30) days of termination, Licensee must provide Licensor with written certification signed by an authorized officer of Licensee confirming that all copies have been destroyed or disabled,
 - any continued Commercial Use without a valid license will constitute unlicensed use and violation of Licensor's copyright.
 
@@ -212,6 +219,9 @@ Unless explicitly set out in a separate written agreement:
 **No Obligation.** Licensor has no obligation to provide updates, upgrades, or new versions of the Software.
 
 **Right to Continue Using Licensed Version.** Licensee may continue using the version of the Software licensed under this License even if newer versions become available, provided that: (i) Licensee remains in compliance with this License, (ii) Licensor may discontinue support for older versions as set forth in the Support Policy, and (iii) older versions may not include security patches or bug fixes available in newer versions.
+
+**IMPORTANT — All Versions Subject to Same Restrictions:**
+All versions of the Software (including older versions, legacy versions, and any versions obtained from any source) are subject to the same licensing requirements and restrictions set forth in this License. Using an older version does not exempt Licensee from any obligations, restrictions, or payment requirements. Licensee may not use an older version to circumvent restrictions that apply to newer versions.
 
 ## 10. FEES
 
@@ -322,8 +332,11 @@ Licensee agrees to maintain the confidentiality of:
 - Source code and internal architecture of the Software
 - Proprietary algorithms and techniques
 - Documentation marked as confidential
-- Pricing and licensing terms
+- Pricing and licensing terms (including but not limited to: fee amounts, payment schedules, discount rates, and any special pricing arrangements)
 - Any other information designated as confidential by Licensor
+
+**Pricing Confidentiality.**
+Licensee agrees not to disclose, share, or publish any pricing, fee, or licensing terms to any third party without Licensor's prior written consent. Disclosure of pricing information to competitors, potential customers, or any third party may constitute a Material Breach. Licensee may share pricing information only with its own employees, contractors, or advisors who have a legitimate need to know and who are bound by confidentiality obligations.
 
 **Security Requirements:**
 Licensee must implement reasonable technical and administrative safeguards (consistent with industry-standard practices for protecting proprietary software) to protect the Software and prevent unauthorized access, use, or disclosure. Such safeguards shall include, at minimum: (i) access controls limiting Software access to Authorized Users, (ii) secure storage of Software and related credentials, and (iii) measures to prevent unauthorized copying or distribution.
