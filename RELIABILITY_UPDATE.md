@@ -198,3 +198,6 @@ This commitment ensures that FoxML Core remains a **trusted foundation** for qua
 - [Configuration Reference](DOCS/02_reference/configuration/FEATURE_TARGET_CONFIGS.md)
 - [Intelligent Training Tutorial](DOCS/01_tutorials/training/INTELLIGENT_TRAINING_TUTORIAL.md)
 
+**For detailed debugging status and technical implementation notes, see:**
+- [Training Pipeline Debugging Status](DOCS/03_technical/STATUS_DEBUGGING.md) — Internal technical documentation with detailed diagnostics, root cause analyses, and implementation details
+

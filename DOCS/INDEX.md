@@ -14,6 +14,7 @@ Complete navigation guide for FoxML Core documentation.
 ### Project Status & Licensing
 
 - [Roadmap](../ROADMAP.md) - Current development focus and upcoming work
+- [Reliability & Safety Update](../RELIABILITY_UPDATE.md) - **NEW**: Public-facing reliability report showing safety-first architecture and operational transparency
 - [Changelog](../CHANGELOG.md) - Recent technical and compliance changes (quick overview)
 - [Detailed Changelog](02_reference/CHANGELOG_DETAILED.md) - Comprehensive change details with file paths and config references
 - [Licensing & Subscriptions](../LEGAL/SUBSCRIPTIONS.md) - AGPL vs commercial usage and subscription tiers
@@ -161,6 +162,7 @@ Research notes, design rationale, advanced topics.
 - [Daily Testing](03_technical/testing/DAILY_TESTING.md) - Daily test procedures
 
 ### Operations
+- [Training Pipeline Debugging Status](03_technical/STATUS_DEBUGGING.md) - **NEW**: Detailed technical debugging status, root cause analyses, and implementation notes (internal technical documentation)
 - [Journald Logging](03_technical/operations/JOURNALD_LOGGING.md) - Logging setup
 - [Restore from Logs](03_technical/operations/RESTORE_FROM_LOGS.md) - Recovery procedures
 - [Avoid Long Runs](03_technical/operations/AVOID_LONG_RUNS.md) - Performance tips
