@@ -197,7 +197,7 @@ class QuantileLightGBMTrainer(BaseModelTrainer):
                         
                         if 'valid_0' in data_name:
                             validation_scores.append((env.iteration, eval_value))
-                            logger.info(f"[QuantileLGBM] Iter {env.iteration}: {data_name} {eval_name}={eval_value:.6f}")
+                            logger.info(f"[QuantileLGBM] Iter {env.iteration}: {data_name} {eval_name}={eval_value:.9f}")
         
         callbacks = []
         if esr and esr > 0:
@@ -226,8 +226,8 @@ class QuantileLightGBMTrainer(BaseModelTrainer):
                 last_score = validation_scores[-1][1]
                 best_score_val = min(s[1] for s in validation_scores) if validation_scores else None
                 improvement = first_score - best_score_val if best_score_val else 0
-                logger.info(f"📊 Validation metric progression: started={first_score:.6f}, best={best_score_val:.6f}, "
-                          f"final={last_score:.6f}, improvement={improvement:.6f}")
+                logger.info(f"📊 Validation metric progression: started={first_score:.9f}, best={best_score_val:.9f}, "
+                          f"final={last_score:.9f}, improvement={improvement:.9f}")
                 
                 # Check if metric stopped improving early
                 if len(validation_scores) >= 3:
@@ -237,8 +237,8 @@ class QuantileLightGBMTrainer(BaseModelTrainer):
                         early_improvement = early_scores[0] - min(early_scores)
                         late_improvement = late_scores[0] - min(late_scores)
                         if early_improvement > 0 and late_improvement < 1e-6:
-                            logger.warning(f"⚠️ Validation metric improved early (first 3 iters: {early_improvement:.6f}) "
-                                         f"but plateaued later (last 3 iters: {late_improvement:.6f}). "
+                            logger.warning(f"⚠️ Validation metric improved early (first 3 iters: {early_improvement:.9f}) "
+                                         f"but plateaued later (last 3 iters: {late_improvement:.9f}). "
                                          f"This suggests model converged quickly, possibly due to fewer features.")
             
             # Diagnostic: Log why training stopped early
