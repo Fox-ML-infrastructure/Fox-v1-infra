@@ -10,15 +10,16 @@ Commercial license pricing is aligned with enterprise quant infrastructure stand
 
 ### Business / Internal Use
 
-**"Business use" or "internal use"** means any use of the Software within a company, organization, or other legal entity, including:
+**"Business use" or "internal use"** means any Commercial Use (as defined in `COMMERCIAL_LICENSE.md` Section 1), including but not limited to:
 
 - Internal tools, dashboards, or research pipelines
 - Proofs of concept, evaluations, or pilot projects (regardless of whether they generate revenue or are "experimental")
 - Non-revenue or "experimental" usage (even if not generating revenue, experimental use within a business context requires a commercial license)
 - Use by employees, contractors, interns, or affiliates in the course of their work
 - Use by sole proprietors, freelancers, or independent contractors in connection with any business activity or client work
+- Use in any environment (development, testing, staging, or production) within a business or organizational context
 
-**Any business or internal use by or for a commercial organization requires a commercial license**, regardless of whether the use directly generates revenue, is experimental, is a proof of concept, or is claimed to be "non-commercial" or "research-only."
+**Any business or internal use by or for a commercial organization requires a commercial license**, regardless of whether the use directly generates revenue, is experimental, is a proof of concept, or is claimed to be "non-commercial" or "research-only." See `COMMERCIAL_LICENSE.md` Section 1 for the complete definition of "Commercial Use."
 
 **FOR THE AVOIDANCE OF DOUBT:** There is no "free trial" or "evaluation period" for commercial use. Any use within a business context requires a commercial license from the start. The 30-day evaluation period described in `LEGAL/SUPPORT_POLICY.md` is for non-commercial evaluation only and does not permit commercial use.
 
@@ -36,7 +37,7 @@ Commercial license pricing is aligned with enterprise quant infrastructure stand
 - **Corporate research labs** — Any research conducted by, for, or on behalf of a commercial organization requires a commercial license, regardless of whether the research lab has non-profit status or is operated as a separate entity
 - **University research with commercial ties** — Research funded by, sponsored by, or operationally integrated into commercial organizations requires a commercial license, even if performed at a non-profit institution
 - **Development, testing, and staging environments** — Any use in development, testing, staging, quality assurance, or other non-production environments within a business context requires a commercial license, regardless of whether such environments are labeled as "experimental" or "non-production"
-- **Open source contributions** — Contributing code, fixes, or improvements to the open-source version does not exempt commercial use from licensing requirements
+- **Open source contributions** — Contributing code, fixes, or improvements to the open-source version does not exempt Commercial Use (as defined in `COMMERCIAL_LICENSE.md` Section 1) from licensing requirements
 
 **Academic research that is conducted for, funded by, sponsored by, or operationally integrated into a commercial organization's activities requires a commercial license**, even if the research is performed by students, interns, or contractors.
 
