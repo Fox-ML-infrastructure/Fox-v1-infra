@@ -1,6 +1,6 @@
 # Detailed Changelog
 
-This document provides comprehensive change details for FoxML Core. For a quick overview, see the [root changelog](../../CHANGELOG.md). For internal release notes with full technical details, see [`DOCS/internal/DETAILED_RELEASE_NOTES.md`](../internal/DETAILED_RELEASE_NOTES.md).
+This document provides comprehensive change details for FoxML Core. For a quick overview, see the [root changelog](../../CHANGELOG.md).
 
 ---
 
@@ -408,7 +408,6 @@ Adaptive intelligence layer design is documented in planning materials.
 ## Related Documentation
 
 - [Root Changelog](../../CHANGELOG.md) - Quick overview of changes
-- [Internal Release Notes](../internal/DETAILED_RELEASE_NOTES.md) - Full technical details
 - [Roadmap](../../ROADMAP.md) - Development priorities and upcoming work
 - [Documentation Index](../INDEX.md) - Complete documentation navigation
 

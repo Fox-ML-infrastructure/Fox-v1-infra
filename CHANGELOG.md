@@ -7,7 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **For more detailed information:**
 - [Detailed Changelog](DOCS/02_reference/CHANGELOG_DETAILED.md) - Comprehensive change details with file paths and config references
-- [Internal Release Notes](DOCS/internal/DETAILED_RELEASE_NOTES.md) - Full technical details for internal reference
 
 ---
 
