@@ -305,7 +305,7 @@ This License, together with any separate signed commercial agreement or Statemen
 
 ## 23. SURVIVAL
 
-Sections 4 (Restrictions), 6 (No Warranty / Limitation of Liability), 7 (Indemnity), 11 (Audit Rights), 12 (Export Control Compliance), 16 (Dispute Resolution), 17 (Governing Law), 19 (Data Handling and Confidentiality), 20 (Severability), 21 (Entire Agreement), and this Section 22 (Survival) will survive termination or expiration of this License.
+Sections 4 (Restrictions), 6 (No Warranty / Limitation of Liability), 7 (Indemnity), 11 (Audit Rights), 12 (Export Control Compliance), 17 (Dispute Resolution), 18 (Governing Law), 20 (Data Handling and Confidentiality), 21 (Severability), 22 (Entire Agreement), and this Section 23 (Survival) will survive termination or expiration of this License.
 
 ## 24. CONTACT
 
