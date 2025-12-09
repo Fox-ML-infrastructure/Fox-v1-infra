@@ -263,6 +263,7 @@ Boruta is implemented as a **statistical gatekeeper**, not just another importan
 - Is excluded from base consensus calculation
 - Modifies final consensus via bonuses/penalties (confirmed: +0.2, rejected: -0.3, tentative: neutral)
 - Provides separate columns in output: `consensus_score_base`, `consensus_score` (final), `boruta_gate_effect`
+- Uses `train_score = math.nan` (not a numeric score) since it's a selector, not a predictor - prevents feature count mismatch errors
 - See [Ranking and Selection Consistency](../../01_tutorials/training/RANKING_SELECTION_CONSISTENCY.md#boruta-statistical-gatekeeper) for details
 
 **Example: Adjusting Model Weights**

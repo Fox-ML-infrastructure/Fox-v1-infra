@@ -105,6 +105,7 @@ Boruta is implemented as a **statistical gatekeeper**, not just another importan
 - Uses `ExtraTreesClassifier/Regressor` (more random than RF, better for stability testing)
 - Hyperparams optimized for stable importance: `n_estimators: 500`, `max_depth: 6`, `perc: 95`
 - Configurable `class_weight`, `n_jobs`, `verbose` via YAML
+- **Note**: Boruta's internal `ExtraTreesClassifier` is trained on a transformed subset of features (confirmed/rejected/tentative selection), not the full feature set. As a result, Boruta uses `train_score = math.nan` (not a numeric score) since it's a selector, not a predictor. This prevents feature count mismatch errors and false "failed" status.
 
 **Gatekeeper Role:**
 - **Excluded from base consensus** — Boruta does not contribute to `consensus_score_base`
