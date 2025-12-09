@@ -106,7 +106,19 @@ Sublicense, rent, lease, sell, share, loan, or otherwise make the Software avail
 
 Reverse engineer, decompile, disassemble, or otherwise attempt to derive or access the source code, underlying ideas, algorithms, file formats, or non-public APIs of the Software, or any trade secrets embodied therein, except to the extent expressly permitted by applicable law notwithstanding a contractual restriction.
 
-For clarity, Licensee may use the Software to build and operate its own internal trading, research, or analytics systems and to provide outputs (e.g., analytics, reports, trading decisions) to its own clients, provided such clients do not receive direct or indirect access to the Software itself, including but not limited to: (i) access to the Software's APIs, (ii) ability to execute code or workflows within the Software, (iii) access to the Software's user interface, or (iv) any other means of interacting with or controlling the Software. Licensee may provide data inputs to the Software and receive outputs from the Software for delivery to clients, but clients may not themselves interact with the Software.
+For clarity, Licensee may use the Software to build and operate its own internal trading, research, or analytics systems and to provide outputs (e.g., analytics, reports, trading decisions, predictions, recommendations) to its own clients, provided such clients do not receive direct or indirect access to the Software itself, including but not limited to: (i) access to the Software's APIs, (ii) ability to execute code or workflows within the Software, (iii) access to the Software's user interface, or (iv) any other means of interacting with or controlling the Software. Licensee may provide data inputs to the Software and receive outputs from the Software for delivery to clients, but clients may not themselves interact with the Software.
+
+**Model Training and Resale.**
+
+Licensee may use the Software to train, develop, or create models, algorithms, or systems for Licensee's own internal Commercial Use and to provide outputs (including predictions, analytics, signals, or trading decisions) to Licensee's own clients.
+
+However, Licensee may not:
+
+(i) sell, license, or provide models, algorithms, or systems created using the Software as a standalone product or service (for example, "pretrained models" or "model APIs" sold to third parties);
+
+(ii) use the Software to build or operate a Competing Infrastructure Service; or
+
+(iii) grant any third party direct or indirect access to the Software or to any models or systems in a way that allows such third party to run its own workflows using the Software.
 
 **3.1 Benchmarking.**
 
