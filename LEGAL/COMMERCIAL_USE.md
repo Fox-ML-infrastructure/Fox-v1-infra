@@ -9,7 +9,7 @@
 ### ✅ **YES — You need a commercial license if:**
 
 - You are a **business, organization, or institution**
-- You use FoxML Core for **internal operations**
+- You use FoxML Core for **internal operations** (see `LEGAL/SUBSCRIPTIONS.md` for definition of business/internal use)
 - You use it for **trading, investment, or financial decision-making**
 - You **deploy it in production**
 - You **integrate it into proprietary systems**
@@ -17,14 +17,18 @@
 - You **modify it for commercial use**
 - You use it to **provide services to third parties**
 
+**Any business or internal use by or for a commercial organization requires a commercial license, regardless of whether the use directly generates revenue.**
+
 ### ❌ **NO — You do NOT need a commercial license if:**
 
-- You are using it for **non-commercial academic research**
-- You are using it for **personal study or learning**
+- You are using it for **non-commercial academic research** (see `LEGAL/SUBSCRIPTIONS.md` for full definition)
+- You are using it for **personal study or learning** (individual in personal capacity)
 - You are contributing to **open-source projects** (under AGPL-3.0)
 - You are **not using it in production** or for commercial purposes
 
-**See `DUAL_LICENSE.md` for detailed dual licensing information.**
+**Note:** Academic research conducted for, funded by, or operationally integrated into a commercial organization requires a commercial license, even if performed by students or interns.
+
+**See `LEGAL/SUBSCRIPTIONS.md` for complete definitions and usage scenarios.**
 
 ---
 

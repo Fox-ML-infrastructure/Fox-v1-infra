@@ -18,11 +18,13 @@ FoxML Core is dual-licensed under two distinct options. This document is a **hig
 
 **Use this if:**
 
-- Your use is **purely personal or academic research**.
+- Your use is **purely personal or academic research** (see `LEGAL/SUBSCRIPTIONS.md` for full definition).
 
 - Your use is **non-commercial**.
 
 - You are willing and able to comply with AGPL-3.0 source code disclosure requirements.
+
+**Note:** Academic research conducted for, funded by, or integrated into a commercial organization requires a commercial license. See `LEGAL/SUBSCRIPTIONS.md` for the complete definition of "non-commercial academic or personal research use."
 
 ## License Option 2: Commercial License
 
@@ -65,13 +67,13 @@ FoxML Core is dual-licensed under two distinct options. This document is a **hig
 
 **You may use AGPL-3.0 if:**
 
-- Your use is **purely personal or academic research**.
+- Your use is **purely personal or academic research** (see `LEGAL/SUBSCRIPTIONS.md` for full definition).
 
 - Your use is **non-commercial**.
 
 - You are willing and able to comply with AGPL-3.0 source code disclosure requirements.
 
-**Note:** If you are using FoxML Core **inside a company**, even for "research only," you should generally assume a Commercial License is required unless your legal team explicitly signs off on AGPL-3.0 obligations.
+**Note:** If you are using FoxML Core **inside any business or organization**, assume you need a commercial license. See `LEGAL/SUBSCRIPTIONS.md` for details on business/internal use requirements. Academic research conducted for, funded by, or integrated into a commercial organization requires a commercial license, even if performed by students or interns.
 
 ## Contact
 

@@ -4,6 +4,51 @@ FoxML Core is available under annual commercial licensing for organizations.
 
 Commercial license pricing is aligned with enterprise quant infrastructure standards.
 
+---
+
+## License Requirements & Definitions
+
+### Business / Internal Use
+
+**"Business use" or "internal use"** means any use of the Software within a company, organization, or other legal entity, including:
+
+- Internal tools, dashboards, or research pipelines
+- Proofs of concept, evaluations, or pilot projects
+- Non-revenue or "experimental" usage
+- Use by employees, contractors, interns, or affiliates in the course of their work
+
+**Any business or internal use by or for a commercial organization requires a commercial license**, regardless of whether the use directly generates revenue.
+
+### Academic & Personal Use (AGPL-3.0 Only)
+
+**"Non-commercial academic or personal research use"** means:
+
+- Use by an individual in their personal capacity, or
+- Use by a degree-granting educational or non-profit research institution, where the results are not used to support commercial operations, trading, or revenue-generating activities
+
+**Academic research that is conducted for, funded by, or operationally integrated into a commercial organization's activities requires a commercial license**, even if the research is performed by students, interns, or contractors.
+
+**See `DUAL_LICENSE.md` for complete dual licensing information.**
+
+---
+
+## Usage Scenarios
+
+| Scenario | License Required | Notes |
+|----------|------------------|-------|
+| **Personal / Individual** | AGPL-3.0 | Personal study, experimentation, or non-commercial research by an individual |
+| **Academic Institution** | AGPL-3.0 | Non-profit educational institution, research not supporting commercial operations |
+| **Startup / Small Business** | Commercial | Any business entity, regardless of size or revenue |
+| **Hedge Fund / Trading Firm** | Commercial | Trading, investment, or financial decision-making |
+| **Corporate Research Lab** | Commercial | Research conducted by or for a commercial organization |
+| **University Research (Corporate-Funded)** | Commercial | Research funded by or integrated into commercial operations |
+| **Internal Tools / Dashboards** | Commercial | Any internal use within a business organization |
+| **Proof of Concept / Pilot** | Commercial | Evaluation or pilot projects within a business context |
+| **SaaS / Hosted Service** | Commercial + Custom | Requires explicit written permission and custom licensing terms |
+| **Vendor / Reseller** | Commercial + Custom | Requires separate commercial agreement |
+
+**When in doubt, assume a commercial license is required. Contact jenn.lewis5789@gmail.com for clarification.**
+
 **Annual License Tiers**
 
 - 1–10 employees — $150,000 / year  

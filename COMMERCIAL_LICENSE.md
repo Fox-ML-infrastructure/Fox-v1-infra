@@ -26,7 +26,9 @@ This Commercial License is intended for trading firms, hedge funds, financial in
   (d) is used to provide services to third parties,
   (e) enables, assists, or supports any for-profit activity.
 
-Non-commercial academic or personal research use of the open-source version remains available under the AGPL-3.0 license. This Commercial License is intended for organizations that wish to:
+**Business / Internal Use:** Any use of the Software within a company, organization, or other legal entity (including internal tools, proofs of concept, evaluations, pilot projects, or use by employees, contractors, interns, or affiliates) requires a commercial license, regardless of whether the use directly generates revenue. See `LEGAL/SUBSCRIPTIONS.md` for complete definitions.
+
+Non-commercial academic or personal research use of the open-source version remains available under the AGPL-3.0 license, subject to the definitions in `LEGAL/SUBSCRIPTIONS.md`. Academic research conducted for, funded by, or operationally integrated into a commercial organization's activities requires a commercial license. This Commercial License is intended for organizations that wish to:
   (a) avoid AGPL copyleft obligations in commercial / internal systems, or
   (b) obtain additional rights or assurances not provided by AGPL-3.0.
 

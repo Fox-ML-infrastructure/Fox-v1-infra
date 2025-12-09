@@ -78,14 +78,20 @@ This positions FoxML Core as **serious infrastructure** (not a one-off HFT tool)
 
 ## Licensing & Commercial Use
 
+> ⚠️ **BUSINESS USE REQUIRES A COMMERCIAL LICENSE**
+>
+> - If you're running this inside a company or fund, you almost certainly need a commercial license.
+> - Non-commercial academic / personal research is allowed under AGPL-3.0 (see `LICENSE`).
+> - Full details and pricing: `LEGAL/SUBSCRIPTIONS.md`.
+
 FoxML Core is released under the **AGPL-3.0** license. Personal / academic research uses AGPL. Organizations using FoxML Core in production or revenue-generating environments should obtain a commercial license.
 
 That means:
 
-- Individual developers, students, and researchers can use FoxML Core under AGPL-3.0 for **personal and academic research, evaluation, and experimentation**.
+- Individual developers, students, and researchers can use FoxML Core under AGPL-3.0 for **personal and academic research, evaluation, and experimentation** (see `LEGAL/SUBSCRIPTIONS.md` for full definition).
 - Organizations that want to use FoxML Core in **production, revenue-generating, or internal trading / research environments** will almost always want a **commercial license** to avoid AGPL copyleft obligations and to get clear commercial terms.
 
-> ⚠️ **If you're running this inside a company (trading desk, fund, fintech, SaaS, etc.), you should assume you need a commercial license unless your legal team is explicitly comfortable with AGPL-3.0 obligations.**
+**If you are using FoxML Core inside any business or organization, assume you need a commercial license.** See `LEGAL/SUBSCRIPTIONS.md` for details.
 
 ### Commercial License (Recommended for Organizations)
 
