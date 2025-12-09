@@ -71,13 +71,13 @@ Subject to payment of applicable fees and execution of a commercial agreement, t
 - Use the Software solely for use by Authorized Users, up to the limits set forth in the applicable Ordering Documents
 
 **IMPORTANT — No Source Code Access Rights:**
-This License does NOT grant Licensee any right to access, view, or receive the source code of the Software. Licensee receives only object code, compiled binaries, or executable versions of the Software. Source code access, if available, is provided separately and subject to additional terms and restrictions. Licensee has no right to demand, request, or require source code access as part of this License.
+This License does NOT grant Licensee any right to access, view, or receive the source code of the Software. Licensee receives only object code, compiled binaries, or executable versions of the Software. Source code access is not included in this License and is not granted by this License. Any source code access, if provided at all, is provided separately under a separate agreement and subject to additional terms and restrictions. Licensee has no right to demand, request, or require source code access as part of this License.
 
 **Authorized Users and Seat Limits.**
 
 Use of the Software is limited to the number and type of Authorized Users specified in the applicable Ordering Document ("Seats"). Licensee shall ensure that only Authorized Users use the Software and that such use does not exceed the purchased Seats.
 
-If Licensee exceeds the purchased Seats, Licensor may (without limiting its other rights and remedies) invoice Licensee for the excess usage at Licensor's then-current rates, and Licensee shall pay such invoice within thirty (30) days. Repeated or material excess usage (exceeding purchased Seats by more than ten percent (10%) for more than thirty (30) consecutive days) may constitute a Material Breach and grounds for termination under Section 5.
+If Licensee exceeds the purchased Seats, Licensor may (without limiting its other rights and remedies) invoice Licensee for the excess usage at Licensor's standard rates in effect at the time of the excess usage, and Licensee shall pay such invoice within thirty (30) days. Repeated or material excess usage (exceeding purchased Seats by more than ten percent (10%) for more than thirty (30) consecutive days) constitutes a Material Breach and grounds for termination under Section 5.
 
 **External Contractors.**
 
@@ -166,7 +166,7 @@ This License is effective upon payment and execution of a commercial agreement. 
 
 **Renewal.**
 
-This License renews automatically for successive one (1) year terms at Licensor's then-current pricing (not to exceed a ten percent (10%) increase over the prior term's pricing, unless otherwise agreed in writing) unless either party provides written notice of non-renewal at least thirty (30) days prior to the end of the then-current term. Licensee may cancel renewal by providing written notice as set forth above.
+This License renews automatically for successive one (1) year terms at Licensor's pricing in effect at the time of renewal (not to exceed a ten percent (10%) increase over the prior term's pricing, unless otherwise agreed in writing) unless either party provides written notice of non-renewal at least thirty (30) days prior to the end of the current term. Licensee may cancel renewal by providing written notice as set forth above.
 
 **Termination.**
 
@@ -263,7 +263,7 @@ Licensor reserves the right to audit Licensee's use of the Software to verify co
 - Audit scope limited to verification of Software usage and compliance with license restrictions
 - Remote audit methods are permitted (e.g., usage logs, deployment verification)
 - If an audit reveals that Licensee underpaid fees by more than five percent (5%) for the audited period or materially violated the license restrictions (meaning a violation that is significant, substantial, or has a material adverse effect on Licensor's rights or interests), Licensee shall reimburse Licensor's reasonable audit costs (not to exceed the amount of underpaid fees) in addition to paying any unpaid fees
-- Licensee must provide reasonable cooperation (including making relevant personnel available during normal business hours) and access to relevant records, logs, and documentation reasonably necessary to verify compliance
+- Licensee must provide full cooperation (including making relevant personnel available during normal business hours) and access to all relevant records, logs, and documentation necessary to verify compliance. Licensee's failure to provide such cooperation and access constitutes a Material Breach.
 - If Licensee refuses to provide access, documentation, or cooperation reasonably required for an audit, such refusal constitutes a Material Breach. In that case, Licensor may terminate this License and invoice Licensee for an estimated usage amount based on available information, and Licensee shall pay such invoice within thirty (30) days unless the parties agree in writing to a different resolution
 
 **Confidentiality:** All audit information shall be treated as confidential and used solely for compliance verification.
@@ -350,7 +350,7 @@ Licensee agrees to maintain the confidentiality of:
 Licensee agrees not to disclose, share, or publish any pricing, fee, or licensing terms to any third party without Licensor's prior written consent. Disclosure of pricing information to competitors, potential customers, or any third party may constitute a Material Breach. Licensee may share pricing information only with its own employees, contractors, or advisors who have a legitimate need to know and who are bound by confidentiality obligations.
 
 **Security Requirements:**
-Licensee must implement reasonable technical and administrative safeguards (consistent with industry-standard practices for protecting proprietary software) to protect the Software and prevent unauthorized access, use, or disclosure. Such safeguards shall include, at minimum: (i) access controls limiting Software access to Authorized Users, (ii) secure storage of Software and related credentials, and (iii) measures to prevent unauthorized copying or distribution.
+Licensee must implement technical and administrative safeguards to protect the Software and prevent unauthorized access, use, or disclosure. Such safeguards must include, at minimum: (i) access controls limiting Software access to Authorized Users only, (ii) secure storage of Software and related credentials, and (iii) measures to prevent unauthorized copying or distribution. Licensee's failure to implement and maintain such safeguards constitutes a Material Breach.
 
 **Breach Notification:**
 Licensee must notify Licensor immediately (and in any event within twenty-four (24) hours) upon discovery of any unauthorized use, disclosure, or breach of security related to the Software.
@@ -384,7 +384,7 @@ Email: jenn.lewis5789@gmail.com
 Subject: Fox Infrastructure Licensing Inquiry
 
 **IMPORTANT — Physical Mail Requirements:**
-- **Email notification required first:** Before sending any physical mail (including certified mail, overnight courier, or any other physical delivery method) to Licensor, the sending party MUST first send an email to jenn.lewis5789@gmail.com with the subject line "Physical Mail Notification" describing the nature of the physical mail and the expected delivery date. Physical mail sent without prior email notification may not be deemed received.
+- **Email notification required first:** Before sending any physical mail (including certified mail, overnight courier, or any other physical delivery method) to Licensor, the sending party MUST first send an email to jenn.lewis5789@gmail.com with the subject line "Physical Mail Notification" describing the nature of the physical mail and the expected delivery date. Physical mail sent without prior email notification will not be deemed received and will not satisfy any notice requirements under this License.
 - **Registered Agent address prohibited:** Do NOT send mail to any registered agent address or corporate filing address. Mail sent to registered agent addresses will not be accepted and will not be deemed received.
 - **Physical mail address:** Physical mail (if required after email notification) should be sent only to an address that Licensor designates in writing after receiving the email notification. Contact jenn.lewis5789@gmail.com to obtain the appropriate physical mailing address.
 

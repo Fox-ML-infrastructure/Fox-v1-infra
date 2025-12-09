@@ -310,7 +310,7 @@ Subject to the terms of this Agreement and the applicable Ordering Documents, Li
 
 (c) use by any Affiliate constitutes use by Licensee for purposes of any user, seat, environment, or usage limitations.
 
-For the avoidance of doubt, each separate legal entity (including each Affiliate) that wishes to use the Software for its own benefit must obtain its own license (typically via a separate Ordering Document), unless expressly stated otherwise in writing by Licensor.
+For the avoidance of doubt, each separate legal entity (including each Affiliate) that wishes to use the Software for its own benefit must obtain its own license via a separate Ordering Document, unless expressly stated otherwise in writing by Licensor.
 
 14. Audit Rights
 
