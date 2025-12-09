@@ -23,11 +23,13 @@ This Commercial License is intended for trading firms, hedge funds, financial in
 
 "Affiliate" means any entity that directly or indirectly Controls, is Controlled by, or is under common Control with a party, where "Control" means ownership of more than fifty percent (50%) of the voting interests of such entity or the contractual power to direct its management and policies.
 
-"Direct Competitor" means any third party whose primary business includes developing, licensing, or providing machine learning or quantitative trading infrastructure products or services that are substantially similar to the Software (for example, commercial platforms primarily marketed as quantitative research, ML pipeline, or trading infrastructure solutions).
+"Direct Competitor" means any third party whose primary business (meaning more than fifty percent (50%) of its revenue or business activities) includes developing, licensing, or providing machine learning or quantitative trading infrastructure products or services that are substantially similar to the Software (for example, commercial platforms primarily marketed as quantitative research, ML pipeline, or trading infrastructure solutions). For the avoidance of doubt, a company that uses the Software internally for its own trading or research activities is not a Direct Competitor solely by virtue of such internal use.
 
 "Major Version" means a release of the Software identified by a change in the first digit of the version number (e.g., 1.x to 2.0).
 
 "Minor Version" means a release identified by a change in the second digit (e.g., 1.1 to 1.2) or subsequent maintenance or patch releases.
+
+"Material Breach" means a breach that is significant, substantial, or has a material adverse effect on the other party's rights or interests under this License, including but not limited to: unauthorized distribution, reverse engineering, benchmarking without consent, or use in violation of export controls.
 
 "Commercial Use" means any use of the Software by a business, organization, institution, or individual that:
   (a) generates revenue directly or indirectly,
@@ -105,7 +107,7 @@ Licensee shall not use the Software to develop, host, or provide any software-as
 
 (c) an API, SDK, or other interface that provides third parties with direct or indirect access to the Software's core infrastructure capabilities.
 
-For clarity, Licensee may use the Software to build and operate its own internal trading, research, or analytics systems and to provide outputs (e.g., analytics, reports, trading decisions) to its own clients, provided such clients do not receive direct access to the Software itself.
+For clarity, Licensee may use the Software to build and operate its own internal trading, research, or analytics systems and to provide outputs (e.g., analytics, reports, trading decisions) to its own clients, provided such clients do not receive direct or indirect access to the Software itself, including but not limited to: (i) access to the Software's APIs, (ii) ability to execute code or workflows within the Software, (iii) access to the Software's user interface, or (iv) any other means of interacting with or controlling the Software. Licensee may provide data inputs to the Software and receive outputs from the Software for delivery to clients, but clients may not themselves interact with the Software.
 - Publish or disclose source code derived from the commercial version
 - Publish or disclose performance benchmarks or comparative tests involving the Software to any third party without Licensor's prior written consent (see Section 4.1 below)
 - Remove or alter copyright notices
@@ -118,9 +120,9 @@ For clarity, Licensee may use the Software to build and operate its own internal
 
 Licensee shall not publish or disclose to any third party any benchmark, performance, or comparison tests of the Software without Licensor's prior written consent.
 
-Any breach of this Section 4.1 shall be deemed a material breach of this License and may cause irreparable harm to Licensor, for which monetary damages may be an insufficient remedy. In addition to any other rights and remedies, Licensor shall be entitled to seek injunctive or other equitable relief to prevent or curtail any actual or threatened breach of this Section 4.1.
+Any breach of this Section 4.1 shall be deemed a Material Breach (as defined in Section 1) of this License and may cause irreparable harm to Licensor, for which monetary damages may be an insufficient remedy. In addition to any other rights and remedies, Licensor shall be entitled to seek injunctive or other equitable relief to prevent or curtail any actual or threatened breach of this Section 4.1.
 
-A material breach of Section 4.1 (Benchmarking) shall be grounds for immediate termination by Licensor upon written notice, without a cure period.
+A Material Breach of Section 4.1 (Benchmarking) shall be grounds for immediate termination by Licensor upon written notice, without a cure period.
 
 ## 5. TERM AND TERMINATION
 
@@ -130,15 +132,15 @@ This License is effective upon payment and execution of a commercial agreement. 
 
 **Renewal.**
 
-This License renews automatically for successive one (1) year terms at Licensor's then-current pricing unless either party provides written notice of non-renewal at least thirty (30) days prior to the end of the then-current term. Licensee may cancel renewal by providing written notice as set forth above.
+This License renews automatically for successive one (1) year terms at Licensor's then-current pricing (not to exceed a ten percent (10%) increase over the prior term's pricing, unless otherwise agreed in writing) unless either party provides written notice of non-renewal at least thirty (30) days prior to the end of the then-current term. Licensee may cancel renewal by providing written notice as set forth above.
 
 **Termination.**
 
 The Licensor may terminate this License if:
-- the Licensee materially breaches any term of this License and fails to cure such breach within thirty (30) days after written notice from Licensor specifying the breach (except as set forth below),
+- the Licensee commits a Material Breach (as defined in Section 1) of any term of this License and fails to cure such breach within thirty (30) days after written notice from Licensor specifying the breach (except as set forth below),
 - the Licensee fails to pay required fees when due and fails to cure such non-payment within fifteen (15) days after written notice from Licensor,
 - the Licensee attempts unauthorized distribution or sublicensing,
-- the Licensee materially breaches Section 4.1 (Benchmarking), which shall be grounds for immediate termination upon written notice without a cure period.
+- the Licensee commits a Material Breach of Section 4.1 (Benchmarking), which shall be grounds for immediate termination upon written notice without a cure period.
 
 **Suspension for Non-Payment.**
 
@@ -163,7 +165,7 @@ OR ANY CONSEQUENTIAL DAMAGES ARISING FROM USE OF THE SOFTWARE.
 
 ## 7. INDEMNITY
 
-Licensee agrees to indemnify and hold harmless Licensor from and against any third-party claims, damages, or expenses (including reasonable attorneys' fees) arising out of Licensee's misuse of the Software, violation of this License, or violation of applicable laws.
+Licensee agrees to indemnify and hold harmless Licensor from and against any third-party claims, damages, or expenses (including reasonable attorneys' fees and costs) arising out of Licensee's misuse of the Software, violation of this License, or violation of applicable laws. Licensor will promptly notify Licensee of any such claim and Licensee will have the right to control the defense and settlement of such claim, provided that Licensee may not settle any claim that admits liability or imposes obligations on Licensor without Licensor's prior written consent.
 
 ## 8. SUPPORT AND MAINTENANCE
 
@@ -210,8 +212,8 @@ Licensor reserves the right to audit Licensee's use of the Software to verify co
 - Licensor must provide at least 30 days' written notice
 - Audit scope limited to verification of Software usage and compliance with license restrictions
 - Remote audit methods are permitted (e.g., usage logs, deployment verification)
-- If an audit reveals that Licensee underpaid fees by more than five percent (5%) for the audited period or materially violated the license restrictions, Licensee shall reimburse Licensor's reasonable audit costs in addition to paying any unpaid fees
-- Licensee must provide reasonable cooperation and access to relevant records
+- If an audit reveals that Licensee underpaid fees by more than five percent (5%) for the audited period or materially violated the license restrictions (meaning a violation that is significant, substantial, or has a material adverse effect on Licensor's rights or interests), Licensee shall reimburse Licensor's reasonable audit costs (not to exceed the amount of underpaid fees) in addition to paying any unpaid fees
+- Licensee must provide reasonable cooperation (including making relevant personnel available during normal business hours) and access to relevant records, logs, and documentation reasonably necessary to verify compliance
 
 **Confidentiality:** All audit information shall be treated as confidential and used solely for compliance verification.
 
@@ -233,7 +235,7 @@ Licensor may continue to develop, market, and provide software, products, or ser
 
 ## 14. PUBLICITY
 
-Unless Licensee objects in writing, Licensor may use Licensee's name and logo in customary customer lists and marketing materials to identify Licensee as a customer of the Software. Any other publicity will require Licensee's prior written consent.
+Unless Licensee objects in writing, Licensor may use Licensee's name and logo in customer lists, case studies, press releases, and marketing materials (including websites, presentations, and sales materials) to identify Licensee as a customer of the Software. Any other publicity, including but not limited to quotes, testimonials, or detailed case studies, will require Licensee's prior written consent.
 
 ## 15. USE BY AFFILIATES
 
@@ -290,7 +292,7 @@ Licensee agrees to maintain the confidentiality of:
 - Any other information designated as confidential by Licensor
 
 **Security Requirements:**
-Licensee must implement reasonable technical and administrative safeguards to protect the Software and prevent unauthorized access, use, or disclosure.
+Licensee must implement reasonable technical and administrative safeguards (consistent with industry-standard practices for protecting proprietary software) to protect the Software and prevent unauthorized access, use, or disclosure. Such safeguards shall include, at minimum: (i) access controls limiting Software access to Authorized Users, (ii) secure storage of Software and related credentials, and (iii) measures to prevent unauthorized copying or distribution.
 
 **Breach Notification:**
 Licensee must notify Licensor immediately upon discovery of any unauthorized use, disclosure, or breach of security related to the Software.
