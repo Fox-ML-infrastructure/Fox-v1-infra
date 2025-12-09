@@ -324,7 +324,8 @@ def detect_interval_from_dataframe(
         return default
     
     timestamps = df[timestamp_column]
-    detected = detect_interval_from_timestamps(timestamps, default=None, explicit_interval=None)
+    # Pass default to avoid "Nonem" in warning messages
+    detected = detect_interval_from_timestamps(timestamps, default=default, explicit_interval=None)
     
     # PRECEDENCE 4: Fallback with LOUD warning
     if detected is None:

@@ -52,7 +52,9 @@ always_exclude:
   - flipcount_60m
   - gk_vol_5
   - market_correlation_20d
+  - market_correlation_60d
   - mass_index
+  - month_of_year
   - negative_volume_index
   - obv_ema
   - parkinson_vol_5

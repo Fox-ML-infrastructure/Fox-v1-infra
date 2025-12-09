@@ -94,6 +94,74 @@ X_dense, feature_names_dense = make_sklearn_dense_X(X, feature_names)
 ### Tree Models (Not Affected)
 Tree-based models (LightGBM, XGBoost, Random Forest, CatBoost) continue to use raw data as they handle NaNs natively.
 
+### Boruta Statistical Gatekeeper
+
+#### Overview
+Boruta is implemented as a **statistical gatekeeper**, not just another importance scorer. It uses ExtraTrees with stability-oriented hyperparams to test whether features are demonstrably better than noise, then modifies consensus scores via bonuses/penalties.
+
+#### Implementation Details
+
+**Base Estimator:**
+- Uses `ExtraTreesClassifier/Regressor` (more random than RF, better for stability testing)
+- Hyperparams optimized for stable importance: `n_estimators: 500`, `max_depth: 6`, `perc: 95`
+- Configurable `class_weight`, `n_jobs`, `verbose` via YAML
+
+**Gatekeeper Role:**
+- **Excluded from base consensus** — Boruta does not contribute to `consensus_score_base`
+- **Applied as modifier** — Boruta bonuses/penalties modify base consensus to produce `consensus_score`
+- **Scoring system:**
+  - Confirmed features: `+1.0` → `+boruta_confirm_bonus` (default: `+0.2`)
+  - Tentative features: `+0.3` → no modifier (neutral)
+  - Rejected features: `-1.0` → `+boruta_reject_penalty` (default: `-0.3`)
+
+**Output Columns:**
+- `consensus_score_base` — Base consensus (model families only, without Boruta)
+- `consensus_score` — Final consensus (with Boruta gatekeeper effect) — used for sorting/selection
+- `boruta_gate_effect` — Pure Boruta effect (final - base) for debugging
+- `boruta_gate_score` — Raw Boruta scores (1.0/0.3/-1.0)
+- `boruta_confirmed` — Boolean mask for confirmed features
+- `boruta_rejected` — Boolean mask for rejected features
+- `boruta_tentative` — Boolean mask for tentative features
+
+**Magnitude Sanity Checks:**
+- Warns if `max(|bonus|, |penalty|) / base_range > threshold` (default: 0.5)
+- Helps ensure Boruta is a "gentle nudge" not "god-logic"
+- Configurable via `boruta_magnitude_warning_threshold` in aggregation config
+
+**Ranking Impact Metric:**
+- Compares top-K sets: base consensus vs final consensus
+- Logs: `"X features changed in top-K set (base vs final). Ratio: Y%"`
+- Interpretation:
+  - `changed ~ 0%` → gate is inert
+  - `changed ~ 10-30%` → meaningful but not dominant
+  - `changed ~ 50%+` → Boruta is dominating (reduce bonuses/penalties)
+
+**Configuration:**
+```yaml
+# CONFIG/feature_selection/multi_model.yaml
+boruta:
+  enabled: true
+  config:
+    n_estimators: 500
+    max_depth: 6
+    perc: 95
+    n_jobs: 1
+    verbose: 0
+    class_weight: "auto"  # auto/none/dict
+
+aggregation:
+  boruta_confirm_bonus: 0.2
+  boruta_reject_penalty: -0.3
+  boruta_confirmed_threshold: 0.9
+  boruta_tentative_threshold: 0.0
+  boruta_magnitude_warning_threshold: 0.5
+```
+
+**Debug Output:**
+- `feature_importance_with_boruta_debug.csv` — Explicit debug view with all Boruta columns
+- Sorted by final consensus score for easy inspection
+- Includes base score, final score, gate effect, and Boruta flags
+
 ## CatBoost Configuration
 
 ### Problem

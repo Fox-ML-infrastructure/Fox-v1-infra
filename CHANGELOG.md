@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-**Status**: Phase 1 functioning properly - Ranking and selection pipelines unified with consistent behavior. Documentation updated and cross-linked.
+**Status**: Phase 1 functioning properly - Ranking and selection pipelines unified with consistent behavior. Boruta refactored as statistical gatekeeper. All documentation updated and cross-linked.
 
-**Note**: Phase 1 of the pipeline (intelligent training framework) is functioning properly. Ranking and selection pipelines now have unified behavior (interval handling, sklearn preprocessing, CatBoost configuration). All documentation has been updated with cross-links and references to new config files and utilities. Backward functionality remains fully operational. All existing training workflows continue to function as before, and legacy config locations are still supported with deprecation warnings.
+**Note**: Phase 1 of the pipeline (intelligent training framework) is functioning properly. Ranking and selection pipelines now have unified behavior (interval handling, sklearn preprocessing, CatBoost configuration). Boruta has been refactored from "just another importance scorer" to a statistical gatekeeper that modifies consensus scores via bonuses/penalties. All documentation has been updated with cross-links and references to new config files and utilities. Backward functionality remains fully operational. All existing training workflows continue to function as before, and legacy config locations are still supported with deprecation warnings.
 
 ### Stability Guarantees
 
@@ -35,6 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **New**: Automated leakage detection + auto-fixer with production-grade backup system
 - **New**: Centralized safety configs and feature/target schema system
 - **New**: LightGBM GPU support in ranking + TRAINING module now self-contained
+- **New**: Boruta refactored as statistical gatekeeper (ExtraTrees-based, modifies consensus via bonuses/penalties)
+- **New**: Base vs final consensus separation with explicit Boruta gate effect tracking
 - **New**: Full compliance documentation suite + commercial pricing update
 
 ### Added
@@ -61,10 +63,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Easy to switch between quiet production runs and verbose debug runs via config
 
 #### **Ranking and Selection Pipeline Consistency**
-- **Unified interval handling** — `explicit_interval` parameter now wired through entire ranking pipeline (orchestrator → rank_targets → evaluate_target_predictability → train_and_evaluate_models). All interval detection respects `data.bar_interval` from experiment config, eliminating spurious auto-detection warnings.
+- **Unified interval handling** — `explicit_interval` parameter now wired through entire ranking pipeline (orchestrator → rank_targets → evaluate_target_predictability → train_and_evaluate_models). All interval detection respects `data.bar_interval` from experiment config, eliminating spurious auto-detection warnings. Fixed "Nonem" logging issue in interval detection fallback.
 - **Shared sklearn preprocessing** — All sklearn-based models in ranking now use `make_sklearn_dense_X()` helper (same as feature selection) for consistent NaN/dtype/inf handling. Applied to Lasso, Mutual Information, Univariate Selection, Boruta, and Stability Selection.
 - **Unified CatBoost builder** — CatBoost in ranking now uses same target type detection and loss function selection as feature selection. Auto-detects classification vs regression and sets appropriate `loss_function` (`Logloss`/`MultiClass`/`RMSE`) with YAML override support.
 - **Shared target utilities** — New `TRAINING/utils/target_utils.py` module with reusable helpers (`is_classification_target()`, `is_binary_classification_target()`, `is_multiclass_target()`) used consistently across ranking and selection.
+
+#### **Boruta Statistical Gatekeeper Refactor**
+- **Boruta as gatekeeper, not scorer** — Refactored Boruta from "just another importance scorer" to a statistical gatekeeper that modifies consensus scores via bonuses/penalties. Boruta is now excluded from base consensus calculation and only applied as a modifier, eliminating double-counting.
+- **Base vs final consensus separation** — Feature selection now tracks both `consensus_score_base` (model families only) and `consensus_score` (with Boruta gatekeeper effect). Added `boruta_gate_effect` column showing pure Boruta impact (final - base) for debugging and analysis.
+- **Boruta implementation improvements**:
+  - Switched from `RandomForest` to `ExtraTreesClassifier/Regressor` for more random, stability-oriented importance testing
+  - Configurable hyperparams: `n_estimators: 500` (vs RF's 200), `max_depth: 6` (vs RF's 15), `perc: 95` (more conservative)
+  - Configurable `class_weight`, `n_jobs`, `verbose` via YAML
+  - Fixed `X_clean` error by using `X_dense` and `y` from `make_sklearn_dense_X()`
+- **Magnitude sanity checks** — Added configurable magnitude ratio warning (`boruta_magnitude_warning_threshold: 0.5`) that warns if Boruta bonuses/penalties exceed 50% of base consensus range. Logs base_min, base_max, base_range, and ratio for tuning.
+- **Ranking impact metric** — Calculates and logs how many features changed in top-K set when comparing base vs final consensus. Helps verify Boruta is having meaningful but not dominant effect.
+- **Edge case handling** — Guards for Boruta disabled/failed cases. Always populates Boruta columns in summary_df (zeros/False when disabled) for consistent DataFrame structure.
+- **Debug output** — New `feature_importance_with_boruta_debug.csv` file with explicit columns for Boruta gatekeeper analysis (base score, final score, gate effect, confirmed/rejected/tentative flags).
+- **Config migration** — All Boruta hyperparams and gatekeeper settings moved to `CONFIG/feature_selection/multi_model.yaml` (no hardcoded values).
 
 #### **Modular Configuration System** (Testing in Progress)
 - **Typed configuration schemas** (`CONFIG/config_schemas.py`):
@@ -223,6 +239,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated company address in Terms of Service (STE B 212 W. Troy St., Dothan, AL 36303)
 
 ### Fixed
+
+#### **Feature Selection Pipeline Fixes**
+- **Boruta `X_clean` error** — Fixed `NameError: name 'X_clean' is not defined` in Boruta feature selection. Now correctly uses `X_dense` and `y` from `make_sklearn_dense_X()` sanitization.
+- **Interval detection "Nonem" warning** — Fixed logging issue where interval detection fallback showed "Using default: Nonem" instead of actual default value. Now properly passes default parameter through call chain.
+- **Boruta double-counting** — Fixed issue where Boruta was contributing to both base consensus (as a model family) and gatekeeper modifier. Now excluded from base consensus, only applied as gatekeeper modifier.
+- **Config hardcoded values** — Moved all hardcoded config values (RFE estimator params, Boruta hyperparams, Stability Selection params, Boruta gatekeeper thresholds) to YAML config files for full configurability.
 - **Logging configuration**:
   - Fixed method name mismatch in `logging_config_utils.py` (`get_backend_logging_config` now correctly calls `get_backend_config`)
   - Fixed logger initialization order in `rank_target_predictability.py` (config import before logger usage)

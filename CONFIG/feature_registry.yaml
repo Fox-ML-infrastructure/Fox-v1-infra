@@ -532,6 +532,18 @@ features:
     source: unknown
     rejected: true
     description: 'AUTO-REJECTED: Detected as leaky feature'
+  market_correlation_60d:
+    lag_bars: 0
+    allowed_horizons: []
+    source: unknown
+    rejected: true
+    description: 'AUTO-REJECTED: Detected as leaky feature'
+  month_of_year:
+    lag_bars: 0
+    allowed_horizons: []
+    source: unknown
+    rejected: true
+    description: 'AUTO-REJECTED: Detected as leaky feature'
 feature_families:
   lagged_returns:
     pattern: ^ret_\d+$

@@ -3,7 +3,7 @@
 Complete navigation guide for FoxML Core documentation.
 
 **Last Updated**: 2025-12-08  
-**Recent Updates**: Added unified pipeline consistency guide, structured logging configuration, and shared utility modules documentation.
+**Recent Updates**: Added unified pipeline consistency guide (including Boruta gatekeeper), structured logging configuration, shared utility modules documentation, and comprehensive Boruta refactor documentation.
 
 ## Quick Navigation
 
@@ -51,7 +51,7 @@ Step-by-step guides for common tasks.
 
 ### Training
 - [Intelligent Training Tutorial](01_tutorials/training/INTELLIGENT_TRAINING_TUTORIAL.md) - Automated target ranking, feature selection, and training (includes timestamped outputs and backup system)
-- [Ranking and Selection Consistency](01_tutorials/training/RANKING_SELECTION_CONSISTENCY.md) - **NEW**: Unified pipeline behavior (interval handling, sklearn preprocessing, CatBoost configuration)
+- [Ranking and Selection Consistency](01_tutorials/training/RANKING_SELECTION_CONSISTENCY.md) - **NEW**: Unified pipeline behavior (interval handling, sklearn preprocessing, CatBoost configuration, Boruta gatekeeper)
 - [Model Training Guide](01_tutorials/training/MODEL_TRAINING_GUIDE.md) - Manual training workflow (how to run it)
 - [Walk-Forward Validation](01_tutorials/training/WALKFORWARD_VALIDATION.md) - Validation workflow
 - [Feature Selection Tutorial](01_tutorials/training/FEATURE_SELECTION_TUTORIAL.md) - Manual feature selection

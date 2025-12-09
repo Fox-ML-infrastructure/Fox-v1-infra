@@ -167,7 +167,7 @@ The pipeline automatically discovers and ranks all available targets using multi
 - **Lasso** - Linear model (uses shared sklearn preprocessing)
 - **Mutual Information** - Statistical feature selection (uses shared sklearn preprocessing)
 - **Univariate Selection** - F-test based selection (uses shared sklearn preprocessing)
-- **Boruta** - All-relevant feature selection (uses shared sklearn preprocessing)
+- **Boruta** - Statistical gatekeeper (ExtraTrees-based, uses shared sklearn preprocessing, modifies consensus via bonuses/penalties)
 - **Stability Selection** - Bootstrap-based selection (uses shared sklearn preprocessing)
 
 **Ranking Criteria:**
@@ -218,6 +218,7 @@ For each selected target, the pipeline automatically selects the best features u
 - Trains multiple model families (LightGBM, XGBoost, Random Forest, CatBoost, Neural Network, Lasso, Mutual Information, Univariate Selection, Boruta, Stability Selection)
 - Extracts feature importance (native/SHAP/permutation/coefficients)
 - Aggregates importance across models and symbols
+- **Boruta acts as statistical gatekeeper**: Excluded from base consensus, applied as modifier via bonuses/penalties (confirmed features get +0.2, rejected get -0.3, tentative neutral)
 - Ranks features by consensus score
 
 **Preprocessing Consistency:**

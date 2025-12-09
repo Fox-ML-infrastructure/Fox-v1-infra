@@ -252,9 +252,18 @@ model_families:
 ```
 
 **Model Families:**
-- **Tree-based:** LightGBM, XGBoost, Random Forest
+- **Tree-based:** LightGBM, XGBoost, Random Forest, CatBoost
 - **Neural:** MLP, Transformer, LSTM, CNN1D
+- **Statistical/Wrapper:** Lasso, Mutual Information, Univariate Selection, RFE, Boruta (gatekeeper), Stability Selection
 - **Ensemble:** Ensemble, MultiTask
+
+**Note on Boruta:**
+Boruta is implemented as a **statistical gatekeeper**, not just another importance scorer. It:
+- Uses ExtraTrees (more random than RF) with stability-oriented hyperparams (`n_estimators: 500`, `max_depth: 6`, `perc: 95`)
+- Is excluded from base consensus calculation
+- Modifies final consensus via bonuses/penalties (confirmed: +0.2, rejected: -0.3, tentative: neutral)
+- Provides separate columns in output: `consensus_score_base`, `consensus_score` (final), `boruta_gate_effect`
+- See [Ranking and Selection Consistency](../../01_tutorials/training/RANKING_SELECTION_CONSISTENCY.md#boruta-statistical-gatekeeper) for details
 
 **Example: Adjusting Model Weights**
 

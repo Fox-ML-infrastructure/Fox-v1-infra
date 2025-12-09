@@ -16,6 +16,7 @@ Feature selection reduces dimensionality and improves model performance by:
 - Multi-model consensus (LightGBM, XGBoost, Random Forest, CatBoost, Neural Network, Lasso, Mutual Information, Univariate Selection, Boruta, Stability Selection)
 - Consistent preprocessing (shared `make_sklearn_dense_X()` helper for sklearn models)
 - Unified interval handling (respects `data.bar_interval` from experiment config)
+- **Boruta statistical gatekeeper**: Boruta acts as a gatekeeper (not just another scorer), using ExtraTrees to test feature significance and modifying consensus scores via bonuses/penalties
 - See [Ranking and Selection Consistency](RANKING_SELECTION_CONSISTENCY.md) for details
 
 ## Quick Start

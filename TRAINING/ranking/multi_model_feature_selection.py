@@ -581,10 +581,26 @@ def train_model_and_get_importance(
         n_features_to_select = min(model_config.get('n_features_to_select', 50), len(feature_names))
         step = model_config.get('step', 5)
         
+        # Use config for RFE's internal estimator (or defaults)
+        estimator_n_estimators = model_config.get('estimator_n_estimators', 100)
+        estimator_max_depth = model_config.get('estimator_max_depth', 10)
+        estimator_n_jobs = model_config.get('estimator_n_jobs', 1)
+        estimator_random_state = model_config.get('random_state', 42)
+        
         if is_binary or is_multiclass:
-            estimator = RandomForestClassifier(n_estimators=100, max_depth=10, random_state=42, n_jobs=1)
+            estimator = RandomForestClassifier(
+                n_estimators=estimator_n_estimators,
+                max_depth=estimator_max_depth,
+                random_state=estimator_random_state,
+                n_jobs=estimator_n_jobs
+            )
         else:
-            estimator = RandomForestRegressor(n_estimators=100, max_depth=10, random_state=42, n_jobs=1)
+            estimator = RandomForestRegressor(
+                n_estimators=estimator_n_estimators,
+                max_depth=estimator_max_depth,
+                random_state=estimator_random_state,
+                n_jobs=estimator_n_jobs
+            )
         
         selector = RFE(estimator, n_features_to_select=n_features_to_select, step=step)
         selector.fit(X, y)
@@ -608,10 +624,11 @@ def train_model_and_get_importance(
             train_score = 0.0
     
     elif model_family == 'boruta':
-        # Boruta - All-relevant feature selection
+        # Boruta - All-relevant feature selection (statistical gate, not just another importance scorer)
+        # Uses ExtraTrees with more trees/shallower depth for stable importance testing
         try:
             from boruta import BorutaPy
-            from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+            from sklearn.ensemble import ExtraTreesRegressor, ExtraTreesClassifier
             from TRAINING.utils.sklearn_safe import make_sklearn_dense_X
             
             # Boruta doesn't support NaN - use sklearn-safe conversion
@@ -625,33 +642,97 @@ def train_model_and_get_importance(
                 for v in unique_vals
             )
             
-            if is_binary or is_multiclass:
-                rf = RandomForestClassifier(n_estimators=100, max_depth=10, random_state=42, n_jobs=1)
-            else:
-                rf = RandomForestRegressor(n_estimators=100, max_depth=10, random_state=42, n_jobs=1)
+            # Use ExtraTrees (more random, better for stability testing) with Boruta-optimized hyperparams
+            # More trees + shallower depth = stable importance signals, not best predictive performance
+            boruta_n_estimators = model_config.get('n_estimators', 500)  # More trees for stability
+            boruta_max_depth = model_config.get('max_depth', 6)  # Shallower to avoid overfitting to interactions
+            boruta_random_state = model_config.get('random_state', 42)
+            boruta_max_iter = model_config.get('max_iter', 100)
+            boruta_n_jobs = model_config.get('n_jobs', 1)
+            boruta_verbose = model_config.get('verbose', 0)
+            boruta_class_weight = model_config.get('class_weight', 'auto')
             
-            boruta = BorutaPy(rf, n_estimators='auto', verbose=0, random_state=42, max_iter=model_config.get('max_iter', 100))
+            # Handle class_weight config
+            if is_binary or is_multiclass:
+                if boruta_class_weight == 'auto':
+                    # Auto: balanced_subsample for binary, balanced for multiclass
+                    class_weight_value = 'balanced_subsample' if is_binary else 'balanced'
+                elif boruta_class_weight == 'none' or boruta_class_weight is None:
+                    class_weight_value = None
+                else:
+                    # Use config value directly (could be dict, 'balanced', etc.)
+                    class_weight_value = boruta_class_weight
+                
+                base_estimator = ExtraTreesClassifier(
+                    n_estimators=boruta_n_estimators,
+                    max_depth=boruta_max_depth,
+                    random_state=boruta_random_state,
+                    n_jobs=boruta_n_jobs,
+                    class_weight=class_weight_value
+                )
+            else:
+                base_estimator = ExtraTreesRegressor(
+                    n_estimators=boruta_n_estimators,
+                    max_depth=boruta_max_depth,
+                    random_state=boruta_random_state,
+                    n_jobs=boruta_n_jobs
+                )
+            
+            boruta = BorutaPy(
+                base_estimator,
+                n_estimators='auto',
+                verbose=boruta_verbose,
+                random_state=boruta_random_state,
+                max_iter=boruta_max_iter,
+                perc=model_config.get('perc', 95)  # Higher threshold = more conservative (needs to beat shadow more decisively)
+            )
+            # Note: make_sklearn_dense_X imputes NaNs but doesn't filter rows, so y matches X_dense length
             boruta.fit(X_dense, y)
             
             # Update feature_names to match dense array
             feature_names = feature_names_dense
             
-            # Convert to importance: selected features get high importance, rejected get low
-            ranking = boruta.ranking_
-            selected = boruta.support_
+            # Boruta as statistical gate: confirmed/rejected/tentative labels
+            ranking = boruta.ranking_  # 1=confirmed, 2=tentative, >2=rejected
+            selected = boruta.support_  # True=confirmed, False=rejected or tentative
             
-            # Importance: selected=1.0, tentative=0.5, rejected=0.1
-            # Boruta returns per-feature importance (not per-sample), so no mapping needed
-            importance_values = np.where(selected, 1.0, np.where(ranking == 2, 0.5, 0.1))
+            # Log Boruta gate results per symbol
+            n_confirmed = selected.sum()
+            n_tentative = (ranking == 2).sum()
+            n_rejected = (ranking > 2).sum()
+            logger.info(f"    boruta: {n_confirmed} confirmed, {n_rejected} rejected, {n_tentative} tentative")
+            
+            # Store Boruta labels for aggregation (gatekeeper role)
+            # Importance scoring: confirmed=+1.0, tentative=+0.3, rejected=-1.0 (penalty)
+            # This makes Boruta a modifier, not just another importance vector
+            importance_values = np.where(
+                selected,  # confirmed
+                1.0,
+                np.where(ranking == 2, 0.3, -1.0)  # tentative=0.3, rejected=-1.0 (penalty)
+            )
             
             class DummyModel:
                 def __init__(self, importance):
                     self.importance = importance
+                # Store Boruta metadata for aggregation
+                def get_boruta_labels(self):
+                    return {
+                        'confirmed': selected,
+                        'tentative': ranking == 2,
+                        'rejected': ranking > 2,
+                        'ranking': ranking
+                    }
             
             model = DummyModel(importance_values)
-            train_score = rf.score(X_clean, y_clean) if hasattr(rf, 'score') else 0.0
+            # Fix: Use X_dense and y (not X_clean, y_clean which don't exist)
+            # Note: y is not sanitized separately, but since make_sklearn_dense_X doesn't filter rows,
+            # y matches X_dense in length and alignment
+            train_score = base_estimator.score(X_dense, y) if hasattr(base_estimator, 'score') else 0.0
         except ImportError:
             logger.error("Boruta not available (pip install Boruta)")
+            return None, pd.Series(0.0, index=feature_names), importance_method, 0.0
+        except Exception as e:
+            logger.error(f"Boruta failed: {e}", exc_info=True)
             return None, pd.Series(0.0, index=feature_names), importance_method, 0.0
     
     elif model_family == 'stability_selection':
@@ -674,7 +755,7 @@ def train_model_and_get_importance(
         # Calculate purge_overlap from target horizon
         # CRITICAL: Use the data_interval_minutes parameter (detected in calling function)
         # Using wrong interval (e.g., assuming 5m when data is 1m) causes severe leakage
-        purge_buffer_bars = 5  # Safety buffer
+        purge_buffer_bars = model_config.get('purge_buffer_bars', 5)  # Safety buffer (configurable)
         
         leakage_config = _load_leakage_config()
         target_horizon_minutes = _extract_horizon(target_column, leakage_config) if target_column else None
@@ -683,15 +764,21 @@ def train_model_and_get_importance(
             target_horizon_bars = target_horizon_minutes // data_interval_minutes
             purge_overlap = target_horizon_bars + purge_buffer_bars
         else:
-            # Fallback: conservative default (60m = 12 bars + 5 buffer)
+            # Fallback: conservative default (60m = 12 bars + buffer)
             purge_overlap = 17
         
         # Create purged CV splitter
         # NOTE: Using row-count based purging (legacy). For better accuracy, use time-based purging:
         # purged_cv = PurgedTimeSeriesSplit(n_splits=3, purge_overlap_time=pd.Timedelta(minutes=target_horizon_minutes), time_column_values=timestamps)
-        purged_cv = PurgedTimeSeriesSplit(n_splits=3, purge_overlap=purge_overlap)
+        n_splits = model_config.get('n_splits', 3)  # Number of CV splits (configurable)
+        purged_cv = PurgedTimeSeriesSplit(n_splits=n_splits, purge_overlap=purge_overlap)
         
         n_bootstrap = model_config.get('n_bootstrap', 50)  # Reduced for speed
+        stability_random_state = model_config.get('random_state', 42)
+        stability_cs = model_config.get('Cs', 10)  # Number of C values for LogisticRegressionCV
+        stability_max_iter = model_config.get('max_iter', 1000)  # Max iterations for LassoCV/LogisticRegressionCV
+        stability_n_jobs = model_config.get('n_jobs', 1)  # Parallel jobs
+        
         stability_scores = np.zeros(X.shape[1])
         
         for _ in range(n_bootstrap):
@@ -700,9 +787,20 @@ def train_model_and_get_importance(
             
             try:
                 if is_binary or is_multiclass:
-                    model = LogisticRegressionCV(Cs=10, cv=purged_cv, random_state=42, max_iter=1000, n_jobs=1)
+                    model = LogisticRegressionCV(
+                        Cs=stability_cs,
+                        cv=purged_cv,
+                        random_state=stability_random_state,
+                        max_iter=stability_max_iter,
+                        n_jobs=stability_n_jobs
+                    )
                 else:
-                    model = LassoCV(cv=purged_cv, random_state=42, max_iter=1000, n_jobs=1)
+                    model = LassoCV(
+                        cv=purged_cv,
+                        random_state=stability_random_state,
+                        max_iter=stability_max_iter,
+                        n_jobs=stability_n_jobs
+                    )
                 
                 model.fit(X_boot, y_boot)
                 stability_scores += (np.abs(model.coef_[0] if len(model.coef_.shape) > 1 else model.coef_) > 1e-6).astype(int)
@@ -884,6 +982,8 @@ def aggregate_multi_model_importance(
     
     # Aggregate within each family
     family_scores = {}
+    boruta_scores = None  # Store separately for gatekeeper role
+    
     for family_name, results in family_results.items():
         # Combine importances across symbols for this family
         importances_df = pd.concat(
@@ -903,25 +1003,142 @@ def aggregate_multi_model_importance(
         
         # Apply family weight
         weight = model_families_config[family_name].get('weight', 1.0)
-        family_scores[family_name] = family_score * weight
         
-        logger.info(f"📊 {family_name}: Aggregated {len(results)} symbols, "
-                   f"weight={weight}, top={family_score.idxmax()}")
+        # CRITICAL: Boruta is NOT included in base consensus - it's a gatekeeper, not a scorer
+        if family_name == 'boruta':
+            boruta_scores = family_score  # Store for gatekeeper role only
+            logger.info(f"🔒 {family_name}: Aggregated {len(results)} symbols (gatekeeper, excluded from base consensus)")
+        else:
+            family_scores[family_name] = family_score * weight
+            logger.info(f"📊 {family_name}: Aggregated {len(results)} symbols, "
+                       f"weight={weight}, top={family_score.idxmax()}")
     
-    # Combine across families
+    # Combine across families (EXCLUDING Boruta - it's a gatekeeper, not a scorer)
+    if not family_scores:
+        logger.warning("No model family results available (all families may have failed or been disabled)")
+        return pd.DataFrame(), []
+    
     combined_df = pd.DataFrame(family_scores)
     
-    # Calculate consensus score
+    # Calculate BASE consensus score (from non-Boruta families only)
+    # Keep this separate from final score so we can see Boruta's effect
     cross_model_method = aggregation_config.get('cross_model_method', 'weighted_mean')
     if cross_model_method == 'weighted_mean':
-        consensus_score = combined_df.mean(axis=1)
+        consensus_score_base = combined_df.mean(axis=1)
     elif cross_model_method == 'median':
-        consensus_score = combined_df.median(axis=1)
+        consensus_score_base = combined_df.median(axis=1)
     elif cross_model_method == 'geometric_mean':
         # Geometric mean (good for multiplicative effects)
-        consensus_score = np.exp(np.log(combined_df + 1e-10).mean(axis=1))
+        consensus_score_base = np.exp(np.log(combined_df + 1e-10).mean(axis=1))
     else:
-        consensus_score = combined_df.mean(axis=1)
+        consensus_score_base = combined_df.mean(axis=1)
+    
+    # BORUTA GATEKEEPER: Apply Boruta as statistical gate (bonus/penalty system)
+    # Boruta is not just another importance scorer - it's a robustness check
+    # It modifies consensus scores but doesn't contribute to base consensus
+    
+    # Check if Boruta is enabled in config (even if no results)
+    boruta_enabled = model_families_config.get('boruta', {}).get('enabled', False)
+    
+    if boruta_scores is not None:
+        boruta_bonus = aggregation_config.get('boruta_confirm_bonus', 0.2)  # Bonus for confirmed features
+        boruta_penalty = aggregation_config.get('boruta_reject_penalty', -0.3)  # Penalty for rejected features
+        
+        # Boruta scores: 1.0=confirmed, 0.3=tentative, -1.0=rejected
+        # Apply modifiers to consensus score
+        confirmed_threshold = aggregation_config.get('boruta_confirmed_threshold', 0.9)  # Configurable threshold
+        tentative_threshold = aggregation_config.get('boruta_tentative_threshold', 0.0)  # Configurable threshold
+        
+        confirmed_mask = boruta_scores >= confirmed_threshold  # Confirmed (score >= threshold, typically ≈ 1.0)
+        rejected_mask = boruta_scores < tentative_threshold  # Rejected (score < threshold, typically = -1.0)
+        tentative_mask = (boruta_scores >= tentative_threshold) & (boruta_scores < confirmed_threshold)  # Tentative (between thresholds, typically ≈ 0.3)
+        
+        # Calculate Boruta gate effect (bonus/penalty per feature)
+        boruta_gate_effect = pd.Series(0.0, index=consensus_score_base.index)
+        boruta_gate_effect[confirmed_mask] = boruta_bonus
+        boruta_gate_effect[rejected_mask] = boruta_penalty
+        # Tentative features get no modifier (neutral = 0.0)
+        
+        # Apply to base consensus to get final score
+        consensus_score_final = consensus_score_base + boruta_gate_effect
+        
+        # Magnitude sanity check: warn if Boruta bonuses/penalties are too large relative to base consensus
+        # Use explicit mathematical definition: ratio = max(|bonus|, |penalty|) / base_range
+        base_min = consensus_score_base.min()
+        base_max = consensus_score_base.max()
+        base_range = max(base_max - base_min, 1e-9)  # Avoid division by zero
+        
+        # Calculate magnitude ratio (larger of bonus or penalty relative to base range)
+        magnitude = max(abs(boruta_bonus), abs(boruta_penalty))
+        magnitude_ratio = magnitude / base_range
+        
+        # Configurable threshold (default 0.5 = 50% of base range)
+        magnitude_warning_threshold = aggregation_config.get('boruta_magnitude_warning_threshold', 0.5)
+        
+        if magnitude_ratio > magnitude_warning_threshold:
+            logger.warning(
+                "⚠️  Boruta gate magnitude ratio=%.3f exceeds threshold=%.3f "
+                "(base_range=%.4f, base_min=%.4f, base_max=%.4f, confirm_bonus=%.3f, reject_penalty=%.3f). "
+                "Consider reducing boruta_confirm_bonus/boruta_reject_penalty in config if Boruta dominates decisions.",
+                magnitude_ratio,
+                magnitude_warning_threshold,
+                base_range,
+                base_min,
+                base_max,
+                boruta_bonus,
+                boruta_penalty
+            )
+        
+        logger.info(f"🔒 Boruta gatekeeper: {confirmed_mask.sum()} confirmed (+{boruta_bonus}), "
+                   f"{rejected_mask.sum()} rejected ({boruta_penalty}), "
+                   f"{tentative_mask.sum()} tentative (neutral)")
+        logger.debug(f"   Base consensus range: [{consensus_score_base.min():.3f}, {consensus_score_base.max():.3f}], "
+                    f"std={consensus_score_base.std():.3f}, magnitude_ratio={magnitude_ratio:.3f}")
+        
+        # Calculate "Boruta changed ranking" metric: compare top-K sets before vs after gatekeeper
+        # Use top_n if available, otherwise use a reasonable default (50) for comparison
+        top_k_for_comparison = top_n if top_n is not None else min(50, len(consensus_score_base))
+        if top_k_for_comparison > 0 and len(consensus_score_base) >= top_k_for_comparison:
+            # Get top-K features from base consensus (without Boruta)
+            top_base_features = set(
+                consensus_score_base.sort_values(ascending=False).head(top_k_for_comparison).index
+            )
+            # Get top-K features from final consensus (with Boruta)
+            top_final_features = set(
+                consensus_score_final.sort_values(ascending=False).head(top_k_for_comparison).index
+            )
+            # Symmetric difference: features that changed in top-K set
+            changed_features = len(top_base_features ^ top_final_features)
+            logger.info(f"   Boruta ranking impact: {changed_features} features changed in top-{top_k_for_comparison} set "
+                       f"(base vs final). Ratio: {changed_features/top_k_for_comparison:.1%}")
+        
+        # Store for summary_df
+        boruta_gate_effect_series = boruta_gate_effect
+        boruta_gate_scores_series = boruta_scores
+        boruta_confirmed_mask = confirmed_mask
+        boruta_rejected_mask = rejected_mask
+        boruta_tentative_mask = tentative_mask
+        
+    elif boruta_enabled:
+        # Boruta enabled but failed completely (no results from any symbol)
+        logger.warning("🔒 Boruta gatekeeper disabled or unavailable for this target (no effect). "
+                      "Boruta may have failed for all symbols or was disabled mid-run.")
+        # Set defaults: no effect
+        boruta_gate_effect_series = pd.Series(0.0, index=consensus_score_base.index)
+        boruta_gate_scores_series = pd.Series(0.0, index=consensus_score_base.index)
+        boruta_confirmed_mask = pd.Series(False, index=consensus_score_base.index)
+        boruta_rejected_mask = pd.Series(False, index=consensus_score_base.index)
+        boruta_tentative_mask = pd.Series(False, index=consensus_score_base.index)
+        consensus_score_final = consensus_score_base.copy()
+    else:
+        # Boruta not enabled in config - explicit log for clarity
+        logger.debug("🔒 Boruta gatekeeper: disabled via config (no effect on consensus).")
+        boruta_gate_effect_series = pd.Series(0.0, index=consensus_score_base.index)
+        boruta_gate_scores_series = pd.Series(0.0, index=consensus_score_base.index)
+        boruta_confirmed_mask = pd.Series(False, index=consensus_score_base.index)
+        boruta_rejected_mask = pd.Series(False, index=consensus_score_base.index)
+        boruta_tentative_mask = pd.Series(False, index=consensus_score_base.index)
+        consensus_score_final = consensus_score_base.copy()
     
     # Calculate consensus metrics
     n_models = combined_df.shape[1]
@@ -931,20 +1148,28 @@ def aggregate_multi_model_importance(
     # Standard deviation across models (lower = more consensus)
     consensus_std = combined_df.std(axis=1)
     
-    # Create summary DataFrame
+    # Create summary DataFrame with base and final consensus scores
     summary_df = pd.DataFrame({
-        'feature': consensus_score.index,
-        'consensus_score': consensus_score.values,
+        'feature': consensus_score_base.index,
+        'consensus_score_base': consensus_score_base.values,  # Base consensus (without Boruta)
+        'consensus_score': consensus_score_final.values,  # Final consensus (with Boruta gatekeeper effect)
+        'boruta_gate_effect': boruta_gate_effect_series.values,  # Pure Boruta effect (final - base)
         'n_models_agree': frequency,
         'consensus_pct': frequency_pct,
         'std_across_models': consensus_std,
     })
     
-    # Add per-family scores
+    # Add per-family scores (excluding Boruta from per-family columns - it's in gatekeeper section)
     for family_name in family_scores.keys():
         summary_df[f'{family_name}_score'] = combined_df[family_name].values
     
-    # Sort by consensus score
+    # Always add Boruta gatekeeper columns (even if disabled/failed - shows zeros/False)
+    summary_df['boruta_gate_score'] = boruta_gate_scores_series.values  # Raw Boruta scores (1.0/0.3/-1.0)
+    summary_df['boruta_confirmed'] = boruta_confirmed_mask.values
+    summary_df['boruta_rejected'] = boruta_rejected_mask.values
+    summary_df['boruta_tentative'] = boruta_tentative_mask.values
+    
+    # Sort by final consensus score (with Boruta effect)
     summary_df = summary_df.sort_values('consensus_score', ascending=False).reset_index(drop=True)
     
     # Filter by minimum consensus if specified
@@ -976,9 +1201,31 @@ def save_multi_model_results(
             f.write(f"{feature}\n")
     logger.info(f"✅ Saved {len(selected_features)} features to selected_features.txt")
     
-    # 2. Detailed summary CSV
+    # 2. Detailed summary CSV (includes all columns including Boruta gatekeeper)
     summary_df.to_csv(output_dir / "feature_importance_multi_model.csv", index=False)
     logger.info(f"✅ Saved detailed multi-model summary to feature_importance_multi_model.csv")
+    
+    # 2b. Explicit debug view: Boruta gatekeeper effect analysis
+    # This is a stable, named file for quick inspection of Boruta's impact
+    debug_columns = [
+        'feature',
+        'consensus_score_base',  # Base consensus (model families only)
+        'consensus_score',  # Final consensus (with Boruta effect)
+        'boruta_gate_effect',  # Pure Boruta effect (final - base)
+        'boruta_gate_score',  # Raw Boruta scores (1.0/0.3/-1.0)
+        'boruta_confirmed',
+        'boruta_rejected',
+        'boruta_tentative',
+        'n_models_agree',
+        'consensus_pct'
+    ]
+    # Only include columns that exist in summary_df
+    available_debug_columns = [col for col in debug_columns if col in summary_df.columns]
+    if available_debug_columns:
+        debug_df = summary_df[available_debug_columns].copy()
+        debug_df = debug_df.sort_values('consensus_score', ascending=False)  # Sort by final score
+        debug_df.to_csv(output_dir / "feature_importance_with_boruta_debug.csv", index=False)
+        logger.info(f"✅ Saved Boruta gatekeeper debug view to feature_importance_with_boruta_debug.csv")
     
     # 3. Per-model-family breakdowns
     for family_name in summary_df.columns:

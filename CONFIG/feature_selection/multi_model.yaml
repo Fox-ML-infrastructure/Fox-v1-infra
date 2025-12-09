@@ -171,14 +171,25 @@ model_families:
     config:
       n_features_to_select: 50  # Number of features to select
       step: 5  # Number of features to remove per iteration
+      # RFE estimator config (RandomForest used internally)
+      estimator_n_estimators: 100  # Number of trees in RFE's internal RF estimator
+      estimator_max_depth: 10  # Max depth for RFE's internal RF estimator
+      estimator_n_jobs: 1  # Parallel jobs for RFE's internal RF estimator
+      random_state: 42
   
   boruta:
-    enabled: true  # ✅ ENABLED - All-relevant feature selection (slower)
-    importance_method: "native"  # Selection-based (selected/tentative/rejected)
-    weight: 1.0
+    enabled: true  # ✅ ENABLED - All-relevant feature selection (statistical gate, not just another importance scorer)
+    importance_method: "native"  # Selection-based (confirmed/tentative/rejected)
+    weight: 1.0  # Weight in base aggregation (before gatekeeper bonuses/penalties)
     config:
-      max_iter: 100  # Maximum iterations
+      n_estimators: 500  # More trees for stable importance testing (vs RF's 200)
+      max_depth: 6  # Shallower to avoid overfitting to interactions (vs RF's 15)
+      max_iter: 100  # Maximum Boruta iterations
+      perc: 95  # Percentile threshold (higher = more conservative, needs to beat shadow more decisively)
       random_state: 42
+      n_jobs: 1  # Parallel jobs for ExtraTrees base estimator
+      verbose: 0  # BorutaPy verbosity (0=silent, 1=progress, 2=detailed)
+      class_weight: "auto"  # "auto"=balanced_subsample for binary, balanced for multiclass; "none"=no weighting; or dict
   
   stability_selection:
     enabled: true  # ✅ ENABLED - Bootstrap-based stable feature selection (slower)
@@ -190,6 +201,9 @@ model_families:
       Cs: 10  # Number of C values to try for LogisticRegressionCV
       cv: 3  # CV folds for LassoCV/LogisticRegressionCV
       n_jobs: 1  # Parallel jobs for CV
+      max_iter: 1000  # Maximum iterations for LassoCV/LogisticRegressionCV
+      purge_buffer_bars: 5  # Safety buffer bars for PurgedTimeSeriesSplit (added to target horizon)
+      n_splits: 3  # Number of CV splits for PurgedTimeSeriesSplit
 
 # Aggregation strategies
 aggregation:
@@ -204,6 +218,15 @@ aggregation:
   
   # Consensus threshold (0-1): fraction of models that must agree
   consensus_threshold: 0.5  # 50% of models must find feature important
+  
+  # Boruta gatekeeper settings (Boruta acts as statistical gate, not just another importance scorer)
+  boruta_confirm_bonus: 0.2  # Bonus added to consensus score for Boruta-confirmed features
+  boruta_reject_penalty: -0.3  # Penalty applied to consensus score for Boruta-rejected features
+  boruta_confirmed_threshold: 0.9  # Minimum score threshold for "confirmed" (scores >= this are confirmed)
+  boruta_tentative_threshold: 0.0  # Minimum score threshold for "tentative" (scores >= this but < confirmed are tentative)
+  boruta_magnitude_warning_threshold: 0.5  # Warn if max(|bonus|, |penalty|) / base_range > this ratio (0.5 = 50%)
+  # Note: Tentative features get no modifier (neutral), rejected features (scores < tentative_threshold) get penalty
+  # Note: Magnitude ratio > 0.5 means Boruta bonuses/penalties are >50% of base consensus range (may dominate decisions)
 
 # Sampling and performance
 sampling:
