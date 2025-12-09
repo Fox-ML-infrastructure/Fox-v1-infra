@@ -1,5 +1,7 @@
 # Fox ML Infrastructure — Strategic Roadmap
 
+FoxML Core is the core research and training engine of Fox ML Infrastructure.
+
 Direction and priorities for ongoing development. Timelines are aspirational and subject to change.
 
 ---
@@ -28,7 +30,7 @@ FoxML Core is maintained with an **enterprise reliability mindset**:
 * ✅ **Centralized YAML Configuration** — Use structured configs for experiments, model families, and system parameters
 * ✅ **Complete Documentation & Legal** — Full 4-tier docs hierarchy + enterprise legal package for commercial evaluation
 
-**This is production-ready infrastructure, not a prototype.**
+**This is production-grade ML infrastructure, not a prototype.**
 
 ---
 
@@ -232,7 +234,7 @@ FoxML Core is maintained with an **enterprise reliability mindset**:
 
 **Research and future-track work — not blocking near-term goals:**
 
-6. **Testing GPU models + ranking system** — Ongoing validation and edge-case coverage
+6. **GPU + ranking regression testing** — Ongoing validation and edge-case coverage
 7. **Production readiness** — Full test coverage, monitoring, deployment guides, disaster recovery
 8. **Exploratory modules** — Experimental features and research tracks
 9. **NVLink & multi-GPU exploration** — Research phase, performance benchmarking, architecture design
@@ -252,7 +254,7 @@ Fox ML Infrastructure is evolving into:
 
 This roadmap reflects the maturation of FoxML Core from a high-powered solo project into a **commercially viable, enterprise-class ML platform.**
 
-**Development Approach:** Phases 0–2 (documentation, intelligent training, configuration) are complete or substantially complete. Current focus is validation, polish, and strategic sequencing of next-phase work. Priorities emphasize commercially-leverageable improvements over exploratory research.
+**Development Approach:** Phases 0–2 (documentation, intelligent training, configuration) are complete or substantially complete. Development is ahead of schedule on infrastructure and documentation. Current focus is validation, polish, and strategic sequencing of next-phase work. Priorities emphasize commercially-leverageable improvements over exploratory research.
 
 ---
 
@@ -269,4 +271,4 @@ Some TensorFlow warnings (version compatibility, plugin registration) may appear
 
 * **Alpaca Trading Module:** Broken due to minor errors — needs fixes
 * **IBKR Trading Module:** Untested — requires comprehensive testing
-* **Focus:** Training and ranking portions are the primary development priority
+* **Focus:** Training and ranking are stable and under ongoing validation; current active work centers on configuration, memory/polars, and trading connectivity.
