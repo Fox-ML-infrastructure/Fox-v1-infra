@@ -60,7 +60,7 @@ Commercial license pricing is aligned with enterprise quant infrastructure stand
 | **Corporate Research Lab** | Commercial | Research conducted by or for a commercial organization (regardless of non-profit status of lab) |
 | **University Research (Corporate-Funded)** | Commercial | Research funded by, sponsored by, or integrated into commercial operations |
 | **Internal Tools / Dashboards** | Commercial | Any internal use within a business organization (including experimental or non-revenue use) |
-| **Proof of Concept / Pilot** | Commercial | Evaluation or pilot projects within a business context (no free trial for commercial use) |
+| **Proof of Concept / Pilot** | Commercial | Evaluation or pilot projects within a business context (no free trial for Commercial Use) |
 | **SaaS / Hosted Service** | Commercial + Custom | Requires explicit written permission and custom licensing terms |
 | **Vendor / Reseller** | Commercial + Custom | Requires separate commercial agreement |
 
