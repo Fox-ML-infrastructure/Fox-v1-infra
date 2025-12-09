@@ -88,15 +88,16 @@ See `COMMERCIAL_LICENSE.md` Section 4 ("Model Training and Resale") for complete
 
 ### Q: Can I modify the Software?
 
-**A:** With a commercial license, you may modify the Software for internal commercial use, subject to restrictions:
+**A:** Yes. With a commercial license, you may modify the Software for your own internal commercial use.
 
-- Modifications are limited to configuration, integration, and interface layers
-- You may NOT modify the core functionality, algorithms, or architecture
-- Any modifications that alter core functionality require Licensor's prior written consent
+However:
 
-See `COMMERCIAL_LICENSE.md` Section 3 for complete modification rights.
+- Modifications must remain for your internal use only
+- You may not distribute modified versions
+- You may not create derivative products that compete with FoxML Core
+- Any work that qualifies as a derivative of the Software is owned by Licensor and licensed back to you under the terms of your commercial license
 
-**Note:** A commercial license does NOT grant source code access. You are licensing the Software as provided.
+See `COMMERCIAL_LICENSE.md` Section 3 ("Licensee Developments") for complete details.
 
 ---
 
