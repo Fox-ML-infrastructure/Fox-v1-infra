@@ -50,7 +50,8 @@ Commercial license pricing is aligned with enterprise quant infrastructure stand
 | **Personal / Individual** | AGPL-3.0 | Personal study, experimentation, or non-commercial research by an individual (NOT for business, client work, or revenue-generating activities) |
 | **Academic Institution** | AGPL-3.0 | Non-profit, tax-exempt educational institution, research not supporting commercial operations (for-profit universities require commercial license) |
 | **Sole Proprietor / Freelancer** | Commercial | Any use in connection with business activity, client work, or revenue generation (even if claimed to be "personal") |
-| **Startup / Small Business** | Commercial | Any business entity, regardless of size, revenue, or stage (including pre-revenue startups) |
+| **Startup / Small Business** | Commercial | Any business entity, regardless of size, revenue, profitability, or stage (including pre-revenue startups, companies operating at a loss, or companies in development phase) |
+| **Subsidiary / Affiliate** | Commercial | Each legal entity (including subsidiaries, affiliates, and parent companies) must have its own license. A parent company's license does not cover subsidiaries, and vice versa |
 | **Hedge Fund / Trading Firm** | Commercial | Trading, investment, or financial decision-making |
 | **Corporate Research Lab** | Commercial | Research conducted by or for a commercial organization (regardless of non-profit status of lab) |
 | **University Research (Corporate-Funded)** | Commercial | Research funded by, sponsored by, or integrated into commercial operations |
