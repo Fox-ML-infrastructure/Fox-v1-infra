@@ -40,7 +40,11 @@ Any entity that directly or indirectly Controls, is Controlled by, or is under c
 
 Direct Competitor
 
-Any third party whose primary business includes developing, licensing, or providing machine learning or quantitative trading infrastructure products or services that are substantially similar to the Software (for example, commercial platforms primarily marketed as quantitative research, ML pipeline, or trading infrastructure solutions).
+Any third party whose primary business (meaning more than fifty percent (50%) of its revenue or business activities) includes developing, licensing, or providing machine learning or quantitative trading infrastructure products or services that are substantially similar to the Software (for example, commercial platforms primarily marketed as quantitative research, ML pipeline, or trading infrastructure solutions). For the avoidance of doubt, a company that uses the Software internally for its own trading or research activities is not a Direct Competitor solely by virtue of such internal use.
+
+Material Breach
+
+A breach that is significant, substantial, or has a material adverse effect on the other party's rights or interests under this Agreement, including but not limited to: unauthorized distribution, reverse engineering, benchmarking without consent, or use in violation of export controls.
 
 2. Grant of Rights
 
@@ -104,15 +108,15 @@ Licensee shall not use the Software to develop, host, or provide any software-as
 
 (c) an API, SDK, or other interface that provides third parties with direct or indirect access to the Software's core infrastructure capabilities.
 
-For clarity, Licensee may use the Software to build and operate its own internal trading, research, or analytics systems and to provide outputs (e.g., analytics, reports, trading decisions) to its own clients, provided such clients do not receive direct access to the Software itself.
+For clarity, Licensee may use the Software to build and operate its own internal trading, research, or analytics systems and to provide outputs (e.g., analytics, reports, trading decisions) to its own clients, provided such clients do not receive direct or indirect access to the Software itself, including but not limited to: (i) access to the Software's APIs, (ii) ability to execute code or workflows within the Software, (iii) access to the Software's user interface, or (iv) any other means of interacting with or controlling the Software. Licensee may provide data inputs to the Software and receive outputs from the Software for delivery to clients, but clients may not themselves interact with the Software.
 
 **3.1 Benchmarking.**
 
 Licensee shall not publish or disclose to any third party any benchmark, performance, or comparison tests of the Software without Licensor's prior written consent.
 
-Any breach of this Section 3.1 shall be deemed a material breach of this Agreement and may cause irreparable harm to Licensor, for which monetary damages may be an insufficient remedy. In addition to any other rights and remedies, Licensor shall be entitled to seek injunctive or other equitable relief to prevent or curtail any actual or threatened breach of this Section 3.1.
+Any breach of this Section 3.1 shall be deemed a Material Breach (as defined in Section 1) of this Agreement and may cause irreparable harm to Licensor, for which monetary damages may be an insufficient remedy. In addition to any other rights and remedies, Licensor shall be entitled to seek injunctive or other equitable relief to prevent or curtail any actual or threatened breach of this Section 3.1.
 
-A material breach of Section 3.1 (Benchmarking) shall be grounds for immediate termination by Licensor upon written notice, without a cure period.
+A Material Breach of Section 3.1 (Benchmarking) shall be grounds for immediate termination by Licensor upon written notice, without a cure period.
 
 All rights not expressly granted are reserved by Licensor.
 
@@ -236,7 +240,7 @@ fails to pay fees,
 
 commercializes derivative works,
 
-materially breaches Section 3.1 (Benchmarking), which shall be grounds for immediate termination upon written notice without a cure period,
+commits a Material Breach of Section 3.1 (Benchmarking), which shall be grounds for immediate termination upon written notice without a cure period,
 
 builds competing infrastructure.
 
@@ -264,7 +268,7 @@ OR ANY CONSEQUENTIAL DAMAGES ARISING FROM USE OF THE SOFTWARE.
 
 9.2. Indemnity
 
-Licensee agrees to indemnify and hold harmless Licensor from and against any third-party claims, damages, or expenses (including reasonable attorneys' fees) arising out of Licensee's misuse of the Software, violation of this Agreement, or violation of applicable laws.
+Licensee agrees to indemnify and hold harmless Licensor from and against any third-party claims, damages, or expenses (including reasonable attorneys' fees and costs) arising out of Licensee's misuse of the Software, violation of this Agreement, or violation of applicable laws. Licensor will promptly notify Licensee of any such claim and Licensee will have the right to control the defense and settlement of such claim, provided that Licensee may not settle any claim that admits liability or imposes obligations on Licensor without Licensor's prior written consent.
 
 10. Export Control Compliance
 
@@ -284,7 +288,7 @@ Licensor may continue to develop, market, and provide software, products, or ser
 
 12. Publicity
 
-Unless Licensee objects in writing, Licensor may use Licensee's name and logo in customary customer lists and marketing materials to identify Licensee as a customer of the Software. Any other publicity will require Licensee's prior written consent.
+Unless Licensee objects in writing, Licensor may use Licensee's name and logo in customer lists, case studies, press releases, and marketing materials (including websites, presentations, and sales materials) to identify Licensee as a customer of the Software. Any other publicity, including but not limited to quotes, testimonials, or detailed case studies, will require Licensee's prior written consent.
 
 13. Use by Affiliates
 
@@ -307,8 +311,8 @@ Audit Terms:
 - Licensor must provide at least 30 days' written notice
 - Audit scope limited to verification of Software usage and compliance with license restrictions
 - Remote audit methods are permitted (e.g., usage logs, deployment verification)
-- If audit reveals material violation (>5% non-compliance), Licensee must reimburse Licensor's reasonable audit costs
-- Licensee must provide reasonable cooperation and access to relevant records
+- If audit reveals that Licensee underpaid fees by more than five percent (5%) for the audited period or materially violated the license restrictions (meaning a violation that is significant, substantial, or has a material adverse effect on Licensor's rights or interests), Licensee shall reimburse Licensor's reasonable audit costs (not to exceed the amount of underpaid fees) in addition to paying any unpaid fees
+- Licensee must provide reasonable cooperation (including making relevant personnel available during normal business hours) and access to relevant records, logs, and documentation reasonably necessary to verify compliance
 
 Confidentiality: All audit information shall be treated as confidential and used solely for compliance verification.
 
@@ -357,9 +361,36 @@ If any provision of this Agreement is held to be invalid, illegal, or unenforcea
 
 This Agreement, together with any separate signed commercial agreement or Statement of Work, constitutes the entire agreement between the parties regarding the subject matter hereof and supersedes all prior or contemporaneous agreements, understandings, negotiations, and discussions, whether oral or written, relating to the Software. No modification, amendment, or waiver of any provision of this Agreement shall be effective unless in writing and signed by both parties.
 
-21. Survival
+21. Notices
 
-Sections 3 (Restrictions), 9.1 (No Warranty / Limitation of Liability), 9.2 (Indemnity), 10 (Export Control Compliance), 13 (Audit Rights), 15 (Dispute Resolution), 16 (Governing Law), 8 (Confidentiality), 18 (Severability), 19 (Entire Agreement), and this Section 20 (Survival) will survive termination or expiration of this Agreement.
+All notices, requests, consents, claims, demands, and other communications under this Agreement ("Notices") must be in writing and addressed to the parties at the addresses set forth below (or to such other address that may be designated by the receiving party from time to time in accordance with this section).
+
+**To Licensor:**
+Jennifer Lewis  
+Fox ML Infrastructure LLC  
+Email: jenn.lewis5789@gmail.com  
+Subject: Fox Infrastructure Licensing Inquiry
+
+**IMPORTANT — Physical Mail Requirements:**
+- **Email notification required first:** Before sending any physical mail (including certified mail, overnight courier, or any other physical delivery method) to Licensor, the sending party MUST first send an email to jenn.lewis5789@gmail.com with the subject line "Physical Mail Notification" describing the nature of the physical mail and the expected delivery date. Physical mail sent without prior email notification may not be deemed received.
+- **Registered Agent address prohibited:** Do NOT send mail to any registered agent address or corporate filing address. Mail sent to registered agent addresses will not be accepted and will not be deemed received.
+- **Physical mail address:** Physical mail (if required after email notification) should be sent only to an address that Licensor designates in writing after receiving the email notification. Contact jenn.lewis5789@gmail.com to obtain the appropriate physical mailing address.
+
+**To Licensee:**
+The address specified in the Ordering Documents or as otherwise provided by Licensee in writing.
+
+**Preferred Method:**
+Email is the preferred and most reliable method of communication. All Notices should be sent via email unless physical mail is specifically required by law or court order.
+
+**Deemed Receipt:**
+Notices sent:
+- By email will be deemed received on the date sent (if sent during business hours on a business day) or the next business day
+- By certified mail, return receipt requested, will be deemed received on the date of delivery shown on the return receipt, provided that prior email notification was sent as required above
+- By overnight courier will be deemed received on the next business day after deposit with the courier, provided that prior email notification was sent as required above
+
+22. Survival
+
+Sections 3 (Restrictions), 9.1 (No Warranty / Limitation of Liability), 9.2 (Indemnity), 10 (Export Control Compliance), 13 (Audit Rights), 15 (Dispute Resolution), 16 (Governing Law), 8 (Confidentiality), 18 (Severability), 19 (Entire Agreement), 21 (Notices), and this Section 22 (Survival) will survive termination or expiration of this Agreement.
 
 Signatures
 
