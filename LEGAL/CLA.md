@@ -371,6 +371,9 @@ If any provision of this Agreement is held to be invalid, illegal, or unenforcea
 
 This Agreement, together with any separate signed commercial agreement or Statement of Work, constitutes the entire agreement between the parties regarding the subject matter hereof and supersedes all prior or contemporaneous agreements, understandings, negotiations, and discussions, whether oral or written, relating to the Software. No modification, amendment, or waiver of any provision of this Agreement shall be effective unless in writing and signed by both parties.
 
+**Document Hierarchy and Conflicts.**
+`COMMERCIAL_LICENSE.md` is the authoritative and controlling document for all commercial licensing terms, definitions, and obligations. In the event of any conflict, contradiction, or inconsistency between `COMMERCIAL_LICENSE.md` and this Agreement or any other document, the terms of `COMMERCIAL_LICENSE.md` shall control and prevail. This Agreement is intended to be consistent with `COMMERCIAL_LICENSE.md` and incorporates its definitions and terms by reference. For the avoidance of doubt, Ordering Documents may supplement but may not contradict the terms of `COMMERCIAL_LICENSE.md`, except as explicitly permitted therein.
+
 21. Notices
 
 All notices, requests, consents, claims, demands, and other communications under this Agreement ("Notices") must be in writing and addressed to the parties at the addresses set forth below (or to such other address that may be designated by the receiving party from time to time in accordance with this section).

@@ -3,6 +3,8 @@ Copyright (c) 2025-2026 Jennifer Lewis
 
 > **Note:** This Commercial License is provided for informational purposes and may be supplemented or modified by a separate signed agreement. Licensor is not providing legal advice; Licensee should consult its own counsel before entering into this License.
 
+**Single Source of Truth:** This Commercial License (`COMMERCIAL_LICENSE.md`) is the authoritative and controlling document for all commercial licensing terms, definitions, and obligations. In the event of any conflict, contradiction, or inconsistency between this Commercial License and any other document (including but not limited to: `LEGAL/CLA.md`, `DUAL_LICENSE.md`, `LEGAL/SUBSCRIPTIONS.md`, `LEGAL/COMMERCIAL_USE.md`, or any other documentation), the terms of this Commercial License shall control and prevail. All definitions, restrictions, and obligations set forth in this Commercial License are binding, and any conflicting statements in other documents are superseded by this License.
+
 ---
 
 **Who This License Is For**
@@ -363,6 +365,9 @@ If any provision of this License is held to be invalid, illegal, or unenforceabl
 ## 22. ENTIRE AGREEMENT
 
 This License, together with any separate signed commercial agreement or Statement of Work, constitutes the entire agreement between the parties regarding the subject matter hereof and supersedes all prior or contemporaneous agreements, understandings, negotiations, and discussions, whether oral or written, relating to the Software. No modification, amendment, or waiver of any provision of this License shall be effective unless in writing and signed by both parties.
+
+**Document Hierarchy and Conflicts.**
+This Commercial License (`COMMERCIAL_LICENSE.md`) is the authoritative and controlling document for all commercial licensing terms, definitions, and obligations. In the event of any conflict, contradiction, or inconsistency between this Commercial License and any other document (including but not limited to: `LEGAL/CLA.md`, `DUAL_LICENSE.md`, `LEGAL/SUBSCRIPTIONS.md`, `LEGAL/COMMERCIAL_USE.md`, `LEGAL/LICENSE_ENFORCEMENT.md`, or any other documentation), the terms of this Commercial License shall control and prevail. All definitions, restrictions, and obligations set forth in this Commercial License are binding, and any conflicting statements in other documents are superseded by this License. For the avoidance of doubt, Ordering Documents (as defined in Section 1) may supplement but may not contradict the terms of this License, except as explicitly permitted herein (e.g., regarding fees as set forth in Section 10).
 
 ## 23. SURVIVAL
 

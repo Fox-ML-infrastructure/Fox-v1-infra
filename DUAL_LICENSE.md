@@ -1,6 +1,8 @@
 # FoxML Core – Dual License
 
-FoxML Core is dual-licensed under two distinct options. This document is a **high-level summary**. In case of any conflict, the full text of `LICENSE` (AGPL-3.0) and `COMMERCIAL_LICENSE.md` controls.
+FoxML Core is dual-licensed under two distinct options. This document is a **high-level summary**. 
+
+**Document Hierarchy:** In case of any conflict, the full text of `LICENSE` (AGPL-3.0) and `COMMERCIAL_LICENSE.md` controls. `COMMERCIAL_LICENSE.md` is the authoritative and controlling document for all commercial licensing terms, definitions, and obligations. Any conflicting statements in this document or other documentation are superseded by `COMMERCIAL_LICENSE.md`.
 
 ## License Option 1: GNU Affero General Public License v3.0 (AGPL-3.0)
 
