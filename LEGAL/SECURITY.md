@@ -59,7 +59,7 @@ For consulting engagements (separate from licensing):
 - **No retention** — Client data is deleted upon project completion unless written authorization is provided
 - **Secure channels** — All data access uses client-approved secure methods
 
-See `LEGAL/internal/SECURITY_AND_ACCESS_POLICY.md` for detailed consulting security practices.
+See `LEGAL/consulting/SECURITY_AND_ACCESS_POLICY.md` for detailed consulting security practices.
 
 ---
 
@@ -225,7 +225,7 @@ Subject: *Security Inquiry — Fox ML Infrastructure*
 
 ## Related Documents
 
-- `LEGAL/internal/SECURITY_AND_ACCESS_POLICY.md` — Detailed security practices for consulting engagements
+- `LEGAL/consulting/SECURITY_AND_ACCESS_POLICY.md` — Detailed security practices for consulting engagements
 - `LEGAL/ENTERPRISE_DELIVERY.md` — Repository structure and delivery model
 - `LEGAL/SUPPORT_POLICY.md` — Support tiers and response times
 - `LEGAL/SERVICE_LEVEL_AGREEMENT.md` — SLA terms for Enterprise support

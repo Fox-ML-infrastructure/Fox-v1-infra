@@ -70,7 +70,7 @@ The platform is **client-hosted software** that runs entirely within the client'
 - **Client-controlled** — All data access uses client-approved secure methods
 - **No retention** — Client data is deleted upon project completion unless written authorization is provided
 
-**See `LEGAL/internal/SECURITY_AND_ACCESS_POLICY.md` for detailed consulting security practices.**
+**See `LEGAL/consulting/SECURITY_AND_ACCESS_POLICY.md` for detailed consulting security practices.**
 
 ### 4.2 Data Handling for Consulting
 
@@ -268,7 +268,7 @@ Subject: *Data Processing Addendum Inquiry — Fox ML Infrastructure*
 ## Related Documents
 
 - `LEGAL/SECURITY.md` — Security statement and data handling practices
-- `LEGAL/internal/SECURITY_AND_ACCESS_POLICY.md` — Detailed security practices for consulting engagements
+- `LEGAL/consulting/SECURITY_AND_ACCESS_POLICY.md` — Detailed security practices for consulting engagements
 - `LEGAL/ENTERPRISE_DELIVERY.md` — Repository structure and delivery model
 - `COMMERCIAL_LICENSE.md` — Commercial license terms
 

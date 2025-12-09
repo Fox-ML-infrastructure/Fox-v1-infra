@@ -59,12 +59,14 @@ always_exclude:
   - obv_ema
   - parkinson_vol_5
   - price_volume_trend
+  - ret_ord_5m
   - ret_zscore_10m
   - ret_zscore_15m
   - ret_zscore_30m
   - ret_zscore_5m
   - ret_zscore_60m
   - rsi_21
+  - rsi_30
   - time_in_profit_10m
   - time_in_profit_15m
   - time_in_profit_5m

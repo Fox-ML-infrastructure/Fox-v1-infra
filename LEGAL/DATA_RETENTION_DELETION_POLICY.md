@@ -80,7 +80,7 @@ However, we do retain limited information for:
 - **Purpose:** Project execution only
 - **Deletion:** All data deleted upon delivery unless client provides written authorization for retention
 
-**See `LEGAL/internal/SECURITY_AND_ACCESS_POLICY.md` for detailed consulting data handling.**
+**See `LEGAL/consulting/SECURITY_AND_ACCESS_POLICY.md` for detailed consulting data handling.**
 
 ### 3.5 Email Communications
 
@@ -281,7 +281,7 @@ Subject: *Data Retention/Deletion Request — Fox ML Infrastructure*
 
 - `LEGAL/PRIVACY_POLICY.md` — Privacy Policy (data collection and use)
 - `LEGAL/DATA_PROCESSING_ADDENDUM.md` — Data Processing Addendum (zero data processing)
-- `LEGAL/internal/SECURITY_AND_ACCESS_POLICY.md` — Security and access policy for consulting
+- `LEGAL/consulting/SECURITY_AND_ACCESS_POLICY.md` — Security and access policy for consulting
 
 ---
 

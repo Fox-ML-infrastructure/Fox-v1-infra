@@ -96,9 +96,9 @@ Core documents for consulting engagements:
 
 *Note: Licensing documents (LICENSING.md, COMMERCIAL_LICENSE.md, CLA.md, SUBSCRIPTIONS.md, TOS.md) are located in the root of this directory.*
 
-### 📁 `internal/` — Internal Policies & Forms
+### 📁 `consulting/` — Client-Facing Policies & Forms
 
-Internal documents and client-facing forms:
+Client-facing documents and forms for consulting engagements:
 
 - **`SECURITY_AND_ACCESS_POLICY.md`** — Data handling, credential rules, infrastructure access, and compliance practices
 - **`INTAKE_FORM.md`** — Structured form for clients to submit project details and initial scoping information
@@ -156,7 +156,7 @@ These demonstrate engineering style, architectural decisions, and domain experti
 ## Contact
 
 For inquiries or scoping discussions, please refer to the contact information on the GitHub profile.  
-Clients are encouraged to use the **Intake Form** (`internal/INTAKE_FORM.md`) when submitting initial project details.
+Clients are encouraged to use the **Intake Form** (`consulting/INTAKE_FORM.md`) when submitting initial project details.
 
 **Email:** jenn.lewis5789@gmail.com
 

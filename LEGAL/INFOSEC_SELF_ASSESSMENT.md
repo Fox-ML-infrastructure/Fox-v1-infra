@@ -255,7 +255,7 @@ This pre-empts common enterprise security review questions and accelerates procu
 - ✅ **Client-controlled** — All data access uses client-approved secure methods
 - ✅ **No retention** — Client data is deleted upon project completion unless written authorization is provided
 
-**See `LEGAL/internal/SECURITY_AND_ACCESS_POLICY.md` for detailed consulting security practices.**
+**See `LEGAL/consulting/SECURITY_AND_ACCESS_POLICY.md` for detailed consulting security practices.**
 
 ---
 
@@ -276,7 +276,7 @@ This pre-empts common enterprise security review questions and accelerates procu
 
 - ✅ **Security statement** — Public-facing security statement (`LEGAL/SECURITY.md`)
 - ✅ **Data handling** — Data processing addendum (`LEGAL/DATA_PROCESSING_ADDENDUM.md`)
-- ✅ **Access policy** — Security and access policy for consulting (`LEGAL/internal/SECURITY_AND_ACCESS_POLICY.md`)
+- ✅ **Access policy** — Security and access policy for consulting (`LEGAL/consulting/SECURITY_AND_ACCESS_POLICY.md`)
 - ✅ **Compliance** — Export compliance and other compliance documents
 
 ---
@@ -312,7 +312,7 @@ Subject: *InfoSec Self-Assessment Inquiry — Fox ML Infrastructure*
 
 - `LEGAL/SECURITY.md` — Security statement and data handling practices
 - `LEGAL/DATA_PROCESSING_ADDENDUM.md` — Data processing addendum (zero data processing)
-- `LEGAL/internal/SECURITY_AND_ACCESS_POLICY.md` — Security and access policy for consulting
+- `LEGAL/consulting/SECURITY_AND_ACCESS_POLICY.md` — Security and access policy for consulting
 - `LEGAL/EXPORT_COMPLIANCE.md` — Export control compliance
 - `LEGAL/ENTERPRISE_CHECKLIST.md` — Enterprise readiness checklist
 

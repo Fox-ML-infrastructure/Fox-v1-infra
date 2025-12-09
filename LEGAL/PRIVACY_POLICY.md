@@ -99,7 +99,7 @@ This Privacy Policy covers:
 - **Client-controlled** — All data access uses client-approved secure methods
 - **No retention** — Client data is deleted upon project completion unless written authorization is provided
 
-**See `LEGAL/internal/SECURITY_AND_ACCESS_POLICY.md` for detailed consulting data handling practices.**
+**See `LEGAL/consulting/SECURITY_AND_ACCESS_POLICY.md` for detailed consulting data handling practices.**
 
 ### 4.2 Consulting Data Handling
 
@@ -287,7 +287,7 @@ Subject: *Privacy Inquiry — Fox ML Infrastructure*
 
 - `LEGAL/DATA_PROCESSING_ADDENDUM.md` — Data Processing Addendum (DPA) for commercial licensees
 - `LEGAL/SECURITY.md` — Security statement and data handling practices
-- `LEGAL/internal/SECURITY_AND_ACCESS_POLICY.md` — Security and access policy for consulting engagements
+- `LEGAL/consulting/SECURITY_AND_ACCESS_POLICY.md` — Security and access policy for consulting engagements
 
 ---
 
