@@ -31,21 +31,21 @@ This Commercial License is intended for trading firms, hedge funds, financial in
 
 "Material Breach" means a breach that is significant, substantial, or has a material adverse effect on the other party's rights or interests under this License, including but not limited to: unauthorized distribution, reverse engineering, benchmarking without consent, or use in violation of export controls.
 
-"Commercial Use" means any use of the Software by a business, organization, institution, or individual that:
-  (a) generates revenue directly or indirectly,
-  (b) contributes to a commercial product or service,
-  (c) is deployed internally within a company for operational, analytical, modeling, forecasting, optimization, or research purposes (including but not limited to: development, testing, staging, quality assurance, or production environments),
-  (d) is used to provide services to third parties,
-  (e) enables, assists, or supports any for-profit activity,
-  (f) is used to train, develop, or create models, algorithms, or systems that are then used commercially, sold, licensed, or provided to third parties,
-  (g) is used in any environment (development, staging, testing, or production) within a business or organizational context, regardless of whether such environment is labeled as "non-production" or "experimental."
+"Competing Infrastructure Service" means any software, platform, hosted service, or product whose primary purpose is to allow third parties to design, run, or manage their own machine learning, quantitative research, or trading workflows, including experiment orchestration, feature/target management, model training, evaluation, and related infrastructure.
 
-**Business / Internal Use:** Any use of the Software within a company, organization, or other legal entity (including internal tools, proofs of concept, evaluations, pilot projects, or use by employees, contractors, interns, or affiliates) requires a commercial license, regardless of whether the use directly generates revenue. See `LEGAL/SUBSCRIPTIONS.md` for complete definitions.
+"Commercial Use" means any use of the Software by or for the benefit of a business, organization, or other legal entity, including:
 
-Non-commercial academic or personal research use of the open-source version remains available under the AGPL-3.0 license, subject to the definitions in `LEGAL/SUBSCRIPTIONS.md`. Academic research conducted for, funded by, sponsored by, or operationally integrated into a commercial organization's activities requires a commercial license.
+(a) internal use in any environment (development, testing, staging, or production);
 
-**IMPORTANT — AGPL-3.0 Commercial Use Prohibition:**
-The AGPL-3.0 version of the Software may NOT be used for any commercial purpose. Commercial use of the AGPL-3.0 version is a violation of the AGPL-3.0 license terms and may result in copyright infringement claims. If you have used the Software commercially under AGPL-3.0, you must immediately obtain a commercial license and may be required to pay retroactive licensing fees for the entire period of unauthorized commercial use.
+(b) use that directly or indirectly supports revenue-generating activities, products, or services; or
+
+(c) use by employees, contractors, interns, or Affiliates in the scope of their work for such entity.
+
+Non-commercial academic or personal research use of the AGPL-3.0 version is permitted only as described in `LEGAL/SUBSCRIPTIONS.md`. Any Commercial Use requires this Commercial License, regardless of whether the environment is labeled "non-production," "evaluation," "pilot," or similar.
+
+**AGPL-3.0 Commercial Use Prohibition.**
+
+The AGPL-3.0 version of the Software may not be used for any Commercial Use. Commercial Use of the Software without a valid commercial license may constitute copyright infringement and may require payment of retroactive licensing fees.
 
 This Commercial License is intended for organizations that wish to:
   (a) avoid AGPL copyleft obligations in commercial / internal systems, or
@@ -104,7 +104,11 @@ Contributing code, fixes, or improvements to the open-source version of the Soft
 
 The Software is licensed, not sold. As between Licensor and Licensee, Licensor retains all right, title, and interest in and to the Software and all related intellectual property rights, whether registered or unregistered.
 
-**Licensee Developments.** Licensee retains ownership of its own internal configurations, scripts, and integrations created to interface with the Software ("Licensee Developments"), provided that such items do not include source code from the Software other than code allowed to be modified under this License. For the avoidance of doubt, Licensee Developments do not include: (i) any modifications to the Software's core functionality, (ii) any derivative works that incorporate substantial portions of the Software's source code, or (iii) any works that would be considered derivative works under applicable copyright law. Licensee Developments must be clearly separable from the Software and must not infringe upon Licensor's intellectual property rights.
+**Licensee Developments.**
+
+"Licensee Developments" means Licensee's own configurations, scripts, glue code, and integrations that interface with the Software but do not include any portion of the Software's source code other than code that Licensee is expressly permitted to modify under this License.
+
+For clarity, Licensee Developments do not include: (i) modifications to the Software itself, or (ii) any work that would be considered a derivative work of the Software under applicable copyright law. All such modifications and derivative works are owned by Licensor and are licensed back to Licensee only as part of the Software under this License.
 
 **Feedback License.** Licensee grants Licensor a non-exclusive, perpetual, irrevocable, worldwide, royalty-free license to use, modify, and incorporate any feedback, suggestions, error reports, or improvements provided by Licensee regarding the Software, without any obligation to Licensee and without giving Licensee ownership of any improvements or modifications made by Licensor.
 
@@ -389,6 +393,8 @@ Notices sent:
 - By email will be deemed received on the date sent (if sent during business hours on a business day) or the next business day
 - By certified mail, return receipt requested, will be deemed received on the date of delivery shown on the return receipt, provided that prior email notification was sent as required above
 - By overnight courier will be deemed received on the next business day after deposit with the courier, provided that prior email notification was sent as required above
+
+A party's failure to send the optional physical mail notification does not invalidate a Notice that is properly delivered by email under this Section.
 
 ## 25. MISCELLANEOUS
 
