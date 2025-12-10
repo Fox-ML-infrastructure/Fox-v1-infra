@@ -46,12 +46,9 @@ python-dotenv>=1.0.0
 tqdm>=4.65.0
 colorlog>=6.7.0
 
-# Financial Data (Demo/Toy Use Only)
-# NOTE: These are included for demonstration and toy examples only.
-# Production customers are expected to plug in their own data feeds.
+# Financial Data
+# NOTE: Market data libraries are NOT included. Production customers are expected to plug in their own data feeds.
 # FoxML Core is a pipeline infrastructure, not a data provider.
-yfinance>=0.2.0
-pandas-datareader>=0.10.0
 
 # API & Networking
 requests>=2.31.0

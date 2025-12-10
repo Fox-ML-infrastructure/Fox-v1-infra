@@ -102,4 +102,6 @@ pip install pybind11 numpy
 ## See Also
 
 - [Performance Optimization](../implementation/PERFORMANCE_OPTIMIZATION.md) - Optimization strategies
+- [Mathematical Foundations](MATHEMATICAL_FOUNDATIONS.md) - Mathematical background
+- [Optimization Engine](OPTIMIZATION_ENGINE.md) - Optimization design
 

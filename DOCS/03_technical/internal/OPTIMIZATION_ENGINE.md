@@ -89,5 +89,4 @@ Python implementations for:
 
 - [C++ Integration](C++_INTEGRATION.md) - Performance implementation
 - [Mathematical Foundations](MATHEMATICAL_FOUNDATIONS.md) - Equations
-- [IBKR System Reference](../../02_reference/systems/IBKR_SYSTEM_REFERENCE.md) - System details
 

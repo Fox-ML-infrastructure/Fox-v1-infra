@@ -97,9 +97,7 @@ This document defines the 4-tier documentation hierarchy for FoxML Core.
   - VALIDATION_METHODOLOGY.md
 - design/
   - ARCHITECTURE_DEEP_DIVE.md
-  - MATHEMATICAL_FOUNDATIONS.md
-  - OPTIMIZATION_ENGINE.md
-  - C++_INTEGRATION.md
+  - (moved to internal/)
 - benchmarks/
   - PERFORMANCE_METRICS.md
   - MODEL_COMPARISONS.md

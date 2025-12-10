@@ -43,5 +43,5 @@ Performance benchmarks and metrics for the trading system.
 ## See Also
 
 - [Performance Optimization](../implementation/PERFORMANCE_OPTIMIZATION.md) - Optimization details
-- [C++ Integration](../design/C++_INTEGRATION.md) - Performance improvements
+- [C++ Integration](../internal/C++_INTEGRATION.md) - Performance improvements (internal)
 

@@ -64,5 +64,5 @@ def expensive_computation(x):
 
 ## See Also
 
-- [C++ Integration](../design/C++_INTEGRATION.md) - C++ implementation
+- [C++ Integration](../internal/C++_INTEGRATION.md) - C++ implementation (internal)
 

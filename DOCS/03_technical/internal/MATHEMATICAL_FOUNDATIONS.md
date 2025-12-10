@@ -102,4 +102,5 @@ size = (vol_target × equity) / (σ × √(h/252))
 ## See Also
 
 - [C++ Integration](C++_INTEGRATION.md) - Performance implementation
+- [Optimization Engine](OPTIMIZATION_ENGINE.md) - Optimization design
 
