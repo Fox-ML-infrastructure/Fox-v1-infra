@@ -57,6 +57,9 @@ cache/
 tmp/
 temp/
 
+# Data processing (users generate their own features)
+DATA_PROCESSING/
+
 # Data files (large binary formats)
 *.parquet
 *.h5
