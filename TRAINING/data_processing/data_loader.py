@@ -22,13 +22,70 @@ import pandas as pd
 import numpy as np
 import logging
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 import polars as pl
 
 logger = logging.getLogger(__name__)
 
 # Import USE_POLARS - defined from environment variable
 USE_POLARS = os.getenv("USE_POLARS", "1") == "1"
+
+# Import utility functions
+from TRAINING.data_processing.data_utils import (
+    strip_targets, collapse_identical_duplicate_columns
+)
+from TRAINING.utils.core_utils import SYMBOL_COL, INTERVAL_TO_TARGET
+
+# Helper function to resolve time column
+def resolve_time_col(df: pd.DataFrame) -> str:
+    """Resolve time column name from dataframe."""
+    for c in ("ts", "timestamp", "time", "datetime", "ts_pred"):
+        if c in df.columns:
+            return c
+    raise KeyError(f"No time column found in {list(df.columns)[:10]}")
+
+# Helper function to pick one target column (handles suffixes)
+def _pick_one(cols: List[str], target: str) -> Optional[str]:
+    """Pick exactly one target-like column, handling suffixes."""
+    if target in cols:
+        return target
+    # Try common suffixes
+    for suffix in ['', '_x', '_y', '_SYM']:
+        candidate = f"{target}{suffix}"
+        if candidate in cols:
+            return candidate
+    return None
+
+# Fallback pandas implementation
+def _load_mtf_data_pandas(data_dir: str, symbols: List[str], interval: str = "5m", max_rows_per_symbol: int = None) -> Dict[str, pd.DataFrame]:
+    """Pandas-based fallback for loading MTF data."""
+    mtf_data = {}
+    for symbol in symbols:
+        new_path = Path(data_dir) / f"interval={interval}" / f"symbol={symbol}" / f"{symbol}.parquet"
+        legacy_path = Path(data_dir) / f"{symbol}_mtf.parquet"
+        file_path = new_path if new_path.exists() else legacy_path
+        if not file_path.exists():
+            logger.warning(f"File not found for {symbol} at {new_path} or {legacy_path}")
+            continue
+        try:
+            df = pd.read_parquet(file_path)
+            if max_rows_per_symbol:
+                df = df.tail(max_rows_per_symbol)
+            mtf_data[symbol] = df
+            logger.info(f"Loaded {symbol}: {len(df):,} rows, {len(df.columns)} cols")
+        except Exception as e:
+            logger.error(f"Error loading {symbol}: {e}")
+    return mtf_data
+
+# Fallback pandas implementation for cross-sectional data prep
+def _prepare_training_data_cross_sectional_pandas(mtf_data: Dict[str, pd.DataFrame], target: str, common_features: List[str], min_cs: int, max_samples_per_symbol: int = None) -> Tuple:
+    """Pandas-based fallback for cross-sectional data preparation."""
+    # Import the pandas version from data_preparation
+    from TRAINING.training_strategies.data_preparation import _prepare_training_data_pandas
+    return _prepare_training_data_pandas(mtf_data, target, common_features, min_cs, max_samples_per_symbol)
+
+# CS_WINSOR default
+CS_WINSOR = os.getenv("CS_WINSOR", "quantile")
 
 def load_mtf_data(data_dir: str, symbols: List[str], interval: str = "5m", max_rows_per_symbol: int = None) -> Dict[str, pd.DataFrame]:
     """Load MTF data for specified symbols and interval.
