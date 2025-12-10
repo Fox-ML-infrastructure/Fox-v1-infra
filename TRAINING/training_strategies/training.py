@@ -160,9 +160,10 @@ from TRAINING.training_strategies.family_runners import _run_family_inproc, _run
 from TRAINING.training_strategies.data_preparation import prepare_training_data_cross_sectional
 from TRAINING.training_strategies.utils import (
     FAMILY_CAPS, ALL_FAMILIES, tf_available, ngboost_available,
-    train_model_comprehensive, _now, _pkg_ver, THREADS, CPU_ONLY,
+    _now, _pkg_ver, THREADS, CPU_ONLY,
     TORCH_SEQ_FAMILIES, build_sequences_from_features, _env_guard, safe_duration
 )
+# train_model_comprehensive is defined in this file, not in utils
 from TRAINING.target_router import TaskSpec
 from TRAINING.strategies.single_task import SingleTaskStrategy
 from TRAINING.strategies.multi_task import MultiTaskStrategy
