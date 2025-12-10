@@ -158,11 +158,21 @@ CPU_FAMS = {"LightGBM", "QuantileLightGBM", "RewardBased", "NGBoost", "GMMRegime
 # Import dependencies
 from TRAINING.training_strategies.family_runners import _run_family_inproc, _run_family_isolated
 from TRAINING.training_strategies.data_preparation import prepare_training_data_cross_sectional
+from TRAINING.training_strategies.utils import (
+    FAMILY_CAPS, ALL_FAMILIES, tf_available, ngboost_available,
+    train_model_comprehensive, _now, _pkg_ver, THREADS, CPU_ONLY,
+    TORCH_SEQ_FAMILIES, build_sequences_from_features, _env_guard, safe_duration
+)
+from TRAINING.target_router import TaskSpec
+from TRAINING.strategies.single_task import SingleTaskStrategy
+from TRAINING.strategies.multi_task import MultiTaskStrategy
+from TRAINING.strategies.cascade import CascadeStrategy
 
 # Standard library imports
 from typing import Dict, List, Any, Optional, Tuple
 import logging
 import json
+import joblib
 
 # Third-party imports
 import numpy as np
@@ -371,16 +381,19 @@ def train_models_for_interval_comprehensive(interval: str, targets: List[str],
                                 model_path = target_dir / f"{family.lower()}_mtf_b0.pt"
                                 import torch, json
                                 
-                                # Extract the actual PyTorch model from trainer
-                                if hasattr(trainer, 'core') and hasattr(trainer.core, 'model'):
-                                    torch_model = trainer.core.model
+                                # Extract the actual PyTorch model from wrapped_model
+                                # wrapped_model should contain the PyTorch model
+                                if hasattr(wrapped_model, 'core') and hasattr(wrapped_model.core, 'model'):
+                                    torch_model = wrapped_model.core.model
+                                elif hasattr(wrapped_model, 'model'):
+                                    torch_model = wrapped_model.model
                                 else:
                                     torch_model = wrapped_model
                                 
                                 # Save state dict + metadata
                                 torch.save({
                                     "state_dict": torch_model.state_dict(),
-                                    "config": getattr(trainer, "config", {}),
+                                    "config": getattr(wrapped_model, "config", {}),
                                     "arch": family,
                                     "input_shape": X.shape
                                 }, str(model_path))
@@ -511,7 +524,7 @@ def train_models_for_interval_comprehensive(interval: str, targets: List[str],
             
             # Clean up training data (X, y can be 2-6GB)
             try:
-                del X, y, feature_names, symbols, indices, feat_cols, time_vals, imputer
+                del X, y, feature_names, symbols, indices, feat_cols, time_vals
                 logger.info(f"[Cleanup] Released training data after target {target}")
             except:
                 pass
@@ -669,7 +682,7 @@ def train_model_comprehensive(family: str, X: np.ndarray, y: np.ndarray,
 
 
 # Legacy code path - kept for backwards compatibility but shouldn't be reached
-def _legacy_train_fallback(family: str, X: np.ndarray, y: np.ndarray, **kwargs):
+def _legacy_train_fallback(family: str, X: np.ndarray, y: np.ndarray, target: str = None, strategy: str = None, **kwargs):
     """Legacy fallback - should not be reached with runtime_policy."""
     logger.warning(f"[{family}] Unexpected fallback path - check runtime_policy configuration")
     if False:  # Dead code marker
@@ -692,6 +705,8 @@ def _legacy_train_fallback(family: str, X: np.ndarray, y: np.ndarray, **kwargs):
         }
     
     # Route PyTorch sequential families for better performance
+    # SEQ_BACKEND is only used in dead code path - default to 'torch' if not provided
+    SEQ_BACKEND = kwargs.get('seq_backend', 'torch')  # Default for legacy code
     if family in TORCH_SEQ_FAMILIES and SEQ_BACKEND == 'torch':
         logger.info("🔥 [%s] using PyTorch implementation for better performance…", family)
         print(f"🔥 [{family}] using PyTorch implementation for better performance...")
