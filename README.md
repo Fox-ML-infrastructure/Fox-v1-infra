@@ -5,7 +5,7 @@
 
 FoxML Core is:
 
-- A leakage-safe ML research and training infrastructure stack for cross-sectional trading
+- A leakage-safe ML research and training infrastructure stack for quantitative research
 - A reference architecture for high-throughput, config-driven ML pipelines
 - Designed for quant desks, infra teams, and researchers (architecture, not alpha)
 
