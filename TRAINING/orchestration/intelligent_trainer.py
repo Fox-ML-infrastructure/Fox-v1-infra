@@ -70,7 +70,8 @@ try:
     _NEW_CONFIG_AVAILABLE = True
 except ImportError:
     _NEW_CONFIG_AVAILABLE = False
-    logger.debug("New config system not available, using legacy configs")
+    # Logger not yet initialized, will be set up below
+    pass
 
 # Import existing training pipeline functions
 # We import the module but don't run main() - we call functions directly

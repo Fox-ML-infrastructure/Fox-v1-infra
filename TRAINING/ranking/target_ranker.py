@@ -43,6 +43,13 @@ from TRAINING.ranking.rank_target_predictability import (
     load_target_configs as _load_target_configs,
     save_rankings as _save_rankings
 )
+
+# Import auto-rerun wrapper if available
+try:
+    from TRAINING.ranking.rank_target_predictability import evaluate_target_with_autofix
+except ImportError:
+    # Fallback: use regular evaluation
+    evaluate_target_with_autofix = _evaluate_target_predictability
 from TRAINING.utils.task_types import TargetConfig, TaskType
 from TRAINING.utils.leakage_filtering import reload_feature_configs
 
@@ -61,7 +68,8 @@ try:
     _NEW_CONFIG_AVAILABLE = True
 except ImportError:
     _NEW_CONFIG_AVAILABLE = False
-    logger.debug("New config system not available, using legacy configs")
+    # Logger not yet initialized, will be set up below
+    pass
 
 # Suppress expected warnings
 warnings.filterwarnings('ignore', message='X does not have valid feature names')

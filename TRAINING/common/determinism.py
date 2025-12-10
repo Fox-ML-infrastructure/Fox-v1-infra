@@ -2,6 +2,11 @@
 
 """
 Copyright (c) 2025-2026 Fox ML Infrastructure LLC
+"""
+import numpy as np
+import logging
+
+"""
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published
@@ -38,6 +43,7 @@ import os
 import random
 import hashlib
 import logging
+import numpy as np
 from typing import Iterable, Optional, Dict, Any
 
 logger = logging.getLogger(__name__)
