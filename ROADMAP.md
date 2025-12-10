@@ -205,8 +205,8 @@ FoxML Core is maintained with an **enterprise reliability mindset**:
 
 **Advanced Features:**
 * Model ensemble architecture
-* Multi-asset support
-* Advanced execution and risk engines
+* Multi-entity cross-sectional support
+* Advanced inference and prediction engines
 * Real-time analytics pipeline
 
 **ROCm Support (Future):**

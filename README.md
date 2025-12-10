@@ -1,13 +1,13 @@
-# FoxML Core — ML & Quantitative Systems Infrastructure
+# FoxML Core — ML Cross-Sectional Infrastructure
 
 > **📋 See [ROADMAP.md](ROADMAP.md) for most recent updates, current development focus, and status of modules (including known broken/untested components).**  
 > **📝 See [CHANGELOG.md](CHANGELOG.md) for recent technical and compliance changes.**
 
 FoxML Core is:
 
-- A leakage-safe ML research and training infrastructure stack for quantitative research
+- A leakage-safe ML research and training infrastructure stack for cross-sectional and panel data
 - A reference architecture for high-throughput, config-driven ML pipelines
-- Designed for quant desks, infra teams, and researchers (architecture, not alpha)
+- Designed for ML infra teams, data scientists, and researchers (architecture, not alpha)
 
 FoxML Core is a high-performance research and machine learning infrastructure stack.  
 It provides a reference-grade architecture for ML pipelines, quantitative workflows, reproducible experiments, and performance-optimized engineering (single-node HPC optimized; distributed HPC planned) without exposing proprietary signals or production-ready trading systems.
@@ -15,7 +15,7 @@ It provides a reference-grade architecture for ML pipelines, quantitative workfl
 > **Note:** Personal / academic use is AGPL-3.0. **Company / production use requires a commercial license.**
 
 Developed and maintained by **Jennifer Lewis**  
-Independent Contractor • ML Engineering • Quantitative Research • Systems Architecture
+Independent Contractor • ML Engineering • Cross-Sectional ML Systems • Systems Architecture
 
 ---------------------------------------------------------------------
 
@@ -30,7 +30,7 @@ FoxML Core demonstrates:
 - **Multi-model training systems** with 20+ model families (GPU-accelerated)
 - **HPC-compatible orchestration patterns** (single-node optimized; distributed HPC planned/WIP)
 
-This is a **research infrastructure system**, not a trading bot or financial product.
+This is a **cross-sectional ML research infrastructure system** designed for panel data and time-series workflows.
 
 ---------------------------------------------------------------------
 
@@ -69,12 +69,10 @@ FoxML Core is **general-purpose ML cross-sectional infrastructure** optimized fo
 - Benchmarking and systems review  
 
 ### Not Appropriate For
-- Turnkey trading or retail strategy deployment  
-- Financial advice or automated trading  
 - Commercial use without a license  
-- Unmodified production HFT or revenue-generating systems  
+- Unmodified production deployment without proper testing and validation
 
-**FoxML Core provides infrastructure and architecture, not investment advice, signals, or plug-and-play trading strategies.**
+**FoxML Core provides ML infrastructure and architecture, not domain-specific applications or pre-built solutions.**
 
 ---------------------------------------------------------------------
 
@@ -122,7 +120,7 @@ Please include:
 
 ### Optional Add-Ons
 
-For trading desks and infra teams that need more than a license, optional services are available, including:
+For ML teams and infra teams that need more than a license, optional services are available, including:
 
 - **Dedicated support retainers** (priority fixes, direct maintainer access)
 - **Custom integration projects** (fit FoxML into your existing infra and data)
@@ -153,11 +151,11 @@ For full policies and contracting information, see the [`LEGAL/`](LEGAL/) direct
 - Configurable model zoos (20+ families: LightGBM, XGBoost, Random Forest, Neural Networks, etc.)
 - GPU-optimized training with CUDA support
 
-#### Quantitative Research Engineering
+#### Cross-Sectional ML Engineering
 - **Automated target predictability assessment** with multi-model evaluation
 - **Feature/target schema system** with ranking vs. training mode rules
 - Walk-forward analysis frameworks with time-purged cross-validation
-- Strict leakage auditing with sentinel tests (shifted-target, symbol-holdout, randomized-time)
+- Strict leakage auditing with sentinel tests (shifted-target, entity-holdout, randomized-time)
 - Research-oriented data pipelines with Polars optimization
 - Feature engineering at scale with registry-based temporal rules  
 
