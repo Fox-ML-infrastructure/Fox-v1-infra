@@ -162,6 +162,7 @@ from TRAINING.training_strategies.data_preparation import prepare_training_data_
 # Standard library imports
 from typing import Dict, List, Any, Optional, Tuple
 import logging
+import json
 
 # Third-party imports
 import numpy as np
@@ -210,7 +211,7 @@ def train_models_for_interval_comprehensive(interval: str, targets: List[str],
         X, y, feature_names, symbols, indices, feat_cols, time_vals, routing_meta = prepare_training_data_cross_sectional(
             mtf_data, target, feature_names=selected_features, min_cs=min_cs, max_cs_samples=max_cs_samples
         )
-        prep_elapsed = time.time() - prep_start
+        prep_elapsed = _t.time() - prep_start
         print(f"✅ Data preparation completed in {prep_elapsed:.2f}s")  # Debug print
         
         if X is None:

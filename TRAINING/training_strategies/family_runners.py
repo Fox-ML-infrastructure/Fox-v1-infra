@@ -380,7 +380,7 @@ def _run_family_isolated(family: str, X, y, timeout_s: int = None,
     for retry in range(3):
         if os.path.exists(payload_path) and os.path.getsize(payload_path) > 0:
             break
-        time.sleep(0.5)
+        _t.sleep(0.5)
     
     if not os.path.exists(payload_path):
         error_file = payload_path + ".error.txt"
