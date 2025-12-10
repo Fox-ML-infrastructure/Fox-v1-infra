@@ -14,7 +14,7 @@ Complete navigation guide for FoxML Core documentation.
 ### Project Status & Licensing
 
 - [Roadmap](../ROADMAP.md) - Current development focus and upcoming work
-- [Reliability & Safety Update](../RELIABILITY_UPDATE.md) - **NEW**: Public-facing reliability report showing safety-first architecture and operational transparency
+- [Deterministic Training](00_executive/DETERMINISTIC_TRAINING.md) - SST config system and reproducibility guarantees
 - [Changelog](../CHANGELOG.md) - Recent technical and compliance changes (quick overview)
 - [Detailed Changelog](02_reference/CHANGELOG_DETAILED.md) - Comprehensive change details with file paths and config references
 - [Licensing & Subscriptions](../LEGAL/SUBSCRIPTIONS.md) - AGPL vs commercial usage and subscription tiers
