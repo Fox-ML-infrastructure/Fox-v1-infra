@@ -24,6 +24,20 @@ from typing import Dict, List, Any, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
+# Import utilities
+from TRAINING.utils.core_utils import SYMBOL_COL
+
+# Helper function to resolve time column
+def resolve_time_col(df: pd.DataFrame) -> str:
+    """Resolve time column name from dataframe."""
+    for c in ("ts", "timestamp", "time", "datetime", "ts_pred"):
+        if c in df.columns:
+            return c
+    raise KeyError(f"No time column found in {list(df.columns)[:10]}")
+
+# Import time-aware split from core_utils
+from TRAINING.utils.core_utils import create_time_aware_split
+
 def strip_targets(cols, all_targets=None):
     """
 

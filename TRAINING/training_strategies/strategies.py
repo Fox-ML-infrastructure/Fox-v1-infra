@@ -163,6 +163,19 @@ from typing import Dict, List, Any, Optional
 import numpy as np
 import pandas as pd
 
+# Import strategy classes
+from TRAINING.strategies.single_task import SingleTaskStrategy
+from TRAINING.strategies.multi_task import MultiTaskStrategy
+from TRAINING.strategies.cascade import CascadeStrategy
+
+# Import target extraction utility
+try:
+    from target_resolver import safe_target_extraction
+except ImportError:
+    # Fallback if not available
+    def safe_target_extraction(df, target):
+        return df[target], target
+
 # Import USE_POLARS and polars if available
 import os
 USE_POLARS = os.getenv("USE_POLARS", "1") == "1"

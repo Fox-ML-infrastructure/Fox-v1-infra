@@ -22,6 +22,7 @@ Used across ranking and feature selection to ensure consistent behavior.
 """
 
 import numpy as np
+import pandas as pd
 from typing import Union
 
 
