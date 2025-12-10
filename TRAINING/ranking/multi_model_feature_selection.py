@@ -434,9 +434,8 @@ def train_model_and_get_importance(
     model_seed = stable_seed_from(seed_parts)
     
     # Validate target before training
-    sys.path.insert(0, str(_REPO_ROOT / "scripts" / "utils"))
     try:
-        from target_validation import validate_target
+        from TRAINING.utils.target_validation import validate_target
         is_valid, error_msg = validate_target(y, min_samples=10, min_class_samples=2)
         if not is_valid:
             logger.debug(f"    {model_family}: {error_msg}")
