@@ -38,7 +38,7 @@ model, cv_results = interface.train_with_cross_validation(
 
 ## Configuration
 
-Walk-forward configuration is defined in YAML:
+Walk-forward configuration is defined in YAML (all parameters load from config - Single Source of Truth):
 
 ```yaml
 walkforward:

@@ -2,6 +2,8 @@
 
 Example configurations for common use cases.
 
+> **✅ Complete Single Source of Truth (SST)**: All model trainers use config-driven hyperparameters. Full reproducibility: same config → same results.
+
 > **📚 For comprehensive configuration documentation, see the [Configuration Reference](../../02_reference/configuration/README.md).**
 
 ## Using Experiment Configs (Recommended for Intelligent Training)

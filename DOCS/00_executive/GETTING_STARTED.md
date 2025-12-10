@@ -35,7 +35,7 @@ FoxML Core provides:
 - Walk-forward validation
 - Optional paper trading integration
 
-Configuration-driven: all parameters in YAML configs, no hardcoded values.
+**Complete Single Source of Truth (SST)**: All parameters in YAML configs - zero hardcoded values. Same config → same results across all pipeline stages. Full reproducibility guaranteed.
 
 ### System Flow
 

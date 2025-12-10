@@ -25,7 +25,7 @@ FoxML Core demonstrates:
 
 - **Intelligent training pipeline** with automated target ranking and feature selection
 - **Leakage-safe research architecture** with pre-training leak detection and auto-fix
-- **Scalable ML workflow design** with config-driven orchestration
+- **Scalable ML workflow design** with complete Single Source of Truth (SST) config system - all 52+ model trainers use config-driven hyperparameters for full reproducibility
 - **High-throughput data processing** with Polars-optimized pipelines
 - **Multi-model training systems** with 20+ model families (GPU-accelerated)
 - **HPC-compatible orchestration patterns** (NVLink-ready architecture planned)
@@ -167,7 +167,7 @@ For full policies and contracting information, see the [`LEGAL/`](LEGAL/) direct
 - GPU topology detection and logging  
 
 #### Systems Architecture
-- Reproducible, config-driven workflows  
+- Complete Single Source of Truth (SST) - reproducible, config-driven workflows with zero hardcoded values  
 - Enterprise deployment patterns  
 - Code correctness and architecture review  
 
@@ -223,7 +223,7 @@ FoxML_Core/
 
 - Defined scopes and clear communication  
 - NDA-compliant handling of client datasets  
-- High-quality, reproducible engineering  
+- High-quality, reproducible engineering with complete config centralization (SST) ensuring same config → same results  
 - Minimal onboarding overhead for teams  
 - SOW-structured engagements  
 

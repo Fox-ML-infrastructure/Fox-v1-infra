@@ -15,7 +15,9 @@ Centralized configuration management for FoxML Core training pipeline, model fam
 
 ## Overview
 
-The configuration system provides a single source of truth for all training parameters, system settings, model hyperparameters, feature management, and safety controls. All configurations are stored as YAML files and loaded programmatically via `config_loader.py`.
+The configuration system provides a **complete Single Source of Truth (SST)** for all training parameters, system settings, model hyperparameters, feature management, and safety controls. **As of 2025-12-10, ALL hardcoded configuration values have been removed from the TRAINING pipeline.** All 52+ model trainers and specialized models now load hyperparameters, test splits, and random seeds from centralized config files, ensuring complete reproducibility: same config → same results across all pipeline stages.
+
+All configurations are stored as YAML files and loaded programmatically via `config_loader.py`.
 
 ## Complete Directory Structure
 

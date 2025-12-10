@@ -4,6 +4,8 @@ Complete guide to training machine learning models on labeled data.
 
 > **New**: For automated target ranking and feature selection, see the [Intelligent Training Tutorial](INTELLIGENT_TRAINING_TUTORIAL.md). This guide covers the manual training workflow.
 
+> **✅ Complete Single Source of Truth (SST)**: As of 2025-12-10, all model trainers use config-driven hyperparameters. Same config → same results. Full reproducibility guaranteed.
+
 ## Overview
 
 There are two ways to train models:
@@ -60,9 +62,12 @@ Trained Model
 from TRAINING.model_fun import LightGBMTrainer
 from CONFIG.config_loader import load_model_config
 
+# All hyperparameters (n_estimators, max_depth, learning_rate, etc.) load from config
+# All train/test splits use preprocessing.validation.test_size from config
+# All random seeds use BASE_SEED from determinism system
 config = load_model_config("lightgbm", variant="conservative")
 trainer = LightGBMTrainer(config)
-trainer.train(X_train, y_train)
+trainer.train(X_train, y_train)  # Fully reproducible with same config
 ```
 
 **XGBoost** - Gradient boosting

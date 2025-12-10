@@ -57,17 +57,21 @@ Infrastructure, not a trading bot. Provides architecture, not alpha.
 
 ### 1. CONFIG (Configuration Management)
 
-Centralized, version-controlled configuration.
+**Complete Single Source of Truth (SST)**: Centralized, version-controlled configuration with zero hardcoded values.
 
-Features:
-- 17 model configs with 3 variants each (conservative/balanced/aggressive)
-- Runtime overrides
-- Environment variable support
-- YAML-based
+**Features:**
+- **52+ model trainers** all use config-driven hyperparameters (n_estimators, max_depth, learning_rate, etc.)
+- **All train/test splits** use `preprocessing.validation.test_size` from config
+- **All random seeds** use `BASE_SEED` from determinism system for full reproducibility
+- **17 model configs** with 3 variants each (conservative/balanced/aggressive)
+- **Runtime overrides** and environment variable support
+- **YAML-based** configuration files
 
-Location: `CONFIG/`
+**Reproducibility**: Same config file → identical results across all pipeline stages. Full reproducibility guaranteed.
 
-Usage:
+**Location:** `CONFIG/`
+
+**Usage:**
 ```python
 from CONFIG.config_loader import load_model_config
 config = load_model_config("lightgbm", variant="conservative")

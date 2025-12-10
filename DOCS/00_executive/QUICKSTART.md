@@ -63,10 +63,10 @@ feature_cols = [col for col in df.columns
 X = df[feature_cols].to_pandas()
 y = df['y_will_peak'].to_pandas()
 
-# Load config
+# Load config (all hyperparameters load from config - Single Source of Truth)
 config = load_model_config("lightgbm", variant="conservative")
 
-# Train
+# Train (fully reproducible: same config → same results)
 trainer = LightGBMTrainer(config)
 trainer.train(X, y)
 
