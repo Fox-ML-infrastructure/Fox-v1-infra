@@ -42,9 +42,9 @@ FoxML Core provides:
 Raw Data → Features → Targets → Models → Evaluation
 ```
 
-1. Raw Data: OHLCV market data (5-minute bars)
-2. Features: 200+ engineered features (returns, volatility, technical indicators)
-3. Targets: Prediction labels (barrier, excess returns)
+1. Raw Data: Panel/time-series data (currently tested with OHLCV market data)
+2. Features: 200+ engineered features (returns, volatility, technical indicators, domain-specific)
+3. Targets: Prediction labels (barrier, excess returns, forward returns, domain-specific)
 4. Models: 17+ model types (LightGBM, XGBoost, Deep Learning)
 5. Evaluation: Walk-forward validation, performance metrics
 

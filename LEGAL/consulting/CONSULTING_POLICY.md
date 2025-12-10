@@ -9,7 +9,7 @@ This policy outlines professional terms for all consulting engagements.
 Services include:
 
 * ML infrastructure engineering
-* Quant modeling & risk research
+* Cross-sectional ML modeling & research
 * HPC systems
 * Integrations with the Fox ML Infrastructure (Fox-v1-infra) system
 

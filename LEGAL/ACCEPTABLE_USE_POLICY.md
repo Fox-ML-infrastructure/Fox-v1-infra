@@ -17,9 +17,9 @@ Violation of this policy may result in termination of the commercial license.
 
 **Fox ML Infrastructure may be used for:**
 
-- **Research and development** — ML research, quantitative research, and model development
+- **Research and development** — ML research, cross-sectional ML research, and model development
 - **Internal operations** — Internal business operations, analytics, and decision-making
-- **Trading and investment** — Trading, investment analysis, and portfolio management (subject to compliance with applicable laws)
+- **Domain-specific applications** — Cross-sectional ML applications across any domain (subject to compliance with applicable laws and regulations)
 - **Academic research** — Academic research and educational purposes (under AGPL-3.0 for non-commercial use)
 - **Integration** — Integration with proprietary systems and workflows
 - **Customization** — Customization and modification for internal use

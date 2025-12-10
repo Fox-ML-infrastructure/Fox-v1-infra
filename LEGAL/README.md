@@ -6,7 +6,7 @@ This directory contains all legal, licensing, and contracting documentation for 
 
 ## Overview
 
-This directory includes standardized documents, templates, and policies used for machine learning, quantitative research, and HPC consulting engagements.  
+This directory includes standardized documents, templates, and policies used for machine learning, cross-sectional ML research, and HPC consulting engagements.  
 These materials are provided to help prospective clients evaluate professionalism, workflow, and project structure before initiating a Statement of Work.
 
 ---
@@ -107,7 +107,7 @@ Client-facing documents and forms for consulting engagements:
 - **`CURRENT_AVAILABILITY.md`** — Current availability status and readiness information
 - **`NOTICE_IMPORTANT.md`** — Important business formation and insurance status
 - **`COMMUNICATION_POLICY.md`** — Written communication requirements
-- **`CAPABILITIES_OVERVIEW.md`** — Core competencies across ML engineering, quant infrastructure, HPC systems, and performance-critical workflows
+- **`CAPABILITIES_OVERVIEW.md`** — Core competencies across ML engineering, cross-sectional ML infrastructure, HPC systems, and performance-critical workflows
 
 ---
 

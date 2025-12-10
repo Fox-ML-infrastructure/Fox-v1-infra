@@ -97,7 +97,7 @@
 
 ### 4.1 Annual License Fees
 
-Commercial license pricing is aligned with enterprise quant infrastructure standards.
+Commercial license pricing is aligned with enterprise ML infrastructure standards.
 
 Tiers are based on total headcount of the legal entity (not just users of the Software).
 

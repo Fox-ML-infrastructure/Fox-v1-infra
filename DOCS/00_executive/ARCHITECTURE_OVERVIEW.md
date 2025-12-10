@@ -4,7 +4,7 @@ System architecture for FoxML Core.
 
 ## System Purpose
 
-FoxML Core is a research infrastructure system for ML pipelines, quantitative workflows, and reproducible experiments. Provides:
+FoxML Core is a research infrastructure system for ML pipelines, cross-sectional data workflows, and reproducible experiments. Provides:
 
 - Scalable ML workflow design
 - Leakage-safe research architecture
@@ -13,7 +13,7 @@ FoxML Core is a research infrastructure system for ML pipelines, quantitative wo
 - Hybrid C++/Python infrastructure
 - HPC-compatible orchestration patterns (single-node optimized; distributed HPC planned/WIP)
 
-Infrastructure, not a trading bot. Provides architecture, not alpha.
+Cross-sectional ML infrastructure. Provides architecture, not domain-specific applications.
 
 ## High-Level Architecture
 
@@ -124,7 +124,7 @@ Trains and validates ML models.
 - Feature importance and model diagnostics
 
 **Integration Points**:
-- Models can be integrated with external trading systems
+- Models can be integrated with external systems and applications
 - Standard formats for model serialization
 - Performance tracking and monitoring interfaces
 

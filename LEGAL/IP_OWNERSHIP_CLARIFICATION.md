@@ -1,7 +1,7 @@
 # Fox ML Infrastructure — Intellectual Property Ownership Clarification
 
-This document clarifies intellectual property ownership boundaries between Fox ML Infrastructure and commercial licensees.  
-This is essential for hedge funds, quantitative firms, and enterprises concerned about IP contamination and ownership clarity.
+This document clarifies intellectual property ownership boundaries between Fox ML Infrastructure and commercial licensees.
+This is essential for ML research organizations, quantitative firms, and enterprises concerned about IP contamination and ownership clarity.
 
 ---
 

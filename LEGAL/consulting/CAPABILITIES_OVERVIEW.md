@@ -1,8 +1,8 @@
 # Capabilities Overview  
-## Jennifer Lewis — ML Systems, Quant Infrastructure, HPC Engineering
+## Jennifer Lewis — ML Systems, Cross-Sectional ML Infrastructure, HPC Engineering
 
-This document provides an overview of the technical capabilities, domains, and service areas offered for consulting engagements.  
-It is intended for engineering teams, quantitative research groups, and organizations requiring specialized machine learning and computational infrastructure expertise.
+This document provides an overview of the technical capabilities, domains, and service areas offered for consulting engagements.
+It is intended for engineering teams, ML research groups, and organizations requiring specialized machine learning and computational infrastructure expertise.
 
 ---
 

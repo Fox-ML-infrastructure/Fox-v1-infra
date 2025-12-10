@@ -191,9 +191,9 @@ Please include:
 
 ---
 
-## 9. Quant Fund & Financial Services Considerations
+## 9. Financial Services & Regulated Industry Considerations
 
-**Additional security considerations for quantitative funds and financial services:**
+**Additional security considerations for financial services and regulated industries:**
 
 - **No data exfiltration** — Platform does not transmit data outside client environment
 - **Auditable codebase** — Full source code is available for security review

@@ -369,7 +369,7 @@ git pull origin main  # Pull any client-specific updates
 
 - **Feature Engineering** — `docs/01_tutorials/pipelines/FEATURE_ENGINEERING_TUTORIAL.md`
 - **Model Training** — `docs/01_tutorials/training/BASIC_TRAINING.md`
-- **Model Integration** — Models can be integrated with external trading systems
+- **Model Integration** — Models can be integrated with external systems and applications
 
 ---
 

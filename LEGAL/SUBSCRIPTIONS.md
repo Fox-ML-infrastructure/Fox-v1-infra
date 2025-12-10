@@ -4,7 +4,7 @@
 
 FoxML Core is available under annual commercial licensing for organizations.
 
-Commercial license pricing is aligned with enterprise quant infrastructure standards.
+Commercial license pricing is aligned with enterprise ML infrastructure standards.
 
 ---
 
