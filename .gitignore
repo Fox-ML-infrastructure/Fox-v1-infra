@@ -378,3 +378,7 @@ test_*_ranking_*/
 
 # CONFIG backups (ignore contents, keep folder structure)
 CONFIG/backups/**
+
+# Development tools (untracked) - must come after !**/*.py to override
+TRAINING/tools/check_undefined_names.py
+TRAINING/tools/find_undefined.py
