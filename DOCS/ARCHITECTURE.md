@@ -40,9 +40,6 @@ This document defines the 4-tier documentation hierarchy for FoxML Core.
   - WALKFORWARD_VALIDATION.md
   - FEATURE_SELECTION_TUTORIAL.md
 - trading/
-  - PAPER_TRADING_SETUP.md
-  - IBKR_INTEGRATION.md
-  - ALPACA_INTEGRATION.md
 - configuration/
   - CONFIG_BASICS.md
   - CONFIG_EXAMPLES.md
@@ -74,8 +71,6 @@ This document defines the 4-tier documentation hierarchy for FoxML Core.
   - MODEL_CONFIG_REFERENCE.md
   - TRAINING_PARAMETERS.md
 - systems/
-  - IBKR_SYSTEM_REFERENCE.md
-  - ALPACA_SYSTEM_REFERENCE.md
   - PIPELINE_REFERENCE.md
 - configuration/
   - CONFIG_LOADER_API.md

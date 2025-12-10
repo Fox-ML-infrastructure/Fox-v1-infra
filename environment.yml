@@ -1,4 +1,4 @@
-name: trader_env
+name: foxml_env
 channels:
   - conda-forge
   - defaults
@@ -58,7 +58,10 @@ dependencies:
   # System Utilities
   - psutil>=7.0.0  # Tested with 7.0.0
   
-  # Financial Data
+  # Financial Data (Demo/Toy Use Only)
+  # NOTE: These are included for demonstration and toy examples only.
+  # Production customers are expected to plug in their own data feeds.
+  # FoxML Core is a pipeline infrastructure, not a data provider.
   - yfinance>=0.2.0
   - pandas-datareader>=0.10.0
   
@@ -102,7 +105,9 @@ dependencies:
   
   # Pip-only packages
   - pip:
-    # Trading Libraries (removed - trading modules moved out of core repository)
+    # Broker and execution adapters are NOT included in this environment.
+    # FoxML Core is broker-agnostic; production execution is handled via internal/commercial adapters.
+    # Trading integration modules have been removed from the core repository.
     
     # Additional ML Libraries
     - ngboost>=0.4.0
@@ -137,7 +142,7 @@ dependencies:
 #    conda env create -f environment.yml
 #
 # 2. Activate environment:
-#    conda activate trader_env
+#    conda activate foxml_env
 #
 # 3. Set MKL threading layer to avoid OpenMP conflicts:
 #    export MKL_THREADING_LAYER=GNU

@@ -40,19 +40,7 @@ Current known issues and limitations.
 
 ## Trading Systems
 
-### IBKR Connection Stability
-
-**Issue**: IBKR API may disconnect during long-running sessions.
-
-**Status**: Handled with RateLimiter and automatic reconnection.
-
-**Workaround**: Monitor connection status, use reconnection logic.
-
-### Alpaca Rate Limits
-
-**Issue**: Alpaca API has rate limits that may be exceeded.
-
-**Status**: Handled with rate limiting in broker implementation.
+**Note:** Trading integration modules have been removed from the core repository. The system focuses on ML research infrastructure and model training.
 
 **Workaround**: Monitor API usage, implement backoff.
 

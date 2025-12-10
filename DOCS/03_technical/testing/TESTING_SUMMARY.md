@@ -14,9 +14,9 @@ Summary of testing results and validation status.
 - Python fallback working
 - No memory leaks detected
 
-### IBKR Integration
+### Integration Testing
 
-**Status**: ✅ Validated
+**Status**: ✅ Validated (trading integration modules removed from core repository)
 
 **Results**:
 - Connection stable
@@ -66,5 +66,4 @@ Continue daily testing and monitoring. See [ROADMAP](../../../ROADMAP.md) for te
 
 - [Testing Plan](TESTING_PLAN.md) - Testing procedures
 - [Daily Testing](DAILY_TESTING.md) - Daily procedures
-- [IBKR Testing Summary](../../../IBKR_trading/TESTING_SUMMARY.md) - Detailed results
 

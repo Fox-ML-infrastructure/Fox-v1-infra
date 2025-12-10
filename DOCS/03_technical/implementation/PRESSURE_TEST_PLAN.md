@@ -35,7 +35,7 @@ Pressure tests validate system behavior under:
 
 ### 3. API Disconnections
 
-**Scenario**: IBKR API disconnects during trading
+**Scenario**: API disconnects during operation
 
 **Tests**:
 - Automatic reconnection
@@ -58,7 +58,6 @@ Pressure tests validate system behavior under:
 ### Run Pressure Tests
 
 ```bash
-cd IBKR_trading
 ./run_comprehensive_test.sh
 ```
 
@@ -85,5 +84,4 @@ python SCRIPTS/check_ibkr_connection.py
 ## See Also
 
 - [Testing Plan](../testing/TESTING_PLAN.md) - General testing
-- [IBKR Testing Summary](../../../IBKR_trading/TESTING_SUMMARY.md) - Test results
 

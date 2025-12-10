@@ -83,7 +83,6 @@ pip install -r requirements.txt
 **Core Directories:**
 ```
 fox-v1-infra/
-├── ALPACA_trading/      # Trading integration modules
 ├── CONFIG/              # Configuration files
 ├── DATA_PROCESSING/     # Data processing pipelines
 ├── TRAINING/            # Model training framework
@@ -370,7 +369,7 @@ git pull origin main  # Pull any client-specific updates
 
 - **Feature Engineering** — `docs/01_tutorials/pipelines/FEATURE_ENGINEERING_TUTORIAL.md`
 - **Model Training** — `docs/01_tutorials/training/BASIC_TRAINING.md`
-- **Trading Integration** — `docs/01_tutorials/trading/ALPACA_INTEGRATION.md`
+- **Model Integration** — Models can be integrated with external trading systems
 
 ---
 

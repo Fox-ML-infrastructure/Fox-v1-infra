@@ -11,12 +11,12 @@ Walk-forward validation prevents look-ahead bias by:
 
 ## Basic Walk-Forward
 
-> **Note**: Walk-forward validation is currently planned but not yet implemented. The configuration exists in `ALPACA_trading/config/base.yaml`, but the `TRAINING.walkforward` module does not exist yet.
+> **Note**: Walk-forward validation is currently planned but not yet implemented.
 
 The walkforward configuration is available in the config:
 
 ```yaml
-# ALPACA_trading/config/base.yaml
+# CONFIG/training_config/walkforward.yaml
 walkforward:
   fold_length: 252
   step_size: 63

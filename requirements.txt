@@ -1,6 +1,9 @@
-# Trading System Requirements
+# FoxML Core Requirements
 # For pip-only installation (not recommended - use environment.yml with conda)
 # Install: pip install -r requirements.txt
+#
+# NOTE: Broker and execution adapters are NOT included in this file.
+# FoxML Core is broker-agnostic; production execution is handled via internal/commercial adapters.
 
 # Core Scientific Computing
 numpy>=2.0.0,<3.0.0  # Tested with 2.2.6
@@ -52,7 +55,9 @@ requests>=2.31.0
 aiohttp>=3.8.0
 websockets>=11.0
 
-# Trading Libraries (removed - trading modules moved out of core repository)
+# Broker and execution adapters are NOT included in this file.
+# FoxML Core is broker-agnostic; production execution is handled via internal/commercial adapters.
+# Trading integration modules have been removed from the core repository.
 
 # ML Extras
 ngboost>=0.4.0

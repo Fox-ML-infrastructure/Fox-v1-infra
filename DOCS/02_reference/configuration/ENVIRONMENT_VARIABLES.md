@@ -38,53 +38,9 @@ Models directory path:
 export MODELS_DIR="./models"
 ```
 
-## Alpaca Trading
+## Trading Integration
 
-### ALPACA_API_KEY
-
-Alpaca API key:
-
-```bash
-export ALPACA_API_KEY="your_api_key_id"
-```
-
-### ALPACA_SECRET_KEY
-
-Alpaca secret key:
-
-```bash
-export ALPACA_SECRET_KEY="your_secret_key"
-```
-
-### ALPACA_BASE_URL
-
-Alpaca API base URL:
-
-```bash
-export ALPACA_BASE_URL="https://paper-api.alpaca.markets"
-```
-
-## IBKR Trading
-
-### IBKR_HOST
-
-IBKR TWS/Gateway host:
-
-```bash
-export IBKR_HOST="127.0.0.1"
-```
-
-### IBKR_PORT
-
-IBKR API port (7497 paper, 7496 live):
-
-```bash
-export IBKR_PORT=7497
-```
-
-### IBKR_CLIENT_ID
-
-IBKR client ID:
+**Note:** Trading integration modules have been removed from the core repository. Environment variables for trading integrations are no longer part of the core system.
 
 ```bash
 export IBKR_CLIENT_ID=1

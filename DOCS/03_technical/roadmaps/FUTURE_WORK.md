@@ -6,7 +6,7 @@ Planned features and enhancements. These are aspirational goals, not hard deadli
 
 ### Testing & Validation
 
-- Comprehensive testing for Alpaca and IBKR modules
+- Comprehensive testing for all modules
 - Performance validation and optimization
 - Bug fixes and stability improvements
 

@@ -65,5 +65,4 @@ def expensive_computation(x):
 ## See Also
 
 - [C++ Integration](../design/C++_INTEGRATION.md) - C++ implementation
-- [C++ Engine README](../../../IBKR_trading/cpp_engine/README.md) - Complete reference
 

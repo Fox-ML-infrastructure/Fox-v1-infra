@@ -111,12 +111,9 @@ defaults:
   min_importance: 0.001
 ```
 
-## IBKR Trading Schema
+## Trading Integration Schema
 
-```yaml
-ibkr:
-  host: "127.0.0.1"
-  port: 7497
+**Note:** Trading integration modules have been removed from the core repository. Trading configuration schemas are no longer part of the core system.
   client_id: 1
 
 trading:

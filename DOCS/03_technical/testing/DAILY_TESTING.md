@@ -9,7 +9,7 @@ Daily testing validates that models are working correctly and ready for trading.
 ## Quick Start
 
 ```bash
-cd IBKR_trading
+# Daily testing procedures
 python test_daily_models.py
 ```
 
@@ -39,7 +39,7 @@ Monitor:
 
 ## Configuration
 
-Edit `IBKR_trading/config/ibkr_enhanced.yaml`:
+Edit configuration file:
 
 ```yaml
 testing:
@@ -72,6 +72,5 @@ Check:
 
 ## See Also
 
-- [Daily Testing README](../../../IBKR_trading/DAILY_TESTING_README.md) - Complete guide
 - [Testing Plan](TESTING_PLAN.md) - Testing strategy
 

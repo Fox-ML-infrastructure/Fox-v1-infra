@@ -62,8 +62,7 @@ pip install torch  # For deep learning models
 
 ```bash
 pip install yfinance  # For data fetching
-pip install ib-insync  # For IBKR integration
-pip install alpaca-trade-api  # For Alpaca integration
+# Trading integration libraries removed - trading modules moved out of core repository
 ```
 
 ## Verification

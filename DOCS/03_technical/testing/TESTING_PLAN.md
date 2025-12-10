@@ -16,12 +16,12 @@ Comprehensive testing strategy for the trading system.
 
 **Commands**:
 ```bash
-python IBKR_trading/test_cpp_components.py
+python test_cpp_components.py
 ```
 
-### Phase 2: IBKR Integration Testing
+### Phase 2: Integration Testing
 
-**Purpose**: Validate IBKR API integration.
+**Purpose**: Validate API integration.
 
 **Tests**:
 - Connection stability
@@ -31,7 +31,7 @@ python IBKR_trading/test_cpp_components.py
 
 **Commands**:
 ```bash
-python IBKR_trading/test_ibkr_integration.py
+python test_integration.py
 ```
 
 ### Phase 3: Model Compatibility Testing
@@ -46,8 +46,8 @@ python IBKR_trading/test_ibkr_integration.py
 
 **Commands**:
 ```bash
-python IBKR_trading/test_daily_models.py
-./IBKR_trading/test_all_models_comprehensive.sh
+python test_daily_models.py
+./test_all_models_comprehensive.sh
 ```
 
 ## Test Types
@@ -73,7 +73,6 @@ Measure latency, throughput, memory usage.
 ### Run All Tests
 
 ```bash
-cd IBKR_trading
 ./run_comprehensive_test.sh
 ```
 
@@ -96,5 +95,4 @@ python test_daily_models.py
 
 - [Testing Summary](TESTING_SUMMARY.md) - Test results
 - [Daily Testing](DAILY_TESTING.md) - Daily procedures
-- [IBKR Testing Plan](../../../IBKR_trading/TESTING_PLAN.md) - Detailed plan
 
