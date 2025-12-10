@@ -2,8 +2,8 @@
 
 Complete navigation guide for FoxML Core documentation.
 
-**Last Updated**: 2025-12-09  
-**Recent Updates**: Added refactoring documentation (large file splits), unified pipeline consistency guide (including Boruta gatekeeper), structured logging configuration, shared utility modules documentation, and comprehensive Boruta refactor documentation.
+**Last Updated**: 2025-12-10  
+**Recent Updates**: Complete Single Source of Truth (SST) config centralization - ALL model trainers now use config-driven hyperparameters for full reproducibility. Added refactoring documentation (large file splits), unified pipeline consistency guide (including Boruta gatekeeper), structured logging configuration, shared utility modules documentation, and comprehensive Boruta refactor documentation.
 
 ## Quick Navigation
 
