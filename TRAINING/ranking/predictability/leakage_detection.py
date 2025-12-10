@@ -101,6 +101,7 @@ except ImportError:
 
 # Import checkpoint utility (after path is set)
 from TRAINING.utils.checkpoint import CheckpointManager
+from TRAINING.ranking.predictability.data_loading import get_model_config
 
 # Import unified task type system
 from TRAINING.utils.task_types import (
@@ -475,7 +476,8 @@ def train_and_evaluate_models(
         try:
             # Generate deterministic seed for feature pruning based on target
             from TRAINING.common.determinism import stable_seed_from
-            target_name_for_seed = target_name if 'target_name' in locals() else target_column if 'target_column' in locals() else 'pruning'
+            # Use target_column if available, otherwise use default
+            target_name_for_seed = target_column if target_column else 'pruning'
             prune_seed = stable_seed_from([target_name_for_seed, 'feature_pruning'])
             
             # Load feature pruning config
