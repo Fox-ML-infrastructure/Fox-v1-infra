@@ -61,8 +61,9 @@ pip install torch  # For deep learning models
 ### Optional Packages
 
 ```bash
-pip install yfinance  # For data fetching
-# Trading integration libraries removed - trading modules moved out of core repository
+# Market data libraries are NOT included in the core environment.
+# Production customers are expected to plug in their own data feeds.
+# FoxML Core is a pipeline infrastructure, not a data provider.
 ```
 
 ## Verification
