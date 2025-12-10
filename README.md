@@ -46,16 +46,16 @@ FoxML Core is **general-purpose ML cross-sectional infrastructure** optimized fo
 - Time-series-aware cross-validation
 - Cross-sectional data processing
 
+**Development Approach:** The system is currently developed and tested using financial time series data, but the architecture is **domain-agnostic by design**. The vision is to provide general-purpose cross-sectional ML infrastructure that works across any domain.
+
 **Domain Applications:** The system is designed for cross-sectional and panel data across multiple domains:
-- **Financial time series** (market data, price/volume features)
+- **Financial time series** (market data, price/volume features) — *currently used for development*
 - **IoT sensor data** (device metrics, time-series sensors)
 - **Healthcare** (patient records, longitudinal studies)
 - **Clickstream analytics** (user behavior, event sequences)
 - **Any panel data** with temporal structure
 
 **Extensibility:** Custom data loaders, feature engineering blocks, domain-specific target definitions, and appropriate leakage rules can be configured for any domain. The architecture is domain-agnostic by design.
-
-**Official Support:** Reference implementations and tested workflows are available for financial time series. Other domains require domain-specific configuration and feature engineering, but the core infrastructure supports them.
 
 ---------------------------------------------------------------------
 
