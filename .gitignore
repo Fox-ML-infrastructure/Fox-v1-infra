@@ -20,8 +20,8 @@ DOCS/audit/
 .internal/
 .internal/**
 
-# Internal scripts and tools
-SCRIPTS/internal/
+# Scripts (users implement their own tooling)
+SCRIPTS/
 
 # Enterprise bundle - now tracked (PDFs and index)
 # ENTERPRISE_BUNDLE/
