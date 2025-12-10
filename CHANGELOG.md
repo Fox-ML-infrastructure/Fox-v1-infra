@@ -17,7 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **SST Enforcement System & Complete Hardcoded Value Elimination** (2025-12-10) — Implemented automated SST (Single Source of Truth) enforcement test that scans all training code for hardcoded hyperparameters. Fixed all remaining hardcoded values: top 10% importance patterns now configurable, batch_size uses training profiles (default/debug/throughput_optimized), all seeds properly marked with FALLBACK_DEFAULT_OK, diagnostic models marked as DESIGN_CONSTANT_OK. Created internal SST documentation (`DOCS/03_technical/internal/SST_DETERMINISM_GUARANTEES.md`, `SST_COMPLIANCE_CHECKLIST.md`) and public-facing deterministic training guide (`DOCS/00_executive/DETERMINISTIC_TRAINING.md`). Test passes: no unmarked hardcoded hyperparameters remain.
 - **Complete Single Source of Truth (SST) config centralization** (2025-12-10) — **ALL** hardcoded configuration values across the entire TRAINING pipeline moved to YAML files. Every model trainer in `model_fun/` and `models/` now loads hyperparameters, test splits, and random seeds from centralized config. Feature pruning, leakage detection, training strategies, data preprocessing, and all 52+ model files use the same config system. Ensures complete reproducibility: same config → same results across all pipeline stages.
 - **Determinism system integration** (2025-12-10) — All `random_state` values now use the centralized determinism system (`BASE_SEED`) instead of hardcoded values. Training strategies, feature selection, data splits, and all model initializations are now fully deterministic and reproducible.
-- **Pipeline robustness fixes** (2025-12-10) — Fixed critical syntax errors and variable initialization issues in config loading patterns. All `if _CONFIG_AVAILABLE:` blocks now have proper `else:` clauses to ensure variables are always initialized, preventing "referenced before assignment" errors. Fixed missing polars imports in data preparation and data loader modules. Added feature list validation to prevent type errors at STEP 2 → STEP 3 transition. Full end-to-end testing currently underway.
+- **Complete F821 undefined name error elimination** (2025-12-10) — Systematically fixed all 194 F821 undefined name errors across TRAINING and CONFIG directories. Added missing imports (numpy, pandas, logging, pathlib, joblib, os, queue, etc.), fixed logger initialization order, resolved circular imports, and corrected type hints. All files now pass Ruff F821 checks. See [`DOCS/INTERNAL/F821_FIX_STRATEGY.md`](DOCS/INTERNAL/F821_FIX_STRATEGY.md) for methodology.
+- **Pipeline robustness fixes** (2025-12-10) — Fixed critical syntax errors and variable initialization issues in config loading patterns. All `if _CONFIG_AVAILABLE:` blocks now have proper `else:` clauses to ensure variables are always initialized, preventing "referenced before assignment" errors. Fixed missing polars imports in data preparation and data loader modules. Added feature list validation to prevent type errors at STEP 2 → STEP 3 transition. Fixed `__future__` import placement in determinism.py. Full end-to-end testing currently underway.
 - **Large file refactoring completed** (2025-12-09) — Split 3 large monolithic files (4.5k, 3.4k, 2.5k lines) into modular components while maintaining 100% backward compatibility
 - **Model family status tracking** — Added comprehensive debugging for multi-model feature selection to identify which families succeed/fail and why
 - **Interval detection robustness** — Fixed timestamp gap filtering to ignore outliers (weekends, data gaps) before computing median
@@ -90,6 +91,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed `UnboundLocalError` in `model_evaluation.py` where `MIN_FEATURES_FOR_MODEL` and `MIN_FEATURES_AFTER_LEAK_REMOVAL` could be undefined when `_CONFIG_AVAILABLE` was `False`
   - All `if _CONFIG_AVAILABLE:` blocks now have proper `else:` clauses ensuring variables are always initialized before use
   - Comprehensive audit confirmed no similar patterns exist elsewhere in the pipeline
+- **Complete F821 undefined name error elimination** (2025-12-10) — Fixed all 194 undefined name errors across TRAINING and CONFIG:
+  - **Core training files**: `training.py` (83 errors), `main.py` (51 errors), `leakage_detection.py` (17 errors), `data_loader.py` (10 errors), `core_utils.py` (10 errors)
+  - **Strategy and data files**: `strategies.py` (4 errors), `data_utils.py` (3 errors), `target_utils.py` (3 errors)
+  - **Orchestration and ranking**: `determinism.py`, `intelligent_trainer.py`, `target_ranker.py`, `target_routing.py`, `feature_selector.py`, `model_evaluation.py`, `scoring.py`, `utils.py`, `comprehensive_trainer.py`, `run_phase1.py`
+  - **Common fixes**: Added missing imports (numpy, pandas, logging, pathlib, joblib, os, queue), fixed logger initialization order, resolved circular imports (`train_model_comprehensive`), fixed `__future__` import placement, corrected type hints with TYPE_CHECKING
+  - **Result**: 100% of F821 errors resolved (194 → 0). All files pass Ruff F821 checks.
 - **Missing import fixes** (2025-12-10) — Fixed `NameError: name 'pl' is not defined` errors at STEP 2 → STEP 3 transition:
   - Added `import polars as pl` to `data_preparation.py` and `data_loader.py`
   - Added missing type imports (`Dict`, `List`, `Tuple`, `Path`) to `data_loader.py`
@@ -99,6 +106,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Handles empty feature lists gracefully (falls back to auto-discovery)
   - Prevents `TypeError` when calling `len()` on invalid types
   - Improves robustness at STEP 2 (Feature Selection) → STEP 3 (Model Training) transition
+- **Import and syntax fixes** (2025-12-10) — Fixed critical import and syntax issues:
+  - Fixed `__future__` import placement in `determinism.py` (must be first import after docstring)
+  - Removed circular import of `train_model_comprehensive` from `utils.py` (function defined in `training.py`)
+  - All edited files verified with `py_compile` and AST parsing
 
 #### Intelligent Training & Ranking
 
