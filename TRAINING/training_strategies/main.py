@@ -158,14 +158,22 @@ CPU_FAMS = {"LightGBM", "QuantileLightGBM", "RewardBased", "NGBoost", "GMMRegime
 # Import all dependencies
 from TRAINING.training_strategies.training import train_models_for_interval_comprehensive, train_model_comprehensive
 from TRAINING.training_strategies.strategies import load_mtf_data, discover_targets, prepare_training_data, create_strategy_config, train_with_strategy, compare_strategies
-from TRAINING.training_strategies.utils import setup_logging
+from TRAINING.training_strategies.utils import (
+    setup_logging, ALL_FAMILIES, THREADS, MKL_THREADS_DEFAULT,
+    _env_guard, USE_POLARS, FAMILY_CAPS, CROSS_SECTIONAL_MODELS, SEQUENTIAL_MODELS
+)
 
 # Standard library imports
 import argparse
 from datetime import datetime
+import logging
+import joblib
 
 # Third-party imports
 import pandas as pd
+
+# Setup logger (will be reconfigured by setup_logging later, but needed for early calls)
+logger = logging.getLogger(__name__)
 
 def main():
     """Main training function with comprehensive approach (replicates original script functionality)"""
@@ -257,6 +265,11 @@ def main():
     
     args = parser.parse_args()
     
+    # Setup logging first (before any logger calls)
+    listener = setup_logging(args.log_level)
+    # Re-get logger after setup_logging configures it
+    logger = logging.getLogger(__name__)
+    
     # Set global backend for sequential models
     global SEQ_BACKEND
     SEQ_BACKEND = args.seq_backend
@@ -270,9 +283,6 @@ def main():
     elif args.use_polars:
         USE_POLARS = True
         logger.info("Polars enabled by user")
-    
-    # Setup logging
-    listener = setup_logging(args.log_level)
     
     # Optional: add live stack dumps for any future "quiet" periods
     try:
@@ -386,7 +396,13 @@ def main():
         logger.info(f"📁 Output directory: {output_dir}")
         
         # Memory cleanup
-        aggressive_cleanup()
+        try:
+            from TRAINING.memory.memory_manager import aggressive_cleanup
+            aggressive_cleanup()
+        except ImportError:
+            import gc
+            gc.collect()
+            logger.debug("Memory cleanup: using gc.collect() fallback")
         
         # Train with strategy/strategies
         if args.strategy == 'all':
