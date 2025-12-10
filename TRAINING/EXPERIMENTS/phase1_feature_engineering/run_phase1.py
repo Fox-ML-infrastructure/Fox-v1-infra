@@ -83,8 +83,6 @@ def load_data(data_dir):
         "Please implement load_data() to load your specific data format.\n"
         "Expected outputs: X (N, F), y_dict (dict of targets), feature_names (list)"
     )
-    
-    return X, y_dict, feature_names
 
 
 def select_features(X, y_dict, feature_names, config):

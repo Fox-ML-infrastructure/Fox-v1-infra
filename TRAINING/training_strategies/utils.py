@@ -156,6 +156,7 @@ CPU_FAMS = {"LightGBM", "QuantileLightGBM", "RewardBased", "NGBoost", "GMMRegime
 """Utility functions for training strategies."""
 
 def setup_logging(log_level: str = "INFO", logfile: str = "training_strategies.log"):
+    import queue
     root = logging.getLogger()
     root.setLevel(getattr(logging, log_level.upper()))
     # remove any existing handlers

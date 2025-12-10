@@ -125,7 +125,8 @@ def load_target_confidence(output_dir: Path, target_name: str) -> Optional[Dict[
 
 def collect_run_level_confidence_summary(
     feature_selections_dir: Path,
-    output_dir: Path
+    output_dir: Path,
+    routing_config: Optional[Dict[str, Any]] = None
 ) -> List[Dict[str, Any]]:
     """
     Collect all target confidence files from a run and create run-level summary.

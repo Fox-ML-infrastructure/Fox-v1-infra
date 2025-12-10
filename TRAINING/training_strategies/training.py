@@ -682,7 +682,7 @@ def train_model_comprehensive(family: str, X: np.ndarray, y: np.ndarray,
 
 
 # Legacy code path - kept for backwards compatibility but shouldn't be reached
-def _legacy_train_fallback(family: str, X: np.ndarray, y: np.ndarray, target: str = None, strategy: str = None, **kwargs):
+def _legacy_train_fallback(family: str, X: np.ndarray, y: np.ndarray, target: str = None, strategy: str = None, feature_names: List[str] = None, **kwargs):
     """Legacy fallback - should not be reached with runtime_policy."""
     logger.warning(f"[{family}] Unexpected fallback path - check runtime_policy configuration")
     if False:  # Dead code marker

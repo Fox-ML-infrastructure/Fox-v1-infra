@@ -308,7 +308,8 @@ def train_and_evaluate_models(
         try:
             # Generate deterministic seed for feature pruning based on target
             from TRAINING.common.determinism import stable_seed_from
-            target_name_for_seed = target_name if 'target_name' in locals() else 'pruning'
+            # Use target_column if available, otherwise use default
+            target_name_for_seed = target_column if target_column else 'pruning'
             prune_seed = stable_seed_from([target_name_for_seed, 'feature_pruning'])
             
             # Load feature pruning config

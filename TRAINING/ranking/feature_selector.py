@@ -52,7 +52,8 @@ try:
     _NEW_CONFIG_AVAILABLE = True
 except ImportError:
     _NEW_CONFIG_AVAILABLE = False
-    logger.debug("New config system not available, using legacy configs")
+    # Logger not yet initialized, will be set up below
+    pass
 
 # Suppress expected warnings
 warnings.filterwarnings('ignore', category=FutureWarning)

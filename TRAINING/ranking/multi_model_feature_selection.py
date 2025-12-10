@@ -659,19 +659,30 @@ def train_model_and_get_importance(
             for v in unique_vals
         )
         
-        if is_binary or is_multiclass:
-            scores, pvalues = f_classif(X_dense, y)
-        else:
-            scores, pvalues = f_regression(X_dense, y)
+        # Suppress division by zero warnings (expected for zero-variance features)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            if is_binary or is_multiclass:
+                scores, pvalues = f_classif(X_dense, y)
+            else:
+                scores, pvalues = f_regression(X_dense, y)
         
         # Update feature_names to match dense array
         feature_names = feature_names_dense
         
+        # Handle NaN/inf in scores (from zero-variance features)
+        scores = np.nan_to_num(scores, nan=0.0, posinf=0.0, neginf=0.0)
+        
         # Normalize scores (F-statistics can be very large)
-        if np.max(scores) > 0:
-            importance_values = scores / np.max(scores)
+        max_score = np.max(scores)
+        if max_score > 0:
+            importance_values = scores / max_score
         else:
-            importance_values = scores
+            # All scores are zero - assign uniform small importance to avoid all zeros
+            importance_values = np.ones(len(scores)) * 1e-6
+        
+        # Ensure importance_values is a numpy array
+        importance_values = np.asarray(importance_values)
         
         class DummyModel:
             def __init__(self, importance):
@@ -732,7 +743,30 @@ def train_model_and_get_importance(
         # RFE ranking: 1 = selected, higher = eliminated
         # Convert to importance: 1/rank (higher importance for lower rank)
         ranking = selector.ranking_
-        importance_values = 1.0 / (ranking + 1e-6)  # Avoid division by zero
+        
+        # Ensure ranking is valid
+        if ranking is None or len(ranking) == 0:
+            # Fallback: assign uniform importance if ranking is invalid
+            importance_values = np.ones(len(feature_names)) * 1e-6
+        else:
+            # Convert ranking to importance, ensuring no division by zero
+            importance_values = 1.0 / (ranking + 1e-6)
+            # Normalize to ensure we have meaningful values
+            max_importance = np.max(importance_values)
+            if max_importance > 0:
+                importance_values = importance_values / max_importance
+            else:
+                # All rankings are the same or invalid - assign uniform small importance
+                importance_values = np.ones(len(feature_names)) * 1e-6
+        
+        # Ensure importance_values is a numpy array and matches feature count
+        importance_values = np.asarray(importance_values)
+        if len(importance_values) != len(feature_names):
+            logger.warning(f"RFE importance length ({len(importance_values)}) doesn't match features ({len(feature_names)})")
+            if len(importance_values) < len(feature_names):
+                importance_values = np.pad(importance_values, (0, len(feature_names) - len(importance_values)), 'constant', constant_values=1e-6)
+            else:
+                importance_values = importance_values[:len(feature_names)]
         
         class DummyModel:
             def __init__(self, importance):

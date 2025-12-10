@@ -46,8 +46,11 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import List, Dict, Any, Tuple, Optional, Union
+from typing import List, Dict, Any, Tuple, Optional, Union, TYPE_CHECKING
 import pandas as pd
+
+if TYPE_CHECKING:
+    from TRAINING.common.leakage_auto_fixer import AutoFixInfo
 import numpy as np
 from dataclasses import dataclass
 import yaml
