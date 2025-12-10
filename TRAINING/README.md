@@ -53,7 +53,7 @@ Large monolithic files have been split into modular components:
 
 **For detailed refactoring documentation, see:**
 - **[Refactoring & Wrappers Guide](../../DOCS/01_tutorials/REFACTORING_AND_WRAPPERS.md)** - User-facing guide explaining wrappers and import patterns
-- **[Refactoring Summary](../../DOCS/03_technical/refactoring/REFACTORING_SUMMARY_INTERNAL.md)** - Internal technical details
+- **[Refactoring Summary](../../DOCS/INTERNAL/REFACTORING_SUMMARY_INTERNAL.md)** - Internal technical details
 - **[Module-Specific Docs](../../DOCS/03_technical/refactoring/)** - Detailed structure for each refactored module
 
 ### Key Points
