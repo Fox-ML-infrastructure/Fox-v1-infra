@@ -154,6 +154,13 @@ def load_multi_model_config(config_path: Path = None) -> Dict[str, Any]:
 
 def get_default_config() -> Dict[str, Any]:
     """Default configuration if file doesn't exist"""
+    # Load default max_samples from config
+    try:
+        from CONFIG.config_loader import get_cfg
+        default_max_samples = int(get_cfg("pipeline.data_limits.default_max_samples_feature_selection", default=50000, config_name="pipeline_config"))
+    except Exception:
+        default_max_samples = 50000
+    
     return {
         'model_families': {
             'lightgbm': {
@@ -211,12 +218,6 @@ def get_default_config() -> Dict[str, Any]:
             'consensus_threshold': 0.5
         },
         'sampling': {
-            # Load default from config
-            try:
-                from CONFIG.config_loader import get_cfg
-                default_max_samples = int(get_cfg("pipeline.data_limits.default_max_samples_feature_selection", default=50000, config_name="pipeline_config"))
-            except Exception:
-                default_max_samples = 50000
             'max_samples_per_symbol': default_max_samples,
             'validation_split': 0.2
         }
@@ -269,17 +270,19 @@ def extract_native_importance(model, feature_names: List[str]) -> pd.Series:
 
 
 def extract_shap_importance(model, X: np.ndarray, feature_names: List[str],
-                           # Load default max_samples for SHAP from config
-                           try:
-                               from CONFIG.config_loader import get_cfg
-                               default_shap_samples = int(get_cfg("pipeline.data_limits.max_cs_samples", default=1000, config_name="pipeline_config"))
-                           except Exception:
-                               default_shap_samples = 1000
-                           max_samples: int = default_shap_samples,
+                           max_samples: int = None,
                            model_family: Optional[str] = None,
                            target_column: Optional[str] = None,
                            symbol: Optional[str] = None) -> pd.Series:
     """Extract SHAP-based feature importance"""
+    # Load default max_samples for SHAP from config if not provided
+    if max_samples is None:
+        try:
+            from CONFIG.config_loader import get_cfg
+            max_samples = int(get_cfg("pipeline.data_limits.max_cs_samples", default=1000, config_name="pipeline_config"))
+        except Exception:
+            max_samples = 1000
+    
     try:
         import shap
     except ImportError:
@@ -917,21 +920,28 @@ def process_single_symbol(
     data_path: Path,
     target_column: str,
     model_families_config: Dict[str, Dict[str, Any]],
-    # Load default from config
-    if _CONFIG_AVAILABLE:
-        try:
-            from CONFIG.config_loader import get_cfg
-            default_max_samples = int(get_cfg("pipeline.data_limits.default_max_samples_feature_selection", default=50000, config_name="pipeline_config"))
-        except Exception:
-            default_max_samples = 50000
-    else:
-        default_max_samples = 50000
-    
-    max_samples: int = default_max_samples,
+    max_samples: int = None,
     explicit_interval: Optional[Union[int, str]] = None,  # Optional explicit interval from config
     experiment_config: Optional[Any] = None  # Optional ExperimentConfig (for data.bar_interval)
 ) -> Tuple[List[ImportanceResult], List[Dict[str, Any]]]:
     """Process a single symbol with multiple model families"""
+    
+    # Load default max_samples from config if not provided
+    if max_samples is None:
+        try:
+            from CONFIG.config_loader import get_cfg
+            _CONFIG_AVAILABLE = True
+        except ImportError:
+            _CONFIG_AVAILABLE = False
+        
+        if _CONFIG_AVAILABLE:
+            try:
+                from CONFIG.config_loader import get_cfg
+                max_samples = int(get_cfg("pipeline.data_limits.default_max_samples_feature_selection", default=50000, config_name="pipeline_config"))
+            except Exception:
+                max_samples = 50000
+        else:
+            max_samples = 50000
     
     results = []
     family_statuses = []  # Initialize family_statuses list
