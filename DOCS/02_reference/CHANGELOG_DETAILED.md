@@ -347,6 +347,26 @@ See [`COMMERCIAL_LICENSE.md`](../../COMMERCIAL_LICENSE.md) for complete pricing 
 
 ### Fixed
 
+- **Complete Single Source of Truth (SST) implementation** (2025-12-10) — Replaced ALL hardcoded values across entire TRAINING pipeline for full reproducibility:
+  - **Model trainers** (`TRAINING/model_fun/` - 34 files): All hardcoded hyperparameters replaced with config loading:
+    - `comprehensive_trainer.py`: LightGBM/XGBoost `n_estimators`, `max_depth`, `learning_rate` now load from `models.{family}.{param}` config paths
+    - `neural_network_trainer.py`: Adam `learning_rate` now uses `_get_learning_rate()` helper method
+    - `ensemble_trainer.py`: Ridge `alpha` now loads from `models.ridge.alpha` config
+    - `change_point_trainer.py`: Ridge `alpha` and KMeans `random_state` now load from config
+    - `ngboost_trainer.py`: HistGradientBoosting `max_depth` and `learning_rate` now load from config
+    - All other trainers already using `_get_test_split_params()` and `_get_random_state()` from base class
+  - **Specialized models** (`TRAINING/models/specialized/` - 2 files): All hardcoded values replaced:
+    - `trainers.py`: All `train_test_split`, `random_state`, `learning_rate`, `alpha`, DecisionTree/RandomForest hyperparameters now load from config
+    - `trainers_extended.py`: LightGBM `learning_rate` and `seed`, GradientBoosting hyperparameters, all Adam `learning_rate`, all `train_test_split` calls now use config
+  - **Base trainer enhancements**: Added `_get_learning_rate()` helper method to `base_trainer.py` for consistent optimizer config access. Method loads from `optimizer.learning_rate` config with model-family-specific fallback support.
+  - **Strategies**: RandomForest fallback `n_estimators` in `cascade.py` and `single_task.py` now loads from `models.random_forest.n_estimators` config
+  - **Config sources used**:
+    - `preprocessing.validation.test_size` - For all train/test splits
+    - `BASE_SEED` (determinism system) - For all random_state values (with config fallback)
+    - `models.{family}.{param}` - For model-specific hyperparameters (n_estimators, max_depth, learning_rate, alpha, etc.)
+    - `optimizer.learning_rate` - For neural network optimizers
+  - **Result**: Same config file → identical results across all pipeline stages. Full reproducibility guaranteed. Zero hardcoded config values remain in the TRAINING pipeline.
+
 **Feature Selection Pipeline Fixes**
 
 - **Boruta `X_clean` error** — Fixed `NameError: name 'X_clean' is not defined` in Boruta feature selection. Now correctly uses `X_dense` and `y` from `make_sklearn_dense_X()` sanitization.
