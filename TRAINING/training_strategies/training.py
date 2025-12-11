@@ -392,7 +392,9 @@ def train_models_for_interval_comprehensive(interval: str, targets: List[str],
                                     }
                                 )
                         except Exception as e:
-                            logger.debug(f"Reproducibility tracking failed for {family}:{target}: {e}")
+                            logger.warning(f"Reproducibility tracking failed for {family}:{target}: {e}")
+                            import traceback
+                            logger.debug(f"Reproducibility tracking traceback: {traceback.format_exc()}")
                     
                     # Save model using original structure: FamilyName/target_name/model_files
                     family_dir = Path(output_dir) / family

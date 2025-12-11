@@ -387,7 +387,9 @@ def select_features_for_target(
                 }
             )
         except Exception as e:
-            logger.debug(f"Reproducibility tracking failed for {target_column}: {e}")
+            logger.warning(f"Reproducibility tracking failed for {target_column}: {e}")
+            import traceback
+            logger.debug(f"Reproducibility tracking traceback: {traceback.format_exc()}")
     
     return selected_features, summary_df
 
