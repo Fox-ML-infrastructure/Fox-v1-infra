@@ -242,12 +242,12 @@
 
 ### Q9.1: How much does a commercial license cost?
 
-**A:** Pricing is based on organization size. Tiers are based on total headcount of the legal entity (not just users of the Software):
-- 1–10 employees: $150,000/year
-- 11–50 employees: $350,000/year
-- 51–250 employees: $750,000/year
-- 251–1000 employees: $1,500,000–$2,500,000/year (based on scope, starting at $1,500,000)
-- 1000+ employees: $5,000,000–$12,000,000+ /year (custom enterprise quote)
+**A:** Pricing is based on organization size and aligned with enterprise ML infrastructure standards (Databricks, Palantir, H2O Driverless AI, Scale AI, Recursion Pharma partnerships). Tiers are based on total headcount of the legal entity (not just users of the Software):
+- Tier 1 — 1–10 employees: $350,000/year
+- Tier 2 — 11–50 employees: $850,000/year
+- Tier 3 — 51–250 employees: $2,500,000/year
+- Tier 4 — 251–1000 employees: $6,000,000–$10,000,000/year (pricing depends on deployment complexity and usage scope)
+- Tier 5 — 1000+ employees: $15,000,000–$30,000,000+ /year (custom enterprise quote)
 
 **See `LEGAL/SUBSCRIPTIONS.md` for complete pricing information.**
 

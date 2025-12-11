@@ -97,26 +97,26 @@
 
 ### 4.1 Annual License Fees
 
-Commercial license pricing is aligned with enterprise ML infrastructure standards.
+Commercial license pricing is aligned with enterprise ML infrastructure standards (Databricks, Palantir, H2O Driverless AI, Scale AI, Recursion Pharma partnerships).
 
 Tiers are based on total headcount of the legal entity (not just users of the Software).
 
-- **1–10 employees** — $150,000 / year
-- **11–50 employees** — $350,000 / year
-- **51–250 employees** — $750,000 / year
-- **251–1000 employees** — $1,500,000–$2,500,000 / year (based on scope, starting at $1,500,000)
-- **1000+ employees** — $5,000,000–$12,000,000+ / year (custom enterprise quote)
+- **Tier 1 — 1–10 employees** — $350,000 / year
+- **Tier 2 — 11–50 employees** — $850,000 / year
+- **Tier 3 — 51–250 employees** — $2,500,000 / year
+- **Tier 4 — 251–1000 employees** — $6,000,000–$10,000,000 / year (pricing depends on deployment complexity and usage scope)
+- **Tier 5 — 1000+ employees** — $15,000,000–$30,000,000+ / year (custom enterprise quote)
 
 **See `LEGAL/SUBSCRIPTIONS.md` for complete pricing information and optional add-ons.**
 
 ### 4.2 Optional Enterprise Add-Ons
 
-Enterprise add-ons are available with defined scope, boundaries, and pricing tiers:
+Enterprise add-ons are available with defined scope, boundaries, and pricing tiers (aligned with enterprise ML infrastructure standards):
 
-- **Dedicated Support SLA** — $5,000–$20,000 / month (tiered: Business/Enterprise/Premium with defined response times, coverage, and channels)
-- **Integration & On-Prem Setup** — $100,000–$500,000 one-time (scoped via SOW, depends on infrastructure complexity and environment count)
-- **Onboarding** — $25,000–$75,000 one-time (Basic: training + architecture review; Custom: tailored workshops + hands-on pipeline design)
-- **Private Slack / Direct Founder Access** — $30,000–$120,000 / year (up to 3–5 named contacts, business hours, strategic discussions only; not a replacement for support SLA)
+- **Dedicated Support SLA** — $25,000–$250,000 / month (tiered: Business Support $25k–$50k/month, Enterprise Support $60k–$120k/month, Premium Support $150k–$250k/month with defined response times, coverage, and channels)
+- **Integration & On-Prem Setup** — $500,000–$3,000,000 one-time (scoped via SOW, depends on infrastructure complexity, environment count, data integration volume, orchestration complexity, and cross-team rollout scope)
+- **Onboarding** — $150,000–$600,000 one-time (Basic: $150k–$300k for training + architecture review; Advanced/Custom: $300k–$600k for tailored workshops + hands-on pipeline design + extended engineering consultation)
+- **Private Slack / Direct Founder Access** — $300,000–$1,000,000 / year (rare, non-replicable strategic access to system architect; comparable to CTO-level advisory fees; up to 3–5 named contacts, business hours, strategic discussions only; not a replacement for support SLA)
 - **Additional User Seats** — $500–$2,000 / seat / year (beyond included seats per tier; each license tier includes a base number of named users)
 - **Adaptive Intelligence Layer** (Tier 5 only) — +$2,000,000–$5,000,000 / year (subject to roadmap availability, requires separate SOW with milestones)
 

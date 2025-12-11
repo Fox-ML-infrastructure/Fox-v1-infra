@@ -72,11 +72,13 @@ Commercial license pricing is aligned with enterprise ML infrastructure standard
 
 Tiers are based on total headcount of the legal entity (not just users of the Software).
 
-- 1–10 employees — $150,000 / year  
-- 11–50 employees — $350,000 / year  
-- 51–250 employees — $750,000 / year  
-- 251–1000 employees — $1,500,000–$2,500,000 / year (based on scope, starting at $1,500,000)
-- 1000+ employees — $5,000,000–$12,000,000+ / year (custom enterprise quote)
+- **Tier 1 — 1–10 employees** — $350,000 / year  
+- **Tier 2 — 11–50 employees** — $850,000 / year  
+- **Tier 3 — 51–250 employees** — $2,500,000 / year  
+- **Tier 4 — 251–1000 employees** — $6,000,000–$10,000,000 / year (pricing depends on deployment complexity and usage scope)
+- **Tier 5 — 1000+ employees** — $15,000,000–$30,000,000+ / year (custom enterprise quote)
+
+*Pricing aligned with enterprise ML infrastructure standards (Databricks, Palantir, H2O Driverless AI, Scale AI, Recursion Pharma partnerships).*
 
 To request access or begin the licensing process, email:
 
@@ -99,35 +101,35 @@ Once received, we will review your information and reply with the appropriate li
 
 ## Optional Enterprise Add-Ons
 
-### Dedicated Support SLA — $5,000–$20,000 / month
+### Dedicated Support SLA — $25,000–$250,000 / month
 
-Tiered support with defined response times, coverage, and channels. Pricing based on SLA level:
+Tiered support with defined response times, coverage, and channels. Pricing aligned with enterprise ML infrastructure support standards (Snowflake, Palantir, Databricks). Pricing based on SLA level:
 
-- **Business Support** ($5,000–$8,000/month):
+- **Business Support** ($25,000–$50,000/month):
   - Response: Initial acknowledgement within 1 business day, substantive response within 3 business days
   - Coverage: Business hours (US Central Time, Monday–Friday)
   - Channels: Dedicated support email, private issue tracking
   - Includes: Priority bug fixes, deployment guidance, integration questions, configuration assistance
 
-- **Enterprise Support** ($10,000–$15,000/month):
+- **Enterprise Support** ($60,000–$120,000/month):
   - Response: Initial acknowledgement same business day, substantive response within 1–2 business days
   - Coverage: Business hours with scheduled call windows (pre-arranged)
   - Channels: Dedicated enterprise support email, optional scheduled calls, prioritized issue handling
   - Includes: Priority bug fixes, deployment guidance, integration questions, architecture review, scheduled support calls (limited hours)
 
-- **Premium Support** ($15,000–$20,000/month):
+- **Premium Support** ($150,000–$250,000/month):
   - Response: Initial acknowledgement same business day (typically within hours), substantive response within 1 business day
-  - Coverage: Business hours with flexible scheduling
-  - Channels: Dedicated premium support email, scheduled support calls (flexible scheduling), direct access to engineering resources
-  - Includes: Highest priority bug fixes, deployment guidance, architecture review, direct engineering consultation, flexible support call scheduling
+  - Coverage: Business hours with flexible scheduling, extended availability
+  - Channels: Dedicated premium support email, scheduled support calls (flexible scheduling), direct access to engineering resources and founder-adjacent consultation
+  - Includes: Highest priority bug fixes, deployment guidance, architecture review, direct engineering consultation, flexible support call scheduling, strategic infrastructure guidance
 
 **Note:** Support SLAs do not include custom feature development, which requires separate consulting agreements or Statements of Work (SOWs). See `LEGAL/SUPPORT_POLICY.md` and `LEGAL/SERVICE_LEVEL_AGREEMENT.md` for complete details.
 
 ---
 
-### Integration & On-Prem Setup — $100,000–$500,000 one-time
+### Integration & On-Prem Setup — $500,000–$3,000,000 one-time
 
-One-time professional services for integration and on-premises deployment setup. Pricing depends on infrastructure complexity, security review requirements, and environment count (dev/staging/production).
+One-time professional services for integration and on-premises deployment setup. Pricing depends on infrastructure complexity, security review requirements, environment count (dev/staging/production), data integration volume, orchestration complexity, and cross-team rollout scope. This reflects standard pricing for enterprise ML infrastructure onboarding.
 
 **Scope (defined via separate SOW):**
 - Architecture review and integration planning
@@ -145,35 +147,37 @@ One-time professional services for integration and on-premises deployment setup.
 
 ---
 
-### Onboarding — $25,000–$75,000 one-time
+### Onboarding — $150,000–$600,000 one-time
 
-One-time onboarding services to accelerate adoption. Pricing based on scope:
+One-time onboarding services to accelerate adoption. Pricing reflects the value of engineering guidance and architecture validation for enterprise ML infrastructure. Pricing based on scope:
 
-- **Basic Onboarding** ($25,000–$40,000):
+- **Basic Onboarding** ($150,000–$300,000):
   - Training sessions on core functionality
   - Architecture review and best practices
   - Initial pipeline design assistance
   - Standard documentation and guides
 
-- **Custom Onboarding** ($40,000–$75,000):
+- **Advanced / Custom Onboarding** ($300,000–$600,000):
   - Custom training workshops tailored to client workflows
   - Deep architecture review and optimization recommendations
   - Hands-on assistance designing first production pipelines
   - Custom best-practices documentation tailored to client infrastructure
+  - Extended engineering consultation and validation
 
 **Note:** Higher license tiers may include basic onboarding. Custom onboarding is always available as an add-on.
 
 ---
 
-### Private Slack / Direct Founder Access — $30,000–$120,000 / year
+### Private Slack / Direct Founder Access — $300,000–$1,000,000 / year
 
-Direct communication channel with founder for strategic discussions and high-level guidance. **Not a replacement for paid support SLA** (these are separate services).
+Direct communication channel with founder for strategic discussions and high-level guidance. This is **not hourly consulting** — it is rare, non-replicable strategic access to the architect of the entire system. Comparable to CTO-level advisory fees for enterprise infrastructure. **Not a replacement for paid support SLA** (these are separate services).
 
 **Included:**
 - Up to 3–5 named contacts (depending on tier)
 - Business hours response (US Central Time, Monday–Friday)
 - Response within ≤24 hours during business hours
 - Strategic discussions, architecture guidance, roadmap alignment
+- Access to the only person who knows the system end-to-end
 
 **Excludes:**
 - Feature development requests (requires separate consulting/SOW)

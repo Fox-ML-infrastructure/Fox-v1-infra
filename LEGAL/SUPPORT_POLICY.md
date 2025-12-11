@@ -163,9 +163,9 @@ Optional Add-ons (Negotiated Separately):
 ## 1.5 Support Pricing
 
 - **Standard Support** — Included with commercial license
-- **Business Support** — Available as add-on (contact for pricing)
-- **Enterprise Support** — $5,000–$20,000/month (see `LEGAL/SUBSCRIPTIONS.md`)
-- **Premium Support** — Custom pricing (contact for quote)
+- **Business Support** — $25,000–$50,000/month (see `LEGAL/SUBSCRIPTIONS.md`)
+- **Enterprise Support** — $60,000–$120,000/month (see `LEGAL/SUBSCRIPTIONS.md`)
+- **Premium Support** — $150,000–$250,000/month (see `LEGAL/SUBSCRIPTIONS.md`)
 
 See `LEGAL/SUBSCRIPTIONS.md` for complete pricing information and optional add-ons.
 
