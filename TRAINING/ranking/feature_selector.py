@@ -343,7 +343,23 @@ def select_features_for_target(
         try:
             from TRAINING.utils.reproducibility_tracker import ReproducibilityTracker
             
-            tracker = ReproducibilityTracker(output_dir=output_dir)
+            # Use module-specific directory for reproducibility log
+            # output_dir is typically: output_dir_YYYYMMDD_HHMMSS/feature_selections/{target}/
+            # We want to store in feature_selections/ subdirectory for this module
+            if output_dir.name == 'feature_selections' or (output_dir.parent / 'feature_selections').exists():
+                # Already in or can find feature_selections subdirectory
+                if output_dir.name != 'feature_selections':
+                    module_output_dir = output_dir.parent / 'feature_selections'
+                else:
+                    module_output_dir = output_dir
+            else:
+                # Fallback: use output_dir directly (for standalone runs)
+                module_output_dir = output_dir
+            
+            tracker = ReproducibilityTracker(
+                output_dir=module_output_dir,
+                search_previous_runs=True  # Search for previous runs in parent directories
+            )
             
             # Calculate summary metrics for reproducibility tracking
             top_feature_score = summary_df.iloc[0]['consensus_score'] if not summary_df.empty else 0.0

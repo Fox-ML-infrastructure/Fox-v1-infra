@@ -59,25 +59,57 @@ class ReproducibilityTracker:
         log_file_name: str = "reproducibility_log.json",
         max_runs_per_item: int = 10,
         score_tolerance: float = 0.001,  # 0.1% tolerance
-        importance_tolerance: float = 0.01  # 1% tolerance
+        importance_tolerance: float = 0.01,  # 1% tolerance
+        search_previous_runs: bool = False  # If True, search parent directories for previous runs
     ):
         """
         Initialize reproducibility tracker.
         
         Args:
-            output_dir: Directory where reproducibility logs are stored
+            output_dir: Directory where reproducibility logs are stored (module-specific)
             log_file_name: Name of the JSON log file
             max_runs_per_item: Maximum number of runs to keep per item (prevents log bloat)
             score_tolerance: Tolerance for score differences (default: 0.1%)
             importance_tolerance: Tolerance for importance differences (default: 1%)
+            search_previous_runs: If True, search parent directories for previous runs from same module
         """
         self.output_dir = Path(output_dir)
-        # Store log file in a consistent location: output_dir/reproducibility_log.json
-        # This ensures all runs for the same output_dir use the same log file
+        # Store log file in module-specific directory: output_dir/reproducibility_log.json
+        # This ensures each module (target_rankings, feature_selections, training_results) has its own log
         self.log_file = self.output_dir / log_file_name
         self.max_runs_per_item = max_runs_per_item
         self.score_tolerance = score_tolerance
         self.importance_tolerance = importance_tolerance
+        self.search_previous_runs = search_previous_runs
+    
+    def _find_previous_log_files(self) -> List[Path]:
+        """Find all previous reproducibility log files in parent directories (for same module)."""
+        if not self.search_previous_runs:
+            return []
+        
+        previous_logs = []
+        current_dir = self.output_dir
+        
+        # Search up to 3 levels up for previous runs
+        for _ in range(3):
+            parent = current_dir.parent
+            if not parent or parent == current_dir:
+                break
+            
+            # Look for timestamped directories (format: *_YYYYMMDD_HHMMSS or similar)
+            if parent.exists():
+                # Check if parent contains module subdirectories (target_rankings, feature_selections, etc.)
+                module_name = self.output_dir.name
+                for sibling_dir in parent.iterdir():
+                    if sibling_dir.is_dir() and sibling_dir != self.output_dir:
+                        # Check if this sibling has the same module subdirectory
+                        module_log = sibling_dir / module_name / self.log_file.name
+                        if module_log.exists():
+                            previous_logs.append(module_log)
+            
+            current_dir = parent
+        
+        return previous_logs
     
     def load_previous_run(
         self,
@@ -87,6 +119,8 @@ class ReproducibilityTracker:
         """
         Load the previous run's summary for a stage/item combination.
         
+        Searches current log file first, then previous runs if search_previous_runs=True.
+        
         Args:
             stage: Pipeline stage name (e.g., "target_ranking", "feature_selection")
             item_name: Name of the item (e.g., target name, symbol name)
@@ -94,28 +128,50 @@ class ReproducibilityTracker:
         Returns:
             Dictionary with previous run results, or None if no previous run exists
         """
-        if not self.log_file.exists():
-            logger.debug(f"Reproducibility log file does not exist: {self.log_file}")
+        key = f"{stage}:{item_name}"
+        all_item_runs = []
+        
+        # First, try current log file
+        if self.log_file.exists():
+            try:
+                with open(self.log_file, 'r') as f:
+                    all_runs = json.load(f)
+                item_runs = all_runs.get(key, [])
+                if item_runs:
+                    all_item_runs.extend(item_runs)
+                    logger.debug(f"Found {len(item_runs)} run(s) in current log: {self.log_file}")
+            except (json.JSONDecodeError, IOError) as e:
+                logger.debug(f"Could not read current log file {self.log_file}: {e}")
+        
+        # Then, search previous runs if enabled
+        if self.search_previous_runs:
+            previous_logs = self._find_previous_log_files()
+            for prev_log in previous_logs:
+                try:
+                    with open(prev_log, 'r') as f:
+                        all_runs = json.load(f)
+                    item_runs = all_runs.get(key, [])
+                    if item_runs:
+                        all_item_runs.extend(item_runs)
+                        logger.debug(f"Found {len(item_runs)} run(s) in previous log: {prev_log}")
+                except (json.JSONDecodeError, IOError) as e:
+                    logger.debug(f"Could not read previous log file {prev_log}: {e}")
+        
+        if not all_item_runs:
+            logger.debug(f"No previous runs found for {key}")
+            if self.log_file.exists():
+                try:
+                    with open(self.log_file, 'r') as f:
+                        all_runs = json.load(f)
+                        logger.debug(f"Available keys in current log: {list(all_runs.keys())[:10]}")
+                except:
+                    pass
             return None
         
-        try:
-            with open(self.log_file, 'r') as f:
-                all_runs = json.load(f)
-            
-            # Get the most recent run for this stage/item
-            key = f"{stage}:{item_name}"
-            item_runs = all_runs.get(key, [])
-            if not item_runs:
-                logger.debug(f"No previous runs found for {key} in {self.log_file}")
-                logger.debug(f"Available keys in log: {list(all_runs.keys())[:10]}")  # Show first 10 keys
-                return None
-            
-            # Return the most recent (last) entry
-            logger.debug(f"Found {len(item_runs)} previous run(s) for {key}, using most recent")
-            return item_runs[-1]
-        except (json.JSONDecodeError, KeyError, IndexError, IOError) as e:
-            logger.warning(f"Could not load previous run for {stage}:{item_name} from {self.log_file}: {e}")
-            return None
+        # Sort by timestamp and return most recent
+        all_item_runs.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+        logger.debug(f"Found {len(all_item_runs)} total previous run(s) for {key}, using most recent")
+        return all_item_runs[0]
     
     def save_run(
         self,

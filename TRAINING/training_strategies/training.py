@@ -349,7 +349,23 @@ def train_models_for_interval_comprehensive(interval: str, targets: List[str],
                     if output_dir and model_result.get('success', False):
                         try:
                             from TRAINING.utils.reproducibility_tracker import ReproducibilityTracker
-                            tracker = ReproducibilityTracker(output_dir=output_dir)
+                            # Use module-specific directory for reproducibility log
+                            # output_dir is typically: output_dir_YYYYMMDD_HHMMSS/training_results/
+                            # We want to store in training_results/ subdirectory for this module
+                            if output_dir.name == 'training_results' or (output_dir.parent / 'training_results').exists():
+                                # Already in or can find training_results subdirectory
+                                if output_dir.name != 'training_results':
+                                    module_output_dir = output_dir.parent / 'training_results'
+                                else:
+                                    module_output_dir = output_dir
+                            else:
+                                # Fallback: use output_dir directly (for standalone runs)
+                                module_output_dir = output_dir
+                            
+                            tracker = ReproducibilityTracker(
+                                output_dir=module_output_dir,
+                                search_previous_runs=True  # Search for previous runs in parent directories
+                            )
                             
                             # Extract metrics from strategy_manager if available
                             strategy_manager = model_result.get('strategy_manager')

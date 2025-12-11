@@ -2855,15 +2855,23 @@ def evaluate_target_predictability(
         try:
             from TRAINING.utils.reproducibility_tracker import ReproducibilityTracker
             
-            # Use parent directory (or results/) for shared reproducibility log across runs
-            # This allows comparing runs even when output_dir is run-specific
-            if output_dir.parent.name in ['target_rankings', 'results']:
-                # output_dir is like results/target_rankings/run_20251211, use results/
-                shared_output_dir = output_dir.parent.parent if output_dir.parent.name == 'target_rankings' else output_dir.parent
+            # Use module-specific directory for reproducibility log
+            # output_dir might be: output_dir_YYYYMMDD_HHMMSS/target_rankings/ or just output_dir_YYYYMMDD_HHMMSS
+            # We want to store in target_rankings/ subdirectory for this module
+            if output_dir.name == 'target_rankings':
+                # Already in target_rankings subdirectory
+                module_output_dir = output_dir
+            elif (output_dir.parent / 'target_rankings').exists():
+                # output_dir is parent, use target_rankings subdirectory
+                module_output_dir = output_dir.parent / 'target_rankings'
             else:
-                # output_dir is like test_e2e_ranking_unified_20251211_133358, use parent
-                shared_output_dir = output_dir.parent
-            tracker = ReproducibilityTracker(output_dir=shared_output_dir)
+                # Fallback: use output_dir directly (for standalone runs)
+                module_output_dir = output_dir
+            
+            tracker = ReproducibilityTracker(
+                output_dir=module_output_dir,
+                search_previous_runs=True  # Search for previous runs in parent directories
+            )
             
             # Log comparison with previous run
             tracker.log_comparison(
