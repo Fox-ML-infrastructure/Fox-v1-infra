@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Highlights
 
+- **Model Config Parameter Sanitization Fix** (2025-12-11) — **FIXED**: Resolved critical TypeError and ValueError errors affecting 7 model families (RandomForest, MLPRegressor, Lasso, CatBoost, XGBoost, LightGBM) when global config defaults were injected. All models now sanitize configs before instantiation, removing incompatible parameters (`random_seed` → `random_state` for sklearn, `n_jobs` → `thread_count` for CatBoost, early stopping params for XGBoost/LightGBM). Determinism preserved with explicit per-symbol/target seed setting.
 - **Feature Importance Stability Tracking System** (2025-12-10) — **NEW**: Comprehensive system for tracking and analyzing feature importance stability across pipeline runs. Automatically captures snapshots from all integration points (target ranking, feature selection, quick pruning). Config-driven automation with stability metrics (top-K overlap, Kendall tau, selection frequency). Includes CLI tool for manual analysis and comprehensive documentation.
 - **Auto-Fixer Backup Fix** (2025-12-10) — Fixed critical bug where auto-fixer was not creating backups when no leaks were detected. Backups are now created whenever auto-fix mode is triggered, preserving state history for debugging. Added comprehensive observability logging to auto-fixer initialization and detection.
 - **Reproducibility Settings Centralization** (2025-12-10) — Centralized all reproducibility-critical settings (`random_state`, `shuffle`, validation splits) to Single Source of Truth. Removed 30+ hardcoded `random_state: 42` values across configs. All models now use `pipeline.determinism.base_seed` for consistent reproducibility.
@@ -71,6 +72,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Model config parameter sanitization** (2025-12-11) — Fixed critical TypeError and ValueError errors when global config defaults (`random_seed`, `n_jobs`, `early_stopping_rounds`) were injected into model constructors. All model families now sanitize configs before instantiation:
+  - **sklearn models** (RandomForest, MLPRegressor, Lasso): Remove `random_seed` (use `random_state` instead)
+  - **CatBoost**: Remove `n_jobs` (uses `thread_count` instead)
+  - **XGBoost/LightGBM**: Remove all early stopping params (`early_stopping_rounds`, `callbacks`, `eval_set`, `eval_metric`) in feature selection mode (requires `eval_set` which isn't available)
+  - Determinism preserved: All models explicitly set `random_state`/`random_seed` using deterministic `model_seed` per symbol/target combination
+  - Uses `.copy()` and `.pop()` for explicit parameter sanitization to prevent incompatible parameters from reaching model constructors
 - **Auto-fixer backup creation** (2025-12-10) — Fixed critical bug where backups were not created when auto-fix mode triggered but no leaks were detected. Backups are now created whenever auto-fix mode is enabled, preserving state history for debugging.
 - **Auto-fixer training accuracy detection** (2025-12-10) — Fixed critical bug where 100% training accuracy was logged but not stored in `model_metrics`, preventing auto-fixer from triggering. Now stores `training_accuracy` and `training_r2` in `model_metrics` for proper leakage detection.
 - **Silent config loading failures** (2025-12-10) — Added warnings when `defaults.yaml` is missing/broken, when `pipeline_config.yaml` can't be loaded, and when YAML files return `None`. All silent failures now log warnings.
