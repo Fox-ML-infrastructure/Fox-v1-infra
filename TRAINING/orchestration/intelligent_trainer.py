@@ -810,44 +810,21 @@ Examples:
     parser.add_argument('--cache-dir', type=Path,
                        help='Cache directory for rankings/selections (default: output_dir/cache)')
     
-    # Target selection
-    parser.add_argument('--auto-targets', action='store_true', default=True,
-                       help='Automatically rank and select targets (default: True)')
-    parser.add_argument('--no-auto-targets', dest='auto_targets', action='store_false',
-                       help='Disable automatic target ranking')
-    parser.add_argument('--top-n-targets', type=int, default=5,
-                       help='Number of top targets to select (default: 5)')
-    parser.add_argument('--max-targets-to-evaluate', type=int, default=None,
-                       help='Limit number of targets to evaluate for faster testing (default: evaluate all)')
+    # Target/feature selection (moved to config - CLI only for manual overrides)
     parser.add_argument('--targets', nargs='+',
-                       help='Manual target list (overrides --auto-targets)')
-    
-    # Feature selection
-    parser.add_argument('--auto-features', action='store_true', default=True,
-                       help='Automatically select features per target (default: True)')
-    parser.add_argument('--no-auto-features', dest='auto_features', action='store_false',
-                       help='Disable automatic feature selection')
-    parser.add_argument('--top-m-features', type=int, default=100,
-                       help='Number of top features per target (default: 100)')
+                       help='Manual target list (overrides config auto_targets)')
     parser.add_argument('--features', nargs='+',
-                       help='Manual feature list (overrides --auto-features)')
+                       help='Manual feature list (overrides config auto_features)')
     
-    # Training arguments (passed through to train_with_strategies)
+    # Training arguments (moved to config - CLI only for manual overrides)
     parser.add_argument('--families', nargs='+',
-                       help='Model families to train')
-    parser.add_argument('--strategy', choices=['single_task', 'multi_task', 'cascade'],
-                       default='single_task',
-                       help='Training strategy (default: single_task)')
-    parser.add_argument('--min-cs', type=int, default=10,
-                       help='Minimum cross-sectional samples required (default: 10)')
-    parser.add_argument('--max-rows-per-symbol', type=int,
-                       help='Maximum rows to load per symbol (for testing)')
-    parser.add_argument('--max-rows-train', type=int,
-                       help='Maximum training rows (for testing)')
-    parser.add_argument('--max-cs-samples', type=int,
-                       help='Maximum cross-sectional samples per timestamp')
-    parser.add_argument('--run-leakage-diagnostics', action='store_true',
-                       help='Run leakage sentinel tests after training (optional diagnostic mode)')
+                       help='Model families to train (overrides config)')
+    
+    # Testing/debugging overrides (use sparingly - prefer config)
+    parser.add_argument('--override-max-samples', type=int,
+                       help='OVERRIDE: Max samples per symbol (testing only, overrides config)')
+    parser.add_argument('--override-max-rows', type=int,
+                       help='OVERRIDE: Max rows per symbol (testing only, overrides config)')
     
     # Cache control
     parser.add_argument('--force-refresh', action='store_true',
@@ -867,7 +844,7 @@ Examples:
     
     args = parser.parse_args()
     
-    # NEW: Load experiment config if provided
+    # NEW: Load experiment config if provided (PREFERRED)
     experiment_config = None
     if args.experiment_config and _NEW_CONFIG_AVAILABLE:
         try:
@@ -888,6 +865,59 @@ Examples:
         parser.error("--data-dir is required (or provide --experiment-config)")
     if not args.symbols:
         parser.error("--symbols is required (or provide --experiment-config)")
+    
+    # Load intelligent training settings from config (SST)
+    try:
+        from CONFIG.config_loader import get_cfg
+        _CONFIG_AVAILABLE = True
+    except ImportError:
+        _CONFIG_AVAILABLE = False
+        logger.warning("Config loader not available, using hardcoded defaults")
+    
+    if _CONFIG_AVAILABLE:
+        # Load from config (SST)
+        intel_cfg = get_cfg("intelligent_training", default={}, config_name="pipeline_config")
+        auto_targets = intel_cfg.get('auto_targets', True)
+        top_n_targets = intel_cfg.get('top_n_targets', 5)
+        max_targets_to_evaluate = intel_cfg.get('max_targets_to_evaluate', None)
+        auto_features = intel_cfg.get('auto_features', True)
+        top_m_features = intel_cfg.get('top_m_features', 100)
+        strategy = intel_cfg.get('strategy', 'single_task')
+        min_cs = intel_cfg.get('min_cs', 10)
+        max_rows_per_symbol = intel_cfg.get('max_rows_per_symbol', None)
+        max_rows_train = intel_cfg.get('max_rows_train', None)
+        max_cs_samples = intel_cfg.get('max_cs_samples', None)
+        run_leakage_diagnostics = intel_cfg.get('run_leakage_diagnostics', False)
+        
+        # If max_cs_samples not in intelligent_training, try pipeline.data_limits
+        if max_cs_samples is None:
+            max_cs_samples = get_cfg("pipeline.data_limits.max_cs_samples", default=None, config_name="pipeline_config")
+    else:
+        # Fallback defaults (FALLBACK_DEFAULT_OK)
+        auto_targets = True
+        top_n_targets = 5
+        max_targets_to_evaluate = None
+        auto_features = True
+        top_m_features = 100
+        strategy = 'single_task'
+        min_cs = 10
+        max_rows_per_symbol = None
+        max_rows_train = None
+        max_cs_samples = None
+        run_leakage_diagnostics = False
+    
+    # CLI overrides (for testing/debugging only - warn user)
+    if args.override_max_samples:
+        logger.warning("⚠️  Using CLI override for max_samples (testing only - not SST compliant)")
+        max_rows_per_symbol = args.override_max_samples
+    if args.override_max_rows:
+        logger.warning("⚠️  Using CLI override for max_rows (testing only - not SST compliant)")
+        max_rows_per_symbol = args.override_max_rows
+    
+    # Manual overrides (targets/features/families) - these are allowed as they're explicit choices
+    targets = args.targets  # Manual target list (overrides auto_targets)
+    features = args.features  # Manual feature list (overrides auto_features)
+    families = args.families  # Manual family list (overrides config)
     
     # Create orchestrator
     trainer = IntelligentTrainer(
@@ -910,28 +940,28 @@ Examples:
         # Only load default if no experiment config
         multi_model_config = load_multi_model_config()
     
-    # Determine cache usage
+    # Determine cache usage (operational flag - allowed in CLI)
     use_cache = not args.no_cache
     
-    # Run training
+    # Run training with config-driven settings
     try:
         results = trainer.train_with_intelligence(
-            auto_targets=args.auto_targets,
-            top_n_targets=args.top_n_targets,
-            max_targets_to_evaluate=args.max_targets_to_evaluate,
-            auto_features=args.auto_features,
-            top_m_features=args.top_m_features,
-            targets=args.targets,
-            features=args.features,
-            families=args.families,
-            strategy=args.strategy,
+            auto_targets=auto_targets,
+            top_n_targets=top_n_targets,
+            max_targets_to_evaluate=max_targets_to_evaluate,
+            auto_features=auto_features,
+            top_m_features=top_m_features,
+            targets=targets,  # Manual override if provided
+            features=features,  # Manual override if provided
+            families=families,  # Manual override if provided
+            strategy=strategy,
             force_refresh=args.force_refresh,
             use_cache=use_cache,
-            run_leakage_diagnostics=args.run_leakage_diagnostics,
-            min_cs=args.min_cs,
-            max_rows_per_symbol=args.max_rows_per_symbol,
-            max_rows_train=args.max_rows_train,
-            max_cs_samples=args.max_cs_samples
+            run_leakage_diagnostics=run_leakage_diagnostics,
+            min_cs=min_cs,
+            max_rows_per_symbol=max_rows_per_symbol,
+            max_rows_train=max_rows_train,
+            max_cs_samples=max_cs_samples
         )
         
         logger.info("="*80)

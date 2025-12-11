@@ -102,3 +102,27 @@ pipeline:
   # Family Capabilities (for reference, may remain code-based)
   # See train_with_strategies.py for full FAMILY_CAPS dictionary
 
+# Intelligent Training Settings
+# These settings control the intelligent training orchestrator behavior
+intelligent_training:
+  # Target selection
+  auto_targets: true  # Automatically rank and select targets
+  top_n_targets: 5  # Number of top targets to select (if auto_targets=true)
+  max_targets_to_evaluate: null  # Limit number of targets to evaluate (null = evaluate all)
+  
+  # Feature selection
+  auto_features: true  # Automatically select features per target
+  top_m_features: 100  # Number of top features per target (if auto_features=true)
+  
+  # Training strategy
+  strategy: "single_task"  # "single_task", "multi_task", or "cascade"
+  
+  # Data limits (can be overridden by experiment config)
+  min_cs: 10  # Minimum cross-sectional samples required
+  max_rows_per_symbol: null  # Maximum rows to load per symbol (null = no limit)
+  max_rows_train: null  # Maximum training rows (null = no limit)
+  max_cs_samples: null  # Maximum cross-sectional samples per timestamp (null = use pipeline.data_limits.max_cs_samples)
+  
+  # Diagnostics
+  run_leakage_diagnostics: false  # Run leakage sentinel tests after training
+
