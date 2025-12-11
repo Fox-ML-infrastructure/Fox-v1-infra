@@ -563,6 +563,11 @@ class IntelligentTrainer:
         """
         logger.info("🚀 Starting intelligent training pipeline")
         
+        # Extract data limits from train_kwargs (passed from main)
+        min_cs = train_kwargs.get('min_cs', 10)
+        max_cs_samples = train_kwargs.get('max_cs_samples')
+        max_rows_per_symbol = train_kwargs.get('max_rows_per_symbol')
+        
         # Step 1: Target selection
         if auto_targets and targets is None:
             logger.info("="*80)
@@ -638,9 +643,7 @@ class IntelligentTrainer:
         families_list = families or ALL_FAMILIES
         output_dir_str = str(self.output_dir / "training_results")
         
-        # Get training parameters from kwargs or config
-        min_cs = train_kwargs.get('min_cs', 10)
-        max_cs_samples = train_kwargs.get('max_cs_samples')
+        # Get training parameters from kwargs or config (min_cs and max_cs_samples already extracted above)
         max_rows_train = train_kwargs.get('max_rows_train')
         
         logger.info(f"Training {len(targets)} targets with strategy '{strategy}'")
