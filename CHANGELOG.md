@@ -73,13 +73,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Reproducibility settings** (2025-12-10) — Removed 30+ hardcoded `random_state: 42` values from configs. All now use centralized `defaults.randomness.random_state` → `pipeline.determinism.base_seed`. Centralized `shuffle: true` setting for train/test splits.
-- **Config cleanup** (2025-12-10) — Removed ~35+ duplicate default values from individual config files (dropout, activation, patience, aggregation settings, output settings). All now auto-injected from `defaults.yaml`.
+- **Reproducibility settings** (2025-12-10) — Removed 30+ hardcoded `random_state: 42` values. All now use centralized determinism system.
+- **Config cleanup** (2025-12-10) — Removed ~35+ duplicate default values. All now auto-injected from `defaults.yaml`.
 - **Internal documentation** (2025-12-10) — Moved all internal docs to `INTERNAL_DOCS/` (never tracked). Cleaned up `CONFIG/` directory by removing internal audit/verification docs.
-- **Config loading patterns** (2025-12-10) — All function parameters with hardcoded defaults now use `Optional[Type] = None` and load from config
-- **Determinism system** (2025-12-10) — All `random_state=42` hardcoded values replaced with `BASE_SEED`
-- **Logging system refactored** — Replaced hardcoded flags with structured YAML configuration
-- **Leakage filtering** — Supports ranking mode with permissive rules, strict rules for training
+- **Config loading patterns** (2025-12-10) — All function parameters now load from config instead of hardcoded defaults
+- **Logging system** — Replaced hardcoded flags with structured YAML configuration
 
 ---
 
