@@ -197,26 +197,30 @@ def load_model_config(
     # Construct config file path
     config_file = CONFIG_DIR / "model_config" / f"{model_family_lower}.yaml"
     
+    # Initialize result dict (will be populated from file or defaults)
+    result = {}
+    config = {}
+    
     if not config_file.exists():
-        logger.warning(f"Config file not found: {config_file}, using empty config")
-        return {}
-    
-    # Load YAML
-    try:
-        with open(config_file, 'r') as f:
-            config = yaml.safe_load(f)
-        if config is None:
-            logger.warning(f"Config file {config_file} is empty or invalid YAML, using empty config")
-            return {}
-        logger.debug(f"Loaded model config: {model_family} from {config_file.name}")
-    except Exception as e:
-        logger.error(f"Failed to load config {config_file}: {e}")
-        return {}
-    
-    # Start with default hyperparameters
-    result = config.get("hyperparameters", {}).copy()
+        logger.warning(f"Config file not found: {config_file}, using defaults only")
+    else:
+        # Load YAML
+        try:
+            with open(config_file, 'r') as f:
+                config = yaml.safe_load(f)
+            if config is None:
+                logger.warning(f"Config file {config_file} is empty or invalid YAML, using defaults only")
+                config = {}
+            else:
+                logger.debug(f"Loaded model config: {model_family} from {config_file.name}")
+                # Start with default hyperparameters from file
+                result = config.get("hyperparameters", {}).copy()
+        except Exception as e:
+            logger.error(f"Failed to load config {config_file}: {e}, using defaults only")
+            config = {}
     
     # Inject global defaults (SST) FIRST - only for keys not already set
+    # This ensures models get random_state, n_jobs, etc. even if config file doesn't exist
     result = inject_defaults(result, model_family=model_family_lower)
     
     # Apply variant if specified (overrides defaults)
