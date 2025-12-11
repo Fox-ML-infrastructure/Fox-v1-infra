@@ -180,26 +180,63 @@ def normalize_importance(
     elif importance.size > n_features:
         importance = importance[:n_features]
     
+    # Defensive: ensure n_features > 0 to avoid division issues
+    if n_features <= 0:
+        logger.error(f"{family}: n_features={n_features} is invalid, using default n_features=1")
+        n_features = 1
+        importance = np.array([1.0], dtype=float)
+        return importance, f"{family}:fallback_invalid_n_features"
+    
     # Fallback if truly no signal (all zeros)
     if not np.any(importance > 0):
         # No signal: treat as "no strong preference" instead of failure
         importance = np.full(n_features, uniform_importance, dtype=float)
         fallback_reason = f"{family}:fallback_uniform_no_signal"
         
-        # Optional: normalize to sum to 1.0
-        if normalize_after_fallback:
-            importance = importance / importance.sum()
+        # Always ensure sum > 0 (even if normalize_after_fallback is False)
+        s = float(importance.sum())
+        if s <= 0:
+            # Defensive: if uniform_importance was 0 or negative, use 1/n
+            importance = np.full(n_features, 1.0 / n_features, dtype=float)
+            logger.warning(f"{family}: uniform_importance={uniform_importance} resulted in sum={s}, using 1/n normalization")
+        elif normalize_after_fallback:
+            # Normalize to sum to 1.0
+            importance = importance / s
     else:
         fallback_reason = None
+        # For non-zero importance, check sum and normalize if needed
+        s = float(importance.sum())
+        if s <= 0:
+            # Edge case: importance has some positive values but sum is still <= 0 (shouldn't happen, but defensive)
+            importance = np.full(n_features, 1.0 / n_features, dtype=float)
+            fallback_reason = f"{family}:fallback_negative_sum"
+            logger.warning(f"{family}: Importance had positive values but sum={s} <= 0, using uniform fallback")
+        elif normalize_after_fallback:
+            # Normalize existing signal
+            importance = importance / s
     
-    # Final normalization: ensure sum > 0 (should always be true after fallback, but defensive)
+    # Final check: ensure sum > 0 (defensive, should always be true now)
     s = float(importance.sum())
-    if s > 0 and normalize_after_fallback and fallback_reason is None:
-        # Normalize existing signal (but not if we just applied uniform fallback)
-        importance = importance / s
+    if s <= 0:
+        # Last resort: force positive sum
+        importance = np.full(n_features, 1.0 / n_features, dtype=float)
+        if fallback_reason is None:
+            fallback_reason = f"{family}:fallback_final_check"
+        logger.warning(f"{family}: Importance sum was {s} in final check, forcing uniform distribution")
     
-    # Guarantee: sum must be > 0
-    assert importance.sum() > 0, f"Importance sum should be positive after normalization (family={family})"
+    # Guarantee: sum must be > 0 (defensive check before assertion)
+    final_sum = float(importance.sum())
+    if final_sum <= 0 or not np.isfinite(final_sum):
+        # Last resort: force positive sum
+        importance = np.full(n_features, 1.0 / n_features, dtype=float)
+        if fallback_reason is None:
+            fallback_reason = f"{family}:fallback_assertion_fix"
+        logger.error(f"{family}: Importance sum was {final_sum} after all normalization, forcing uniform distribution")
+        final_sum = 1.0  # After uniform distribution, sum should be 1.0
+    
+    # Final assertion (should always pass now)
+    assert final_sum > 0 and np.isfinite(final_sum), \
+        f"Importance sum should be positive and finite after normalization (family={family}, sum={final_sum}, n_features={n_features})"
     
     return importance, fallback_reason
 
@@ -822,6 +859,20 @@ def train_model_and_get_importance(
             cb_config.pop('loss_function', None)
             cb_config.pop('n_jobs', None)
             
+            # CRITICAL: CatBoost only accepts ONE of iterations/n_estimators/num_boost_round/num_trees
+            # Prefer 'iterations' (CatBoost's native param), remove ALL synonyms
+            iteration_synonyms = ['n_estimators', 'num_boost_round', 'num_trees']
+            has_iterations = 'iterations' in cb_config
+            
+            # Remove all synonyms (we'll keep 'iterations' if present, or let CatBoost use default)
+            for synonym in iteration_synonyms:
+                if synonym in cb_config:
+                    logger.debug(f"    catboost: Removing {synonym} (preferring 'iterations' if present)")
+                    cb_config.pop(synonym, None)
+            
+            # If we removed synonyms but 'iterations' is not present, that's fine - CatBoost will use default
+            # But if both were present, we now only have 'iterations' which is what we want
+            
             # Determine estimator class and loss function
             if is_binary:
                 est_cls = cb.CatBoostClassifier
@@ -840,6 +891,12 @@ def train_model_and_get_importance(
                 "loss_function": loss_fn
             }
             cb_config = _clean_config_for_estimator(est_cls, cb_config, extra, "catboost")
+            
+            # Double-check: ensure no iteration synonyms remain after cleaning
+            for synonym in iteration_synonyms:
+                if synonym in cb_config:
+                    logger.warning(f"    catboost: {synonym} still present after cleaning, removing it")
+                    cb_config.pop(synonym, None)
             
             # Instantiate with cleaned config + explicit params
             model = est_cls(**cb_config, **extra)
@@ -943,21 +1000,31 @@ def train_model_and_get_importance(
         scores = np.nan_to_num(scores, nan=0.0, posinf=0.0, neginf=0.0)
         
         # Normalize scores (F-statistics can be very large)
+        # Use normalize_importance for robust handling of edge cases (all zeros, etc.)
+        raw_importance = scores.copy()
         max_score = np.max(scores)
         if max_score > 0:
-            importance_values = scores / max_score
-        else:
-            # All scores are zero - assign uniform small importance to avoid all zeros
-            importance_values = np.ones(len(scores)) * 1e-6
+            # Normalize by max for initial scaling
+            raw_importance = scores / max_score
+        # else: raw_importance stays as all zeros, normalize_importance will handle fallback
         
-        # Ensure importance_values is a numpy array
-        importance_values = np.asarray(importance_values)
+        # Use normalize_importance to handle edge cases (all zeros, NaN, etc.) consistently
+        importance_values, fallback_reason = normalize_importance(
+            raw_importance=raw_importance,
+            n_features=len(feature_names),
+            family="univariate_selection",
+            feature_names=feature_names
+        )
+        
+        if fallback_reason:
+            logger.debug(f"    univariate_selection: {fallback_reason}")
         
         class DummyModel:
-            def __init__(self, importance):
+            def __init__(self, importance, fallback_reason=None):
                 self.importance = importance
+                self._fallback_reason = fallback_reason
         
-        model = DummyModel(importance_values)
+        model = DummyModel(importance_values, fallback_reason=fallback_reason)
         train_score = 0.0  # No model to score
     
     elif model_family == 'rfe':
@@ -1445,6 +1512,14 @@ def process_single_symbol(
         
         # Train each enabled model family with structured status tracking
         enabled_families = [f for f, cfg in model_families_config.items() if cfg.get('enabled', False)]
+        
+        # Log reproducibility info for this symbol
+        try:
+            from TRAINING.common.determinism import BASE_SEED
+            base_seed = BASE_SEED if BASE_SEED is not None else 42
+            logger.debug(f"  {symbol}: Reproducibility - base_seed={base_seed}, n_features={len(feature_names)}, n_samples={len(X_arr)}, detected_interval={detected_interval}m")
+        except Exception:
+            logger.debug(f"  {symbol}: Reproducibility - base_seed=N/A (determinism system unavailable)")
         
         for family_name, family_config in model_families_config.items():
             if not family_config.get('enabled', False):

@@ -123,6 +123,14 @@ def clean_config_for_estimator(
             dropped_unknown.append('verbose')
             logger.debug(f"[{family_name}] Removed invalid verbose={verbose_val} (must be >= 0 for RandomForest)")
     
+    # MLPRegressor/MLPClassifier: verbose must be >= 0, not -1 (sklearn doesn't accept negative values)
+    if 'neural_network' in (family_name or '').lower() and 'verbose' in config:
+        verbose_val = config.get('verbose')
+        if verbose_val == -1 or (isinstance(verbose_val, (int, float)) and verbose_val < 0):
+            # Convert -1 to 0 (silent), keep non-negative values as-is
+            config['verbose'] = 0
+            logger.debug(f"[{family_name}] Sanitized verbose={verbose_val} -> 0 (MLPRegressor/MLPClassifier requires >= 0)")
+    
     # MLPRegressor: learning_rate must be string, not float (even though learning_rate is a valid param)
     if 'neural_network' in (family_name or '').lower() and 'learning_rate' in config:
         lr_val = config.get('learning_rate')
@@ -131,6 +139,54 @@ def clean_config_for_estimator(
             config.pop('learning_rate', None)
             dropped_unknown.append('learning_rate')
             logger.debug(f"[{family_name}] Removed invalid learning_rate={lr_val} (MLPRegressor expects string: 'constant', 'adaptive', or 'invscaling')")
+    
+    # CatBoost: only one of random_state or random_seed should be set
+    if 'catboost' in (family_name or '').lower():
+        if 'random_state' in config and 'random_seed' in config:
+            # Prefer random_seed (CatBoost's native param), remove random_state
+            config.pop('random_state', None)
+            dropped_duplicates.append('random_state')
+            logger.debug(f"[{family_name}] Removed random_state (duplicate of random_seed for CatBoost)")
+        elif 'random_state' in config:
+            # Check if random_seed will be passed explicitly (in extra_kwargs)
+            if extra_kwargs and 'random_seed' in extra_kwargs:
+                # random_seed is already in extra_kwargs, just remove random_state to avoid conflict
+                config.pop('random_state', None)
+                dropped_duplicates.append('random_state')
+                logger.debug(f"[{family_name}] Removed random_state (random_seed already in extra_kwargs for CatBoost)")
+            else:
+                # Convert random_state to random_seed (CatBoost's preferred name)
+                config['random_seed'] = config.pop('random_state')
+                logger.debug(f"[{family_name}] Converted random_state -> random_seed for CatBoost")
+        
+        # CatBoost: only one of iterations, n_estimators, num_boost_round, num_trees should be set
+        # These are all synonyms - prefer 'iterations' (CatBoost's native param)
+        iteration_synonyms = ['iterations', 'n_estimators', 'num_boost_round', 'num_trees']
+        found_iteration_params = [p for p in iteration_synonyms if p in config]
+        if len(found_iteration_params) > 1:
+            # Keep 'iterations' if present, otherwise keep the first one found
+            if 'iterations' in found_iteration_params:
+                param_to_keep = 'iterations'
+            else:
+                param_to_keep = found_iteration_params[0]
+            
+            # Remove all others
+            for param in found_iteration_params:
+                if param != param_to_keep:
+                    config.pop(param, None)
+                    dropped_duplicates.append(param)
+                    logger.debug(f"[{family_name}] Removed {param} (duplicate of {param_to_keep} for CatBoost)")
+        
+        # Also check if any iteration param is in extra_kwargs
+        if extra_kwargs:
+            extra_iteration_params = [p for p in iteration_synonyms if p in extra_kwargs]
+            if extra_iteration_params:
+                # Remove iteration params from config if they're in extra_kwargs
+                for param in iteration_synonyms:
+                    if param in config:
+                        config.pop(param, None)
+                        dropped_duplicates.append(param)
+                        logger.debug(f"[{family_name}] Removed {param} from config (already in extra_kwargs for CatBoost)")
     
     # Log what was stripped (use WARNING temporarily to surface issues, then drop to DEBUG)
     if dropped_unknown or dropped_duplicates:
