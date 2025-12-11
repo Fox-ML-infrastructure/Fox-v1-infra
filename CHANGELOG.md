@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Highlights
 
+- **Feature Importance Stability Tracking System** (2025-12-10) — **NEW**: Comprehensive system for tracking and analyzing feature importance stability across pipeline runs. Automatically captures snapshots from all integration points (target ranking, feature selection, quick pruning). Config-driven automation with stability metrics (top-K overlap, Kendall tau, selection frequency). Includes CLI tool for manual analysis and comprehensive documentation.
 - **Auto-Fixer Backup Fix** (2025-12-10) — Fixed critical bug where auto-fixer was not creating backups when no leaks were detected. Backups are now created whenever auto-fix mode is triggered, preserving state history for debugging. Added comprehensive observability logging to auto-fixer initialization and detection.
 - **Reproducibility Settings Centralization** (2025-12-10) — Centralized all reproducibility-critical settings (`random_state`, `shuffle`, validation splits) to Single Source of Truth. Removed 30+ hardcoded `random_state: 42` values across configs. All models now use `pipeline.determinism.base_seed` for consistent reproducibility.
 - **Auto-Fixer Training Accuracy Fix** (2025-12-10) — Fixed critical bug where training accuracy was calculated but not stored in `model_metrics`, preventing auto-fixer from triggering on 100% training accuracy. Auto-fixer now correctly detects and creates backups when leakage is detected.
@@ -47,6 +48,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Feature Importance Stability Tracking System** (2025-12-10) — New `TRAINING/stability/feature_importance/` module with:
+  - Automatic snapshot capture at all integration points (target ranking, feature selection, quick pruning)
+  - Config-driven automation (`safety.feature_importance.auto_analyze_stability`)
+  - Stability metrics: top-K overlap (Jaccard similarity), Kendall tau (rank correlation), selection frequency
+  - CLI tool: `scripts/analyze_importance_stability.py` for manual analysis
+  - Comprehensive documentation: `TRAINING/stability/FEATURE_IMPORTANCE_STABILITY.md`
+  - Non-invasive hooks that don't break pipeline on failures
+  - Standardized JSON snapshot format for easy analysis
 - **Observability logging** (2025-12-10) — Added comprehensive initialization and operation logging to auto-fixer, config loading, and defaults injection. Now logs: auto-fixer initialization (paths, settings), detection results with confidence scores, defaults injection details, and config loading status.
 - **Reproducibility settings centralization** (2025-12-10) — Created `CONFIG/defaults.yaml` with centralized `random_state`, `shuffle`, `validation_split` settings. All models inherit from Single Source of Truth.
 - **Internal documentation organization** (2025-12-10) — Unified all internal docs into `INTERNAL_DOCS/` directory (never tracked). Moved audit trails, refactoring notes, and internal verification docs.

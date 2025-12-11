@@ -3,7 +3,7 @@
 Complete navigation guide for FoxML Core documentation.
 
 **Last Updated**: 2025-12-10  
-**Recent Updates**: Complete Single Source of Truth (SST) config centralization - ALL model trainers now use config-driven hyperparameters for full reproducibility. Added refactoring documentation (large file splits), unified pipeline consistency guide (including Boruta gatekeeper), structured logging configuration, shared utility modules documentation, and comprehensive Boruta refactor documentation.
+**Recent Updates**: Feature Importance Stability Tracking System - Automated snapshot capture and stability analysis for feature importances across runs. Complete Single Source of Truth (SST) config centralization - ALL model trainers now use config-driven hyperparameters for full reproducibility. Added refactoring documentation (large file splits), unified pipeline consistency guide (including Boruta gatekeeper), structured logging configuration, shared utility modules documentation, and comprehensive Boruta refactor documentation.
 
 ## Quick Navigation
 
@@ -95,6 +95,7 @@ Complete technical reference for daily use.
 
 ### Systems Reference
 - [Pipeline Reference](02_reference/systems/PIPELINE_REFERENCE.md) - Data pipelines
+- [Feature Importance Stability](../TRAINING/stability/FEATURE_IMPORTANCE_STABILITY.md) - **NEW**: Feature importance stability tracking and analysis system
 
 ### API Reference
 - [Module Reference](02_reference/api/MODULE_REFERENCE.md) - Python API for all modules
@@ -122,6 +123,7 @@ Research notes, design rationale, advanced topics.
 - [Intelligence Layer Overview](03_technical/research/INTELLIGENCE_LAYER.md) - Complete overview of intelligent training pipeline decision-making and automation
 - [Leakage Analysis](03_technical/research/LEAKAGE_ANALYSIS.md) - Leakage research
 - [Feature Importance Methodology](03_technical/research/FEATURE_IMPORTANCE_METHODOLOGY.md) - Feature importance research
+- [Feature Importance Stability](../TRAINING/stability/FEATURE_IMPORTANCE_STABILITY.md) - Feature importance stability tracking and analysis (see also Systems Reference)
 - [Target Discovery](03_technical/research/TARGET_DISCOVERY.md) - Target research
 - [Validation Methodology](03_technical/research/VALIDATION_METHODOLOGY.md) - Validation research
 
