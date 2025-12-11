@@ -12,8 +12,8 @@ hyperparameters:
   
   # Network architecture
   hidden_layers: [128, 64]
-  activation: "relu"
-  dropout: 0.2
+  # activation: auto-injected from defaults (relu)
+  # dropout: auto-injected from defaults (0.2)
   
   # Training
   epochs: 100

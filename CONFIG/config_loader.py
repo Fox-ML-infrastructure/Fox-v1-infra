@@ -34,6 +34,119 @@ logger = logging.getLogger(__name__)
 # Resolve CONFIG directory (parent of this file)
 CONFIG_DIR = Path(__file__).resolve().parent
 
+# Cache for defaults config (loaded once)
+_DEFAULTS_CACHE = None
+
+def load_defaults_config() -> Dict[str, Any]:
+    """
+    Load global defaults configuration (Single Source of Truth).
+    
+    Returns:
+        Dictionary with default values organized by category
+    """
+    global _DEFAULTS_CACHE
+    if _DEFAULTS_CACHE is not None:
+        return _DEFAULTS_CACHE
+    
+    defaults_file = CONFIG_DIR / "defaults.yaml"
+    if not defaults_file.exists():
+        logger.warning(f"Defaults config not found: {defaults_file}, using empty defaults")
+        _DEFAULTS_CACHE = {}
+        return _DEFAULTS_CACHE
+    
+    try:
+        with open(defaults_file, 'r') as f:
+            loaded = yaml.safe_load(f)
+            if loaded is None:
+                logger.warning(f"Defaults config {defaults_file} is empty or invalid YAML, using empty defaults")
+                _DEFAULTS_CACHE = {}
+            else:
+                _DEFAULTS_CACHE = loaded
+                logger.debug(f"Loaded defaults config from {defaults_file}")
+    except Exception as e:
+        logger.error(f"Failed to load defaults config {defaults_file}: {e}")
+        _DEFAULTS_CACHE = {}
+    
+    return _DEFAULTS_CACHE
+
+
+def inject_defaults(config: Dict[str, Any], model_family: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Inject default values from defaults.yaml into a config dictionary.
+    
+    This ensures Single Source of Truth (SST) - common settings are defined once
+    and automatically applied unless explicitly overridden.
+    
+    Args:
+        config: Configuration dictionary to inject defaults into
+        model_family: Optional model family name (for model-specific defaults)
+    
+    Returns:
+        Config dictionary with defaults injected
+    """
+    defaults = load_defaults_config()
+    if not defaults:
+        logger.warning("Defaults config is empty or failed to load - defaults will not be injected. Config will use explicit values only.")
+        return config
+    
+    # Get random_state from determinism system if not set in defaults
+    random_state = None
+    if 'randomness' in defaults:
+        random_state = defaults['randomness'].get('random_state')
+        if random_state is None:
+            # Load from determinism system (SST) - load directly to avoid circular dependency
+            try:
+                pipeline_config_file = CONFIG_DIR / "training_config" / "pipeline_config.yaml"
+                if pipeline_config_file.exists():
+                    with open(pipeline_config_file, 'r') as f:
+                        pipeline_config = yaml.safe_load(f)
+                    if pipeline_config is None:
+                        logger.warning("pipeline_config.yaml is empty or invalid YAML, using fallback random_state=42")
+                        random_state = 42  # FALLBACK_DEFAULT_OK
+                    else:
+                        random_state = pipeline_config.get('pipeline', {}).get('determinism', {}).get('base_seed', 42)
+                else:
+                    logger.warning("pipeline_config.yaml not found, using fallback random_state=42")
+                    random_state = 42  # FALLBACK_DEFAULT_OK
+            except Exception as e:
+                logger.warning(f"Failed to load random_state from pipeline_config.yaml: {e}, using fallback random_state=42")
+                random_state = 42  # FALLBACK_DEFAULT_OK
+        defaults['randomness']['random_state'] = random_state
+        defaults['randomness']['random_seed'] = defaults['randomness'].get('random_seed') or random_state
+    
+    # Determine which defaults category to apply based on model family
+    defaults_to_apply = {}
+    
+    # Always apply randomness and performance defaults
+    if 'randomness' in defaults:
+        defaults_to_apply.update(defaults['randomness'])
+    if 'performance' in defaults:
+        defaults_to_apply.update(defaults['performance'])
+    
+    # Apply model-specific defaults
+    if model_family:
+        model_lower = model_family.lower()
+        if 'tree' in model_lower or model_lower in ['lightgbm', 'xgboost', 'catboost', 'random_forest', 'histogram_gradient_boosting']:
+            if 'tree_models' in defaults:
+                defaults_to_apply.update(defaults['tree_models'])
+        elif ('neural' in model_lower or 'mlp' in model_lower or 'lstm' in model_lower or 
+              'cnn' in model_lower or 'transformer' in model_lower or 'multi_task' in model_lower or
+              'vae' in model_lower or 'gan' in model_lower or 'meta_learning' in model_lower or
+              'reward_based' in model_lower):
+            if 'neural_networks' in defaults:
+                defaults_to_apply.update(defaults['neural_networks'])
+        elif model_lower in ['lasso', 'ridge', 'elastic_net', 'linear']:
+            if 'linear_models' in defaults:
+                defaults_to_apply.update(defaults['linear_models'])
+    
+    # Inject defaults into config (only if key doesn't exist)
+    for key, value in defaults_to_apply.items():
+        if key not in config:
+            config[key] = value
+    
+    return config
+
+
 def load_model_config(
     model_family: str,
     variant: Optional[str] = None,
@@ -83,6 +196,9 @@ def load_model_config(
     try:
         with open(config_file, 'r') as f:
             config = yaml.safe_load(f)
+        if config is None:
+            logger.warning(f"Config file {config_file} is empty or invalid YAML, using empty config")
+            return {}
     except Exception as e:
         logger.error(f"Failed to load config {config_file}: {e}")
         return {}
@@ -90,7 +206,10 @@ def load_model_config(
     # Start with default hyperparameters
     result = config.get("hyperparameters", {}).copy()
     
-    # Apply variant if specified
+    # Inject global defaults (SST) FIRST - only for keys not already set
+    result = inject_defaults(result, model_family=model_family_lower)
+    
+    # Apply variant if specified (overrides defaults)
     if variant and "variants" in config:
         if variant in config["variants"]:
             variant_config = config["variants"][variant]
@@ -99,7 +218,7 @@ def load_model_config(
         else:
             logger.warning(f"Variant '{variant}' not found for {model_family}, using defaults")
     
-    # Apply overrides
+    # Apply overrides LAST (highest priority)
     if overrides:
         result.update(overrides)
         logger.info(f"Applied {len(overrides)} overrides for {model_family}")
@@ -130,6 +249,9 @@ def load_training_config(config_name: str) -> Dict[str, Any]:
     try:
         with open(config_file, 'r') as f:
             config = yaml.safe_load(f)
+        if config is None:
+            logger.warning(f"Training config {config_file} is empty or invalid YAML, using empty config")
+            return {}
         return config
     except Exception as e:
         logger.error(f"Failed to load training config {config_file}: {e}")
@@ -202,6 +324,9 @@ def get_config_variants(model_family: str) -> list:
     try:
         with open(config_file, 'r') as f:
             config = yaml.safe_load(f)
+        if config is None:
+            logger.warning(f"Config file {config_file} is empty or invalid YAML, no variants available")
+            return []
         return list(config.get("variants", {}).keys())
     except Exception as e:
         logger.error(f"Failed to load variants for {model_family}: {e}")

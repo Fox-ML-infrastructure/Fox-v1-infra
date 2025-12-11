@@ -1,0 +1,122 @@
+# Global Defaults Configuration
+# Single Source of Truth (SST) for common settings across all config files
+# These values are automatically injected into model configs unless explicitly overridden
+
+# Randomness & Determinism
+randomness:
+  # Base random seed - loaded from pipeline.determinism.base_seed at runtime
+  # All models use this unless explicitly overridden
+  random_state: null  # null = use pipeline.determinism.base_seed (default: 42)
+  random_seed: null  # null = use random_state (for libraries that use 'random_seed' instead)
+  
+# Performance & Parallelism
+performance:
+  # Number of parallel jobs/threads
+  # Set to -1 for auto-detect, 1 for sequential, or specific number
+  n_jobs: 1  # Default: sequential (GPU handles parallelism)
+  num_threads: 4  # Default threads for tree models (can be overridden by OMP_NUM_THREADS)
+  threads: 4  # Alias for num_threads
+  
+  # Device selection
+  device: "cpu"  # "cpu", "cuda", or "gpu"
+  
+  # Verbosity
+  verbose: -1  # -1 = silent, 0 = warnings, 1+ = info/debug
+  verbosity: 0  # Alias for verbose (XGBoost uses this)
+
+# Tree Model Defaults
+tree_models:
+  # Common tree hyperparameters
+  n_estimators: 1000  # Use early stopping instead of fixed count
+  learning_rate: 0.03  # Conservative default (0.01-0.05 range)
+  max_depth: 8  # Balanced default (5-9 range)
+  early_stopping_rounds: 50
+  
+  # Sampling
+  subsample: 0.75  # Row sampling (0.7-0.8 range)
+  colsample_bytree: 0.75  # Feature sampling (0.7-0.8 range)
+  feature_fraction: 0.75  # LightGBM alias for colsample_bytree
+  bagging_fraction: 0.75  # LightGBM alias for subsample
+  bagging_freq: 1  # LightGBM: enable bagging every iteration
+  
+  # Regularization
+  reg_alpha: 0.1  # L1 regularization (XGBoost)
+  reg_lambda: 0.1  # L2 regularization (XGBoost)
+  lambda_l1: 0.1  # L1 regularization (LightGBM)
+  lambda_l2: 0.1  # L2 regularization (LightGBM)
+  
+  # Tree structure
+  min_child_weight: 0.5
+  min_data_in_leaf: 200
+  min_samples_split: 20
+  min_samples_leaf: 10
+
+# Neural Network Defaults
+neural_networks:
+  learning_rate: 0.001  # Default for neural networks
+  max_iter: 300  # Maximum iterations/epochs
+  batch_size: "auto"  # Auto-detect batch size
+  early_stopping: true
+  validation_fraction: 0.1
+  n_iter_no_change: 10
+  dropout: 0.2  # Dropout rate (87.5% of neural network configs use this)
+  activation: "relu"  # Activation function (100% of neural network configs use this)
+  patience: 10  # Early stopping patience (71.4% of neural network configs use this)
+
+# Linear Model Defaults
+linear_models:
+  max_iter: 1000  # Maximum iterations for optimization
+  fit_intercept: true
+  alpha: 0.1  # Default regularization strength
+
+# Cross-Validation Defaults
+cross_validation:
+  cv_folds: 3  # Number of CV folds (80% of configs use this)
+  n_splits: 3  # Number of splits (alias for cv_folds)
+  purge_buffer_bars: 5  # Safety buffer for purged time series splits
+  n_jobs: 1  # Parallel jobs for CV (100% of configs use this)
+
+# Bootstrap & Resampling Defaults
+bootstrap:
+  n_bootstrap: 50  # Number of bootstrap iterations
+  replace: true  # Sample with replacement
+
+# Sampling Defaults
+sampling:
+  validation_split: 0.2  # Fraction for validation (100% of configs use this)
+  shuffle: true  # Shuffle data before splitting (affects reproducibility)
+  # random_state: auto-injected from randomness.random_state
+
+# Feature Selection Defaults
+feature_selection:
+  n_features_to_select: 50  # Default number of features to select
+  step: 5  # Features to remove per iteration (RFE)
+  top_k: 20  # Top K features for analysis
+
+# Permutation & SHAP Defaults
+explainability:
+  n_repeats: 5  # Number of permutation repeats
+  max_samples: 1000  # Max samples for SHAP calculation (100% of configs use this)
+  kernel_explainer_background: 100  # Background samples for KernelExplainer (100% of configs use this)
+  use_tree_explainer: true  # Use TreeExplainer when possible (100% of configs use this)
+
+# Aggregation Defaults (for multi-model feature selection)
+aggregation:
+  consensus_threshold: 0.5  # Fraction of models that must agree (100% of configs use this)
+  cross_model_method: "weighted_mean"  # How to combine across model families (100% of configs use this)
+  require_min_models: 2  # Feature must appear in at least N models (100% of configs use this)
+
+# Output Defaults
+output:
+  save_metadata: true  # Save run metadata JSON (100% of configs use this)
+  save_per_family_rankings: true  # Save individual family rankings (100% of configs use this)
+  save_agreement_matrix: true  # Save model agreement matrix (100% of configs use this)
+  include_model_scores: true  # Include individual model scores in summary (100% of configs use this)
+
+# Compute Defaults
+compute:
+  use_gpu: false  # Enable GPU acceleration where supported (100% of configs use this)
+
+# Note: Model-specific hyperparameters (like num_leaves for LightGBM, 
+# gamma for XGBoost) should remain in their respective model config files
+# as they are not common across models.

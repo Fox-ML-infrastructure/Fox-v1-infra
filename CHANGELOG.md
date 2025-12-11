@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Highlights
 
+- **Reproducibility Settings Centralization** (2025-12-10) — Centralized all reproducibility-critical settings (`random_state`, `shuffle`, validation splits) to Single Source of Truth. Removed 30+ hardcoded `random_state: 42` values across configs. All models now use `pipeline.determinism.base_seed` for consistent reproducibility.
+- **Auto-Fixer Training Accuracy Fix** (2025-12-10) — Fixed critical bug where training accuracy was calculated but not stored in `model_metrics`, preventing auto-fixer from triggering on 100% training accuracy. Auto-fixer now correctly detects and creates backups when leakage is detected.
+- **Silent Failures Fixed** (2025-12-10) — Added warnings for all silent config loading failures. Fixed YAML `None` return handling. Defaults injection now logs warnings when `defaults.yaml` is missing/broken. Random state fallback now logs warnings.
 - **SST Enforcement & Complete Config Centralization** (2025-12-10) — All hardcoded configuration values across the entire TRAINING pipeline moved to YAML files. Automated SST enforcement test prevents hardcoded hyperparameters. Same config → same results across all pipeline stages.
 - **Full Determinism** (2025-12-10) — All `random_state` values use centralized determinism system (`BASE_SEED`). Training strategies, feature selection, data splits, and model initializations are fully deterministic and reproducible.
 - **Complete F821 Error Elimination** (2025-12-10) — Fixed all 194 undefined name errors across TRAINING and CONFIG directories. All files now pass Ruff F821 checks.
@@ -43,6 +46,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Reproducibility settings centralization** (2025-12-10) — Created `CONFIG/defaults.yaml` with centralized `random_state`, `shuffle`, `validation_split` settings. All models inherit from Single Source of Truth.
+- **Internal documentation organization** (2025-12-10) — Unified all internal docs into `INTERNAL_DOCS/` directory (never tracked). Moved audit trails, refactoring notes, and internal verification docs.
+- **Config defaults system** (2025-12-10) — New `inject_defaults()` function automatically applies common defaults (dropout, activation, patience, n_jobs, etc.) to model configs unless explicitly overridden.
 - **Complete SST config system** (2025-12-10) — All 52+ model files use centralized config for hyperparameters, test splits, and random seeds
 - **Config centralization** (2025-12-10) — New config sections: `leakage_sentinels.*`, `auto_fixer.*`, `feature_pruning.*`
 - **Determinism integration** (2025-12-10) — All training strategies and model initializations use `BASE_SEED`
@@ -54,6 +60,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Auto-fixer training accuracy detection** (2025-12-10) — Fixed critical bug where 100% training accuracy was logged but not stored in `model_metrics`, preventing auto-fixer from triggering. Now stores `training_accuracy` and `training_r2` in `model_metrics` for proper leakage detection.
+- **Silent config loading failures** (2025-12-10) — Added warnings when `defaults.yaml` is missing/broken, when `pipeline_config.yaml` can't be loaded, and when YAML files return `None`. All silent failures now log warnings.
+- **Empty directory cleanup** (2025-12-10) — Removed sloppy empty directories (`CONFIG/data/`, `CONFIG/leakage/`, `CONFIG/system/`). Added `.gitkeep` to `CONFIG/backups/` for structure preservation.
 - **Complete SST implementation** (2025-12-10) — Replaced ALL hardcoded values across entire TRAINING pipeline (52+ model files)
 - **Config loading robustness** (2025-12-10) — Fixed syntax errors and variable initialization issues in config loading patterns
 - **Complete F821 error elimination** (2025-12-10) — Fixed all 194 undefined name errors (missing imports, logger initialization, circular imports)
@@ -67,6 +76,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Reproducibility settings** (2025-12-10) — Removed 30+ hardcoded `random_state: 42` values from configs. All now use centralized `defaults.randomness.random_state` → `pipeline.determinism.base_seed`. Centralized `shuffle: true` setting for train/test splits.
+- **Config cleanup** (2025-12-10) — Removed ~35+ duplicate default values from individual config files (dropout, activation, patience, aggregation settings, output settings). All now auto-injected from `defaults.yaml`.
+- **Internal documentation** (2025-12-10) — Moved all internal docs to `INTERNAL_DOCS/` (never tracked). Cleaned up `CONFIG/` directory by removing internal audit/verification docs.
 - **Config loading patterns** (2025-12-10) — All function parameters with hardcoded defaults now use `Optional[Type] = None` and load from config
 - **Determinism system** (2025-12-10) — All `random_state=42` hardcoded values replaced with `BASE_SEED`
 - **Logging system refactored** — Replaced hardcoded flags with structured YAML configuration

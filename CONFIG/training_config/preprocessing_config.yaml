@@ -27,8 +27,8 @@ preprocessing:
     train_ratio: 0.8  # 80% training ratio (for time-aware splits)
     val_ratio: 0.15  # 15% validation ratio (for sequential datasets)
     test_ratio: 0.15  # 15% test ratio (for sequential datasets)
-    random_state: 42  # Random state for splits
-    shuffle: true  # Shuffle data before splitting
+    # random_state: auto-injected from defaults.randomness.random_state (or pipeline.determinism.base_seed)
+    # shuffle: auto-injected from defaults.sampling.shuffle (true)
     early_stopping_rounds: 50  # Default early stopping rounds
     # Time-aware split settings (for feature importance evaluation)
     time_aware_split_ratio: 0.8  # 80% train, 20% validation (for time series)

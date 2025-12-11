@@ -16,8 +16,8 @@ hyperparameters:
   tol: 0.001
   reg_covar: 0.000001  # Regularization for covariance matrices
   
-  # Random state
-  random_state: 42
+  # Random state - auto-injected from defaults.randomness.random_state (or pipeline.determinism.base_seed)
+  # random_state: null  # null = use centralized seed
 
 # Regime presets
 regime_presets:

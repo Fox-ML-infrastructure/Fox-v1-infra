@@ -16,7 +16,11 @@ dep/
 docs/internal/
 docs/audit/
 DOCS/internal/
+DOCS/INTERNAL/
+DOCS/03_technical/internal/
 DOCS/audit/
+INTERNAL_DOCS/
+INTERNAL_DOCS/**
 .internal/
 .internal/**
 

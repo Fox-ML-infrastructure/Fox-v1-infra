@@ -131,7 +131,7 @@ gmm_regime:
   n_components: 3               # Start with 3-4 regimes (low-vol, bull, bear, high-vol)
   covariance_type: "full"
   max_iter: 100
-  random_state: 42
+  # random_state: auto-injected from defaults.randomness.random_state (or pipeline.determinism.base_seed)
 
 change_point:
   # Structural break detection

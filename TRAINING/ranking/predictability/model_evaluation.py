@@ -676,8 +676,35 @@ def train_and_evaluate_models(
         # Store primary score for backward compatibility
         model_scores[model_name] = primary_score
         
-        # Compute full task-aware metrics
+            # Compute full task-aware metrics
         try:
+            # Calculate training accuracy/correlation BEFORE checking for perfect correlation
+            # This is needed for auto-fixer to detect high training scores
+            training_accuracy = None
+            if task_type in {TaskType.BINARY_CLASSIFICATION, TaskType.MULTICLASS_CLASSIFICATION}:
+                if hasattr(model, 'predict_proba'):
+                    if task_type == TaskType.BINARY_CLASSIFICATION:
+                        y_proba = model.predict_proba(X)[:, 1]
+                        try:
+                            from CONFIG.config_loader import get_cfg
+                            binary_threshold = float(get_cfg("safety.leakage_detection.model_evaluation.binary_classification_threshold", default=0.5, config_name="safety_config"))
+                        except Exception:
+                            binary_threshold = 0.5
+                        y_pred_train = (y_proba >= binary_threshold).astype(int)
+                    else:
+                        y_proba = model.predict_proba(X)
+                        y_pred_train = y_proba.argmax(axis=1)
+                else:
+                    y_pred_train = model.predict(X)
+                if len(y) == len(y_pred_train):
+                    training_accuracy = np.mean(y == y_pred_train)
+            elif task_type == TaskType.REGRESSION:
+                y_pred_train = model.predict(X)
+                if len(y) == len(y_pred_train):
+                    corr = np.corrcoef(y, y_pred_train)[0, 1]
+                    if not np.isnan(corr):
+                        training_accuracy = abs(corr)  # Store absolute correlation for regression
+            
             if task_type == TaskType.REGRESSION:
                 y_pred = model.predict(X)
                 # Check for perfect correlation (leakage) - this sets _critical_leakage_detected flag
@@ -718,6 +745,18 @@ def train_and_evaluate_models(
             
             # Store full metrics
             model_metrics[model_name] = full_metrics
+            
+            # Also store training accuracy/correlation for auto-fixer detection
+            # This is the in-sample training score (not CV), which is what triggers leakage warnings
+            if training_accuracy is not None:
+                if task_type == TaskType.REGRESSION:
+                    # For regression, store as 'r2' (even though it's correlation, auto-fixer checks 'r2')
+                    # The actual CV R² is already in full_metrics['r2']
+                    model_metrics[model_name]['training_r2'] = training_accuracy
+                else:
+                    # For classification, store as 'accuracy' (auto-fixer checks 'accuracy')
+                    # The actual CV accuracy is already in full_metrics['accuracy']
+                    model_metrics[model_name]['training_accuracy'] = training_accuracy
         except Exception as e:
             logger.warning(f"Failed to compute full metrics for {model_name}: {e}")
             # Fallback to primary score only
@@ -2416,20 +2455,36 @@ def evaluate_target_predictability(
                     if isinstance(metrics, dict):
                         logger.debug(f"  {model_name} metrics: {list(metrics.keys())}")
                         # Check for perfect training accuracy in classification tasks
-                        if 'accuracy' in metrics:
-                            acc = metrics['accuracy']
-                            logger.debug(f"    {model_name} accuracy: {acc:.4f}")
+                        # Check training_accuracy first (in-sample), then fall back to CV accuracy
+                        if 'training_accuracy' in metrics:
+                            acc = metrics['training_accuracy']
+                            logger.debug(f"    {model_name} training_accuracy: {acc:.4f}")
                             if acc >= accuracy_threshold:
                                 should_auto_fix = True
                                 logger.warning(f"🚨 Perfect training accuracy detected in {model_name} ({acc:.1%} >= {accuracy_threshold:.1%}) - enabling auto-fix mode")
                                 break
+                        elif 'accuracy' in metrics:
+                            acc = metrics['accuracy']
+                            logger.debug(f"    {model_name} accuracy (CV): {acc:.4f}")
+                            if acc >= accuracy_threshold:
+                                should_auto_fix = True
+                                logger.warning(f"🚨 Perfect CV accuracy detected in {model_name} ({acc:.1%} >= {accuracy_threshold:.1%}) - enabling auto-fix mode")
+                                break
                         # Check for perfect correlation in regression tasks
-                        if 'r2' in metrics:
-                            r2 = metrics['r2']
-                            logger.debug(f"    {model_name} R²: {r2:.4f}")
+                        # Check training_r2 first (in-sample correlation), then fall back to CV R²
+                        if 'training_r2' in metrics:
+                            r2 = metrics['training_r2']
+                            logger.debug(f"    {model_name} training_r2 (correlation): {r2:.4f}")
                             if r2 >= r2_threshold:
                                 should_auto_fix = True
-                                logger.warning(f"🚨 Perfect R² detected in {model_name} ({r2:.4f} >= {r2_threshold:.4f}) - enabling auto-fix mode")
+                                logger.warning(f"🚨 Perfect training correlation detected in {model_name} ({r2:.4f} >= {r2_threshold:.4f}) - enabling auto-fix mode")
+                                break
+                        elif 'r2' in metrics:
+                            r2 = metrics['r2']
+                            logger.debug(f"    {model_name} R² (CV): {r2:.4f}")
+                            if r2 >= r2_threshold:
+                                should_auto_fix = True
+                                logger.warning(f"🚨 Perfect CV R² detected in {model_name} ({r2:.4f} >= {r2_threshold:.4f}) - enabling auto-fix mode")
                                 break
             
             # Check 3: Models that triggered perfect correlation warnings (fallback check)
@@ -2477,15 +2532,23 @@ def evaluate_target_predictability(
                 if model_metrics:
                     for model_name, metrics in model_metrics.items():
                         if isinstance(metrics, dict):
-                            # For classification, use accuracy
-                            if 'accuracy' in metrics and metrics['accuracy'] >= accuracy_threshold:
-                                actual_train_score = metrics['accuracy']
+                            # For classification, prefer training_accuracy (in-sample), fall back to CV accuracy
+                            if 'training_accuracy' in metrics and metrics['training_accuracy'] >= accuracy_threshold:
+                                actual_train_score = metrics['training_accuracy']
                                 logger.debug(f"Using training accuracy {actual_train_score:.4f} from {model_name} for auto-fixer")
                                 break
-                            # For regression, use R²
+                            elif 'accuracy' in metrics and metrics['accuracy'] >= accuracy_threshold:
+                                actual_train_score = metrics['accuracy']
+                                logger.debug(f"Using CV accuracy {actual_train_score:.4f} from {model_name} for auto-fixer")
+                                break
+                            # For regression, prefer training_r2 (in-sample correlation), fall back to CV R²
+                            elif 'training_r2' in metrics and metrics['training_r2'] >= r2_threshold:
+                                actual_train_score = metrics['training_r2']
+                                logger.debug(f"Using training correlation {actual_train_score:.4f} from {model_name} for auto-fixer")
+                                break
                             elif 'r2' in metrics and metrics['r2'] >= r2_threshold:
                                 actual_train_score = metrics['r2']
-                                logger.debug(f"Using training R² {actual_train_score:.4f} from {model_name} for auto-fixer")
+                                logger.debug(f"Using CV R² {actual_train_score:.4f} from {model_name} for auto-fixer")
                                 break
                 
                 # Fallback to CV score if no perfect training score found

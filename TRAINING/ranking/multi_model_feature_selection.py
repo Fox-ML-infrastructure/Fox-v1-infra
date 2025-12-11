@@ -117,6 +117,172 @@ class ImportanceResult:
     train_score: float
 
 
+def normalize_importance(
+    raw_importance: Optional[Union[np.ndarray, pd.Series]],
+    n_features: int,
+    family: str,
+    feature_names: Optional[List[str]] = None,
+    config: Optional[Dict[str, Any]] = None
+) -> Tuple[np.ndarray, Optional[str]]:
+    """
+    Normalize and sanitize importance vector with fallback handling for no-signal cases.
+    
+    This function ensures importance vectors are always valid (non-None, correct shape, no NaN/inf)
+    and provides a uniform fallback when there's truly no signal, preventing InvalidImportance errors.
+    
+    Args:
+        raw_importance: Raw importance values (can be None, array, or Series)
+        n_features: Expected number of features
+        family: Model family name (for logging)
+        feature_names: Optional feature names (for Series conversion)
+        config: Optional config dict with fallback settings (from aggregation.fallback)
+    
+    Returns:
+        Tuple of (normalized_importance, fallback_reason)
+        - normalized_importance: np.ndarray of shape (n_features,) with non-zero sum
+        - fallback_reason: None if no fallback used, or string reason if fallback applied
+    """
+    # Load fallback config from SST
+    try:
+        from CONFIG.config_loader import get_cfg
+        fallback_cfg = get_cfg("preprocessing.multi_model_feature_selection.aggregation.fallback", default={}, config_name="preprocessing_config")
+        uniform_importance = fallback_cfg.get('uniform_importance', 1e-6)
+        normalize_after_fallback = fallback_cfg.get('normalize_after_fallback', True)
+    except Exception:
+        # Fallback defaults if config unavailable
+        uniform_importance = config.get('uniform_importance', 1e-6) if config else 1e-6
+        normalize_after_fallback = config.get('normalize_after_fallback', True) if config else True
+    
+    # Handle None / empty
+    if raw_importance is None:
+        importance = np.zeros(n_features, dtype=float)
+    else:
+        # Convert to numpy array
+        if isinstance(raw_importance, pd.Series):
+            importance = raw_importance.values
+        else:
+            importance = np.asarray(raw_importance, dtype=float)
+        
+        # Flatten if needed
+        importance = importance.flatten()
+    
+    # Clean NaN / inf
+    importance = np.nan_to_num(importance, nan=0.0, posinf=0.0, neginf=0.0)
+    
+    # Pad / truncate to match feature count
+    if importance.size < n_features:
+        importance = np.pad(importance, (0, n_features - importance.size), mode='constant', constant_values=0.0)
+    elif importance.size > n_features:
+        importance = importance[:n_features]
+    
+    # Fallback if truly no signal (all zeros)
+    if not np.any(importance > 0):
+        # No signal: treat as "no strong preference" instead of failure
+        importance = np.full(n_features, uniform_importance, dtype=float)
+        fallback_reason = f"{family}:fallback_uniform_no_signal"
+        
+        # Optional: normalize to sum to 1.0
+        if normalize_after_fallback:
+            importance = importance / importance.sum()
+    else:
+        fallback_reason = None
+    
+    # Final normalization: ensure sum > 0 (should always be true after fallback, but defensive)
+    s = float(importance.sum())
+    if s > 0 and normalize_after_fallback and fallback_reason is None:
+        # Normalize existing signal (but not if we just applied uniform fallback)
+        importance = importance / s
+    
+    # Guarantee: sum must be > 0
+    assert importance.sum() > 0, f"Importance sum should be positive after normalization (family={family})"
+    
+    return importance, fallback_reason
+
+
+def boruta_to_importance(
+    support: np.ndarray,
+    support_weak: Optional[np.ndarray] = None,
+    ranking: Optional[np.ndarray] = None,
+    n_features: Optional[int] = None,
+) -> Optional[np.ndarray]:
+    """
+    Build a robust importance vector from Boruta outputs.
+    
+    This function ensures that when Boruta identifies confirmed or tentative features,
+    the resulting importance array will have non-zero entries and a positive sum,
+    preventing false "InvalidImportance" errors.
+    
+    Returns values compatible with gatekeeper logic:
+    - confirmed: 1.0
+    - tentative: 0.3
+    - rejected: 0.0 (not -1.0, to ensure positive sum)
+    
+    Args:
+        support: Boolean mask of confirmed features (True=confirmed, False=rejected/tentative)
+        support_weak: Optional boolean mask of tentative features
+        ranking: Optional integer ranking array (1=confirmed, 2=tentative, >2=rejected)
+        n_features: Total number of features (inferred from support if not provided)
+    
+    Returns:
+        importance: np.ndarray of shape (n_features,) with non-zero entries
+                    for confirmed/tentative features, or None if truly no signal.
+                    Values: confirmed=1.0, tentative=0.3, rejected=0.0
+    
+    Notes:
+        - Only returns None when Boruta truly selects nothing (no confirmed, no tentative)
+        - Guarantees sum(importance) > 0 when any features are confirmed/tentative
+        - Uses gatekeeper-compatible scoring (1.0/0.3/0.0) instead of normalized values
+        - Rejected features get 0.0 (not -1.0) to ensure positive sum for validation
+    """
+    support = np.asarray(support, dtype=bool)
+    if n_features is None:
+        n_features = support.shape[0]
+
+    if support_weak is None:
+        support_weak = np.zeros_like(support, dtype=bool)
+    else:
+        support_weak = np.asarray(support_weak, dtype=bool)
+
+    # Defensive: ensure correct length
+    if support.shape[0] != n_features:
+        raise ValueError(f"support length {support.shape[0]} != n_features {n_features}")
+    if support_weak.shape[0] != n_features:
+        raise ValueError(f"support_weak length {support_weak.shape[0]} != n_features {n_features}")
+
+    has_confirmed = support.any()
+    has_tentative = support_weak.any()
+
+    # Case 1: nothing selected at all → let caller handle as "no signal"
+    if not has_confirmed and not has_tentative:
+        return None
+
+    # Initialize with zeros (rejected features)
+    importance = np.zeros(n_features, dtype=float)
+    
+    # Assign importance: confirmed=1.0, tentative=0.3
+    # Note: We use 0.0 for rejected (not -1.0) to ensure positive sum for validation
+    # The gatekeeper logic will apply penalties separately in aggregation
+    importance[support] = 1.0  # Confirmed features
+    importance[support_weak] = 0.3  # Tentative features
+    
+    # If both confirmed and tentative exist, confirmed takes precedence
+    # (support_weak should not overlap with support, but be defensive)
+    overlap = support & support_weak
+    if overlap.any():
+        # If there's overlap, confirmed takes precedence (1.0 > 0.3)
+        importance[overlap] = 1.0
+
+    # Final safety check: ensure we have positive values
+    if importance.sum() <= 0:
+        # Something is very off; treat as "no signal"
+        return None
+
+    # Guarantee: if we have confirmed/tentative, sum must be > 0
+    assert importance.sum() > 0, "Importance sum should be positive when features are selected"
+    
+    return importance
+
+
 def load_multi_model_config(config_path: Path = None) -> Dict[str, Any]:
     """Load multi-model feature selection configuration
     
@@ -147,6 +313,29 @@ def load_multi_model_config(config_path: Path = None) -> Dict[str, Any]:
     
     with open(config_path) as f:
         config = yaml.safe_load(f)
+    
+    # Inject global defaults from defaults.yaml (SST)
+    # This centralizes common settings like random_state, n_jobs, etc.
+    try:
+        from CONFIG.config_loader import inject_defaults
+        
+        # Inject defaults into each model family config
+        if 'model_families' in config:
+            for family_name, family_config in config['model_families'].items():
+                if 'config' in family_config:
+                    family_config['config'] = inject_defaults(
+                        family_config['config'], 
+                        model_family=family_name
+                    )
+        
+        # Inject defaults into top-level sections
+        if 'sampling' in config:
+            config['sampling'] = inject_defaults(config['sampling'])
+        if 'permutation' in config:
+            config['permutation'] = inject_defaults(config['permutation'])
+            
+    except Exception as e:
+        logger.warning(f"Failed to inject defaults: {e}, continuing without defaults")
     
     logger.info(f"Loaded multi-model config from {config_path}")
     return config
@@ -864,24 +1053,45 @@ def train_model_and_get_importance(
             ranking = boruta.ranking_  # 1=confirmed, 2=tentative, >2=rejected
             selected = boruta.support_  # True=confirmed, False=rejected or tentative
             
+            # Get tentative mask (ranking == 2)
+            tentative_mask = (ranking == 2)
+            
             # Log Boruta gate results per symbol
             n_confirmed = selected.sum()
-            n_tentative = (ranking == 2).sum()
+            n_tentative = tentative_mask.sum()
             n_rejected = (ranking > 2).sum()
             logger.info(f"    boruta: {n_confirmed} confirmed, {n_rejected} rejected, {n_tentative} tentative")
             
-            # Store Boruta labels for aggregation (gatekeeper role)
-            # Importance scoring: confirmed=+1.0, tentative=+0.3, rejected=-1.0 (penalty)
-            # This makes Boruta a modifier, not just another importance vector
-            importance_values = np.where(
-                selected,  # confirmed
-                1.0,
-                np.where(ranking == 2, 0.3, -1.0)  # tentative=0.3, rejected=-1.0 (penalty)
+            # Use robust helper to convert Boruta outputs to importance vector
+            # This ensures we never get all-zeros or negative-sum when there are confirmed/tentative features
+            # Returns: confirmed=1.0, tentative=0.3, rejected=0.0 (positive sum for validation)
+            importance_values = boruta_to_importance(
+                support=selected,
+                support_weak=tentative_mask,
+                ranking=ranking,
+                n_features=X_dense.shape[1]
             )
             
+            # If Boruta truly found no signal, use fallback instead of failing
+            fallback_reason = None
+            if importance_values is None:
+                logger.debug(f"    boruta: No stable features identified (all rejected), using uniform fallback")
+                # Use normalize_importance fallback to avoid InvalidImportance error
+                importance_values, fallback_reason = normalize_importance(
+                    raw_importance=None,
+                    n_features=X_dense.shape[1],
+                    family="boruta",
+                    feature_names=feature_names
+                )
+                # Note: selected and ranking are already defined above, so they're valid here
+            
+            # Convert to pandas Series for consistency with other model families
+            importance_values = pd.Series(importance_values, index=feature_names)
+            
             class DummyModel:
-                def __init__(self, importance):
+                def __init__(self, importance, fallback_reason=None):
                     self.importance = importance
+                    self._fallback_reason = fallback_reason
                 # Store Boruta metadata for aggregation
                 def get_boruta_labels(self):
                     return {
@@ -891,7 +1101,7 @@ def train_model_and_get_importance(
                         'ranking': ranking
                     }
             
-            model = DummyModel(importance_values)
+            model = DummyModel(importance_values, fallback_reason=fallback_reason)
             # CRITICAL: Do NOT call base_estimator.score(X_dense, y) for Boruta.
             # Boruta's internal ExtraTreesClassifier is trained on a transformed subset of features
             # (confirmed/rejected/tentative selection), not the full X_dense.
@@ -979,13 +1189,25 @@ def train_model_and_get_importance(
                 continue  # Skip failed bootstrap iterations
         
         # Normalize to 0-1 (fraction of times selected)
-        importance_values = stability_scores / n_bootstrap
+        raw_importance = stability_scores / n_bootstrap
+        
+        # Use normalize_importance to handle edge cases (all zeros, NaN, etc.)
+        importance_values, fallback_reason = normalize_importance(
+            raw_importance=raw_importance,
+            n_features=X.shape[1],
+            family="stability_selection",
+            feature_names=feature_names
+        )
+        
+        if fallback_reason:
+            logger.debug(f"    stability_selection: {fallback_reason}")
         
         class DummyModel:
-            def __init__(self, importance):
+            def __init__(self, importance, fallback_reason=None):
                 self.importance = importance
+                self._fallback_reason = fallback_reason
         
-        model = DummyModel(importance_values)
+        model = DummyModel(importance_values, fallback_reason=fallback_reason)
         train_score = 0.0  # No single model to score
     
     else:
@@ -1145,18 +1367,35 @@ def process_single_symbol(
                     logger.info(f"    ✅ {family_name}: score={score_str}, "
                               f"top feature={importance.idxmax()} ({importance.max():.2f})")
                     
-                    family_statuses.append({
-                        "status": "success",
-                        "family": family_name,
-                        "symbol": symbol,
-                        "score": float(train_score) if not math.isnan(train_score) else None,
-                        "top_feature": importance.idxmax(),
-                        "top_feature_score": float(importance.max()),
-                        "error": None,
-                        "error_type": None
-                    })
+                    # Check if model used a fallback (soft no-signal case)
+                    fallback_reason = getattr(model, '_fallback_reason', None)
+                    if fallback_reason:
+                        # Soft no-signal fallback: not a failure, just "no strong preference"
+                        family_statuses.append({
+                            "status": "no_signal_fallback",
+                            "family": family_name,
+                            "symbol": symbol,
+                            "score": float(train_score) if not math.isnan(train_score) else None,
+                            "top_feature": importance.idxmax(),
+                            "top_feature_score": float(importance.max()),
+                            "error": fallback_reason,
+                            "error_type": "NoSignalFallback"
+                        })
+                        logger.debug(f"    ℹ️  {family_name}: {fallback_reason} (not counted as failure)")
+                    else:
+                        # Normal success
+                        family_statuses.append({
+                            "status": "success",
+                            "family": family_name,
+                            "symbol": symbol,
+                            "score": float(train_score) if not math.isnan(train_score) else None,
+                            "top_feature": importance.idxmax(),
+                            "top_feature_score": float(importance.max()),
+                            "error": None,
+                            "error_type": None
+                        })
                 else:
-                    # Model returned but importance is None or all zeros
+                    # Model returned but importance is None or all zeros (hard failure)
                     logger.warning(f"    ⚠️  {family_name}: Model trained but returned invalid importance (None or all zeros)")
                     family_statuses.append({
                         "status": "failed",
@@ -1317,14 +1556,15 @@ def aggregate_multi_model_importance(
         boruta_bonus = aggregation_config.get('boruta_confirm_bonus', 0.2)  # Bonus for confirmed features
         boruta_penalty = aggregation_config.get('boruta_reject_penalty', -0.3)  # Penalty for rejected features
         
-        # Boruta scores: 1.0=confirmed, 0.3=tentative, -1.0=rejected
+        # Boruta scores: 1.0=confirmed, 0.3=tentative, 0.0=rejected
+        # (Note: rejected is 0.0, not -1.0, to ensure positive sum for validation)
         # Apply modifiers to consensus score
         confirmed_threshold = aggregation_config.get('boruta_confirmed_threshold', 0.9)  # Configurable threshold
-        tentative_threshold = aggregation_config.get('boruta_tentative_threshold', 0.0)  # Configurable threshold
+        tentative_threshold = aggregation_config.get('boruta_tentative_threshold', 0.1)  # Updated: 0.1 to distinguish from 0.0 (rejected)
         
-        confirmed_mask = boruta_scores >= confirmed_threshold  # Confirmed (score >= threshold, typically ≈ 1.0)
-        rejected_mask = boruta_scores < tentative_threshold  # Rejected (score < threshold, typically = -1.0)
-        tentative_mask = (boruta_scores >= tentative_threshold) & (boruta_scores < confirmed_threshold)  # Tentative (between thresholds, typically ≈ 0.3)
+        confirmed_mask = boruta_scores >= confirmed_threshold  # Confirmed (score >= 0.9, typically = 1.0)
+        rejected_mask = boruta_scores <= 0.0  # Rejected (score = 0.0, updated from < 0.0)
+        tentative_mask = (boruta_scores > tentative_threshold) & (boruta_scores < confirmed_threshold)  # Tentative (between 0.1 and 0.9, typically = 0.3)
         
         # Calculate Boruta gate effect (bonus/penalty per feature)
         boruta_gate_effect = pd.Series(0.0, index=consensus_score_base.index)
@@ -1437,7 +1677,7 @@ def aggregate_multi_model_importance(
         summary_df[f'{family_name}_score'] = combined_df[family_name].values
     
     # Always add Boruta gatekeeper columns (even if disabled/failed - shows zeros/False)
-    summary_df['boruta_gate_score'] = boruta_gate_scores_series.values  # Raw Boruta scores (1.0/0.3/-1.0)
+    summary_df['boruta_gate_score'] = boruta_gate_scores_series.values  # Raw Boruta scores (1.0/0.3/0.0)
     summary_df['boruta_confirmed'] = boruta_confirmed_mask.values
     summary_df['boruta_rejected'] = boruta_rejected_mask.values
     summary_df['boruta_tentative'] = boruta_tentative_mask.values
@@ -1556,6 +1796,8 @@ def compute_target_confidence(
     metrics['n_models_available'] = len(enabled_families)
     
     # Count successful models (those with valid results)
+    # Note: "no_signal_fallback" cases are counted as successful (they produced valid importance, just uniform)
+    # Only hard failures (exceptions, InvalidImportance) are excluded
     successful_models = set(r.model_family for r in all_results if r.train_score is not None and not (isinstance(r.train_score, float) and (math.isnan(r.train_score) or math.isinf(r.train_score))))
     metrics['n_models_successful'] = len(successful_models)
     
@@ -1691,7 +1933,7 @@ def save_multi_model_results(
         'consensus_score_base',  # Base consensus (model families only)
         'consensus_score',  # Final consensus (with Boruta effect)
         'boruta_gate_effect',  # Pure Boruta effect (final - base)
-        'boruta_gate_score',  # Raw Boruta scores (1.0/0.3/-1.0)
+        'boruta_gate_score',  # Raw Boruta scores (1.0/0.3/0.0)
         'boruta_confirmed',
         'boruta_rejected',
         'boruta_tentative',
@@ -1753,19 +1995,29 @@ def save_multi_model_results(
             if family not in status_summary:
                 status_summary[family] = {
                     'total_runs': 0,
-                    'success': 0,
-                    'failed': 0,
-                    'symbols_success': [],
-                    'symbols_failed': [],
-                    'error_types': set(),
-                    'errors': []
+                'success': 0,
+                'failed': 0,
+                'no_signal_fallback': 0,  # Soft fallbacks (not counted as failures)
+                'symbols_success': [],
+                'symbols_failed': [],
+                'error_types': set(),
+                'errors': []
                 }
             summary = status_summary[family]
             summary['total_runs'] += 1
-            if status.get('status') == 'success':
+            status_value = status.get('status')
+            if status_value == 'success':
                 summary['success'] += 1
                 summary['symbols_success'].append(status.get('symbol'))
+            elif status_value == 'no_signal_fallback':
+                # Soft fallback: counted as success for coverage, but tracked separately
+                summary['success'] += 1  # Count as success for model_coverage_ratio
+                summary['no_signal_fallback'] = summary.get('no_signal_fallback', 0) + 1
+                summary['symbols_success'].append(status.get('symbol'))
+                if status.get('error_type'):
+                    summary['error_types'].add(status.get('error_type'))
             else:
+                # Hard failure (exceptions, InvalidImportance, etc.)
                 summary['failed'] += 1
                 summary['symbols_failed'].append(status.get('symbol'))
                 if status.get('error_type'):
@@ -1789,10 +2041,15 @@ def save_multi_model_results(
             }, f, indent=2)
         logger.info(f"✅ Saved model family status tracking to model_family_status.json")
         
-        # Log summary
+        # Log summary (only hard failures, not soft fallbacks)
         failed_families = [f for f, s in status_summary.items() if s['failed'] > 0]
         if failed_families:
-            logger.warning(f"⚠️  {len(failed_families)} model families had failures: {', '.join(failed_families)}")
+            logger.warning(f"⚠️  {len(failed_families)} model families had hard failures: {', '.join(failed_families)}")
+        
+        # Log soft fallbacks separately (informational, not warnings)
+        fallback_families = [f for f, s in status_summary.items() if s.get('no_signal_fallback', 0) > 0]
+        if fallback_families:
+            logger.info(f"ℹ️  {len(fallback_families)} model families used no-signal fallbacks (not failures): {', '.join(fallback_families)}")
     
     # 6. Target confidence metrics (if model_families_config available in metadata)
     try:

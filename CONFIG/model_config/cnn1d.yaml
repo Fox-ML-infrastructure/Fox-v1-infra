@@ -8,14 +8,14 @@ hyperparameters:
   # Training
   epochs: 50
   batch_size: 512
-  patience: 10
+  # patience: auto-injected from defaults (10)
   learning_rate: 0.001
   
   # Architecture
   filters: 64
   kernel_size: 3
   pool_size: 2
-  dropout: 0.2
+  # dropout: auto-injected from defaults (0.2)
   
   # Sequence
   sequence_length: null  # Auto-detected from input

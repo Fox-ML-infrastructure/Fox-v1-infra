@@ -841,6 +841,28 @@ def train_and_evaluate_models(
         
         # Compute full task-aware metrics
         try:
+            # Calculate training accuracy/correlation BEFORE checking for perfect correlation
+            # This is needed for auto-fixer to detect high training scores
+            training_accuracy = None
+            if task_type in {TaskType.BINARY_CLASSIFICATION, TaskType.MULTICLASS_CLASSIFICATION}:
+                if hasattr(model, 'predict_proba'):
+                    if task_type == TaskType.BINARY_CLASSIFICATION:
+                        y_proba = model.predict_proba(X)[:, 1]
+                        y_pred_train = (y_proba >= 0.5).astype(int)
+                    else:
+                        y_proba = model.predict_proba(X)
+                        y_pred_train = y_proba.argmax(axis=1)
+                else:
+                    y_pred_train = model.predict(X)
+                if len(y) == len(y_pred_train):
+                    training_accuracy = np.mean(y == y_pred_train)
+            elif task_type == TaskType.REGRESSION:
+                y_pred_train = model.predict(X)
+                if len(y) == len(y_pred_train):
+                    corr = np.corrcoef(y, y_pred_train)[0, 1]
+                    if not np.isnan(corr):
+                        training_accuracy = abs(corr)  # Store absolute correlation for regression
+            
             if task_type == TaskType.REGRESSION:
                 y_pred = model.predict(X)
                 # Check for perfect correlation (leakage) - this sets _critical_leakage_detected flag
@@ -875,6 +897,18 @@ def train_and_evaluate_models(
             
             # Store full metrics
             model_metrics[model_name] = full_metrics
+            
+            # Also store training accuracy/correlation for auto-fixer detection
+            # This is the in-sample training score (not CV), which is what triggers leakage warnings
+            if training_accuracy is not None:
+                if task_type == TaskType.REGRESSION:
+                    # For regression, store as 'training_r2' (even though it's correlation, auto-fixer checks 'r2')
+                    # The actual CV R² is already in full_metrics['r2']
+                    model_metrics[model_name]['training_r2'] = training_accuracy
+                else:
+                    # For classification, store as 'training_accuracy' (auto-fixer checks 'accuracy')
+                    # The actual CV accuracy is already in full_metrics['accuracy']
+                    model_metrics[model_name]['training_accuracy'] = training_accuracy
         except Exception as e:
             logger.warning(f"Failed to compute full metrics for {model_name}: {e}")
             # Fallback to primary score only

@@ -12,8 +12,8 @@ hyperparameters:
   
   # Architecture
   hidden_layers: [256, 128]
-  activation: "relu"
-  dropout: 0.2
+  # activation: auto-injected from defaults (relu)
+  # dropout: auto-injected from defaults (0.2)
   
   # Training
   meta_batch_size: 4  # Number of tasks per meta-update
