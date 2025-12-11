@@ -24,7 +24,7 @@ Usage:
 import json
 import logging
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from datetime import datetime
 
 # Use root logger to ensure messages are visible regardless of calling script's logger setup
