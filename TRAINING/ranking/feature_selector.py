@@ -337,6 +337,42 @@ def select_features_for_target(
             metadata=metadata
         )
     
+    # Track reproducibility: compare to previous feature selection run
+    # This runs regardless of which entry point calls this function
+    if output_dir and summary_df is not None and len(summary_df) > 0:
+        try:
+            from TRAINING.utils.reproducibility_tracker import ReproducibilityTracker
+            
+            tracker = ReproducibilityTracker(output_dir=output_dir)
+            
+            # Calculate summary metrics for reproducibility tracking
+            top_feature_score = summary_df.iloc[0]['consensus_score'] if not summary_df.empty else 0.0
+            mean_consensus = summary_df['consensus_score'].mean()
+            std_consensus = summary_df['consensus_score'].std()
+            n_features_selected = len(selected_features)
+            n_successful_families = len([s for s in all_family_statuses if s.get('status') == 'success'])
+            
+            tracker.log_comparison(
+                stage="feature_selection",
+                item_name=target_column,
+                metrics={
+                    "metric_name": "Consensus Score",
+                    "mean_score": mean_consensus,
+                    "std_score": std_consensus,
+                    "mean_importance": top_feature_score,  # Use top feature score as importance proxy
+                    "composite_score": mean_consensus,  # Use mean consensus as composite
+                    "n_features_selected": n_features_selected,
+                    "n_successful_families": n_successful_families
+                },
+                additional_data={
+                    "top_feature": summary_df.iloc[0]['feature'] if not summary_df.empty else None,
+                    "top_n": top_n or len(selected_features),
+                    "n_symbols": len(symbols)
+                }
+            )
+        except Exception as e:
+            logger.debug(f"Reproducibility tracking failed for {target_column}: {e}")
+    
     return selected_features, summary_df
 
 
