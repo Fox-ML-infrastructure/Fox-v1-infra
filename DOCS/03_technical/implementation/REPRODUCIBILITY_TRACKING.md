@@ -541,20 +541,26 @@ This ensures that reproducibility comparisons (✅/⚠️ indicators) are always
 
 ## Current Integrations
 
-The reproducibility tracker is currently integrated into:
+**Architecture**: Tracking is integrated into computation modules, not entry points. This ensures tracking works regardless of which entry point calls these functions.
 
-1. **Target Ranking** (`SCRIPTS/rank_target_predictability.py`)
-   - Tracks: ROC-AUC/R², importance, composite score per target
-   - Stage: `"target_ranking"`
+1. **Target Ranking** (`TRAINING/ranking/predictability/model_evaluation.py`)
+   - **Function**: `evaluate_target_predictability()`
+   - **Tracks**: ROC-AUC/R², importance, composite score per target
+   - **Stage**: `"target_ranking"`
+   - **Works for**: intelligent_trainer, standalone scripts, programmatic calls
 
-2. **Feature Selection** (`TRAINING/ranking/multi_model_feature_selection.py`)
-   - Tracks: Consensus scores, top feature, number of features selected
-   - Stage: `"feature_selection"`
+2. **Feature Selection** (`TRAINING/ranking/feature_selector.py`)
+   - **Function**: `select_features_for_target()`
+   - **Tracks**: Consensus scores, top feature, number of features selected, successful families
+   - **Stage**: `"feature_selection"`
+   - **Works for**: intelligent_trainer, standalone scripts, programmatic calls
 
 3. **Model Training** (`TRAINING/training_strategies/training.py`)
-   - Tracks: CV scores (mean/std), composite scores per target:family combination
-   - Stage: `"model_training"`
-   - Item name format: `"{target}:{family}"` (e.g., `"y_will_peak_60m_0.8:lightgbm"`)
+   - **Function**: Training loop in `train_models_for_interval_comprehensive()`
+   - **Tracks**: CV scores (mean/std), composite scores per target:family combination
+   - **Stage**: `"model_training"`
+   - **Item name format**: `"{target}:{family}"` (e.g., `"y_will_peak_60m_0.8:lightgbm"`)
+   - **Works for**: intelligent_trainer, standalone scripts, programmatic calls
 
 ## Extending to New Stages
 
