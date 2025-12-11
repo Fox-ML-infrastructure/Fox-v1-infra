@@ -282,7 +282,10 @@ class IntelligentTrainer:
         force_refresh: bool = False,
         use_cache: bool = True,
         max_targets_to_evaluate: Optional[int] = None,  # Limit number of targets to evaluate (for faster testing)
-        target_ranking_config: Optional['TargetRankingConfig'] = None  # New typed config (optional)
+        target_ranking_config: Optional['TargetRankingConfig'] = None,  # New typed config (optional)
+        min_cs: Optional[int] = None,  # Load from config if None
+        max_cs_samples: Optional[int] = None,  # Load from config if None
+        max_rows_per_symbol: Optional[int] = None  # Load from config if None
     ) -> List[str]:
         """
         Automatically rank targets and return top N.
@@ -295,6 +298,9 @@ class IntelligentTrainer:
             use_cache: If True, use cached rankings if available
             max_targets_to_evaluate: Optional limit on number of targets to evaluate (for faster testing)
             target_ranking_config: Optional TargetRankingConfig object [NEW - preferred]
+            min_cs: Minimum cross-sectional size per timestamp (loads from config if None)
+            max_cs_samples: Maximum samples per timestamp for cross-sectional sampling (loads from config if None)
+            max_rows_per_symbol: Maximum rows to load per symbol (loads from config if None)
         
         Returns:
             List of top N target names
@@ -383,7 +389,10 @@ class IntelligentTrainer:
             max_targets_to_evaluate=max_targets_to_evaluate,  # Limit evaluation if specified
             target_ranking_config=target_ranking_config,  # Pass typed config if available
             explicit_interval=explicit_interval,  # Pass explicit interval
-            experiment_config=experiment_config  # Pass experiment config
+            experiment_config=experiment_config,  # Pass experiment config
+            min_cs=min_cs,  # Pass min_cs from config
+            max_cs_samples=max_cs_samples,  # Pass max_cs_samples from config
+            max_rows_per_symbol=max_rows_per_symbol  # Pass max_rows_per_symbol from config
         )
         
         # Save to cache
@@ -562,7 +571,10 @@ class IntelligentTrainer:
             targets = self.rank_targets_auto(
                 top_n=top_n_targets,
                 use_cache=use_cache,
-                max_targets_to_evaluate=max_targets_to_evaluate
+                max_targets_to_evaluate=max_targets_to_evaluate,
+                min_cs=min_cs,
+                max_cs_samples=max_cs_samples,
+                max_rows_per_symbol=max_rows_per_symbol
             )
             if not targets:
                 raise ValueError(
