@@ -31,6 +31,43 @@ Phase 1 functioning properly - Ranking and selection pipelines unified with cons
 
 ### Added
 
+#### Leakage Detection Critical Bug Fixes (2025-12-11)
+
+**CRITICAL BUG FIX: Detection Confidence Calculation**
+- **Issue**: Detection confidence was using raw importance values (0-1) directly as confidence scores
+  - Example: Feature with 15% importance → 15% confidence
+  - min_confidence threshold = 80% (0.8)
+  - Result: ALL detections were filtered out, so auto-fixer reported 0 leaks even when perfect scores were detected
+- **Impact**: Valid leak detections were silently filtered out, making it appear that detection wasn't working
+- **Root Cause**: Misunderstanding of confidence vs importance - confidence should reflect suspicion level (perfect score = high suspicion), not just raw importance
+- **Fix**: Changed confidence calculation to account for perfect-score context:
+  - Base confidence: 0.85 (perfect score = high suspicion)
+  - Importance boost: up to +0.1 based on importance value
+  - Final confidence: 0.85-0.95 (always above 80% threshold)
+- **Result**: Detections now get appropriate confidence scores and are properly applied
+- **Files**: `TRAINING/common/leakage_auto_fixer.py`
+
+**Enhanced Detection When Importances Missing**
+- **Issue**: When `model_importance` was not provided, detection only checked known patterns (p_, y_, fwd_ret_, etc.), missing subtle leaks
+- **Impact**: Detection couldn't identify leaky features when importances weren't passed from upstream
+- **Fix**: 
+  - Compute feature importances on-the-fly using quick RandomForest when missing
+  - Use computed importances to find suspicious features
+  - Ensures detection works even when importances aren't passed
+- **Files**: `TRAINING/common/leakage_auto_fixer.py`
+
+**Improved Detection Visibility and Diagnostics**
+- **Enhancement**: Added comprehensive logging for detection process
+- **Features**:
+  - Confidence distribution logging (high vs low confidence detections)
+  - Lists top detections that will be fixed vs filtered out
+  - Warnings when perfect score detected but no leaks found
+  - Explains possible reasons: structural leakage, already excluded, detection methods need improvement
+  - INFO-level logging for auto-fixer inputs and top features by importance
+- **Files**: 
+  - `TRAINING/common/leakage_auto_fixer.py`
+  - `TRAINING/ranking/predictability/model_evaluation.py`
+
 #### Cross-Sectional Sampling & Config Parameter Fixes (2025-12-11)
 
 **Critical Bug Fix: max_cs_samples Filtering**

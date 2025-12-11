@@ -107,9 +107,15 @@ The system automatically detects leakage during training and can auto-fix it:
 - Automatic retention policy keeps the last N backups per target (configurable, default: 20)
 
 **Auto-Fixer:**
-- Automatically identifies leaking features
+- Automatically identifies leaking features using multiple methods:
+  - **Method 1**: Perfect score detection - identifies high-importance features in models with perfect training scores
+  - **Method 2**: Leakage sentinels - shifted target test, symbol holdout test, randomized time test
+  - **Method 3**: Pattern-based detection - checks for known leaky patterns (p_, y_, fwd_ret_, etc.)
+- **Confidence calculation**: Uses base confidence of 0.85 for perfect-score context, with importance boost up to 0.95
+- **On-the-fly importance computation**: If feature importances aren't provided, trains quick RandomForest to compute them automatically
 - Updates `excluded_features.yaml` and `feature_registry.yaml`
 - Re-runs training until no leakage is detected
+- **Enhanced logging**: Shows confidence distribution, which detections will be fixed vs filtered out, and diagnostic warnings
 
 **Configuration** (`training_config/safety_config.yaml` - see [Safety & Leakage Configs](../../02_reference/configuration/SAFETY_LEAKAGE_CONFIGS.md)):
 
