@@ -78,14 +78,23 @@ def inject_defaults(config: Dict[str, Any], model_family: Optional[str] = None) 
     and automatically applied unless explicitly overridden.
     
     Args:
-        config: Configuration dictionary to inject defaults into
+        config: Configuration dictionary to inject defaults into (can be None)
         model_family: Optional model family name (for model-specific defaults)
     
     Returns:
         Config dictionary with defaults injected
     """
+    # Handle None config (initialize empty dict)
+    if config is None:
+        config = {}
+    
+    # Ensure config is a dict (not list, str, etc.)
+    if not isinstance(config, dict):
+        logger.warning(f"Config is not a dict (got {type(config)}), initializing empty dict")
+        config = {}
+    
     defaults = load_defaults_config()
-    if not defaults:
+    if not defaults or not isinstance(defaults, dict):
         logger.warning("Defaults config is empty or failed to load - defaults will not be injected. Config will use explicit values only.")
         return config
     

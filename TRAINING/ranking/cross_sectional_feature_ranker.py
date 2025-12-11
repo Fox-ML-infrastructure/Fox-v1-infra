@@ -185,6 +185,9 @@ def train_panel_model(
     # Merge with defaults
     config = {**default_configs.get(model_family, {}), **model_config}
     
+    # Import shared config cleaner utility
+    from TRAINING.utils.config_cleaner import clean_config_for_estimator
+    
     # Determine task type
     unique_vals = np.unique(y[~np.isnan(y)])
     is_binary = len(unique_vals) == 2 and set(unique_vals).issubset({0, 1, 0.0, 1.0})
@@ -199,9 +202,13 @@ def train_panel_model(
             from lightgbm import LGBMRegressor, LGBMClassifier
             
             if is_binary or is_multiclass:
-                model = LGBMClassifier(**config)
+                est_cls = LGBMClassifier
             else:
-                model = LGBMRegressor(**config)
+                est_cls = LGBMRegressor
+            
+            # Clean config to prevent duplicate/unknown param errors
+            config = clean_config_for_estimator(est_cls, config, {}, model_family)
+            model = est_cls(**config)
             
             model.fit(X, y)
             
@@ -222,9 +229,13 @@ def train_panel_model(
             import xgboost as xgb
             
             if is_binary or is_multiclass:
-                model = xgb.XGBClassifier(**config)
+                est_cls = xgb.XGBClassifier
             else:
-                model = xgb.XGBRegressor(**config)
+                est_cls = xgb.XGBRegressor
+            
+            # Clean config to prevent duplicate/unknown param errors
+            config = clean_config_for_estimator(est_cls, config, {}, model_family)
+            model = est_cls(**config)
             
             model.fit(X, y)
             

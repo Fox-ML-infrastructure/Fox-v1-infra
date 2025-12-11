@@ -269,6 +269,9 @@ def _get_model_constructor(
         logger.warning(f"Config for {model_name} is None or not a dict (got {type(config)}), using empty config")
         config = {}
     
+    # Import shared config cleaner utility
+    from TRAINING.utils.config_cleaner import clean_config_for_estimator
+    
     # Remove task-specific params from config (we'll set them explicitly)
     # NOTE: 'device' is NOT removed - it's needed for GPU acceleration (e.g., LightGBM device='gpu')
     config_clean = {k: v for k, v in config.items() 
@@ -283,17 +286,31 @@ def _get_model_constructor(
         # CRITICAL FIX: Standardize constructor signatures - all accept **kwargs for consistency
         # This prevents polymorphism crashes where training loop doesn't know which signature to use
         if task_type == TaskType.REGRESSION:
-            return lambda **kwargs: lgb.LGBMRegressor(objective='regression', **config_clean)
+            est_cls = lgb.LGBMRegressor
+            extra = {'objective': 'regression'}
+            config_clean = clean_config_for_estimator(est_cls, config_clean, extra, model_name)
+            # Capture values in closure to avoid reference issues
+            config_final = config_clean.copy()
+            extra_final = extra.copy()
+            return lambda **kwargs: est_cls(**config_final, **extra_final)
         elif task_type == TaskType.BINARY_CLASSIFICATION:
-            return lambda **kwargs: lgb.LGBMClassifier(objective='binary', **config_clean)
+            est_cls = lgb.LGBMClassifier
+            extra = {'objective': 'binary'}
+            config_clean = clean_config_for_estimator(est_cls, config_clean, extra, model_name)
+            # Capture values in closure to avoid reference issues
+            config_final = config_clean.copy()
+            extra_final = extra.copy()
+            return lambda **kwargs: est_cls(**config_final, **extra_final)
         elif task_type == TaskType.MULTICLASS_CLASSIFICATION:
             # Extract n_classes from kwargs if provided, otherwise infer from data later
             def make_multiclass_lgbm(**kwargs):
                 n_classes = kwargs.get('n_classes', None)
+                est_cls = lgb.LGBMClassifier
+                extra = {'objective': 'multiclass'}
                 if n_classes is not None:
-                    return lgb.LGBMClassifier(objective='multiclass', num_class=n_classes, **config_clean)
-                else:
-                    return lgb.LGBMClassifier(objective='multiclass', **config_clean)
+                    extra['num_class'] = n_classes
+                cleaned = clean_config_for_estimator(est_cls, config_clean, extra, model_name)
+                return est_cls(**cleaned, **extra)
             return make_multiclass_lgbm
     
     elif model_name == 'xgboost':
@@ -301,17 +318,31 @@ def _get_model_constructor(
             import xgboost as xgb
             # CRITICAL FIX: Standardize constructor signatures - all accept **kwargs for consistency
             if task_type == TaskType.REGRESSION:
-                return lambda **kwargs: xgb.XGBRegressor(objective='reg:squarederror', **config_clean)
+                est_cls = xgb.XGBRegressor
+                extra = {'objective': 'reg:squarederror'}
+                config_clean = clean_config_for_estimator(est_cls, config_clean, extra, model_name)
+                # Capture values in closure to avoid reference issues
+                config_final = config_clean.copy()
+                extra_final = extra.copy()
+                return lambda **kwargs: est_cls(**config_final, **extra_final)
             elif task_type == TaskType.BINARY_CLASSIFICATION:
-                return lambda **kwargs: xgb.XGBClassifier(objective='binary:logistic', **config_clean)
+                est_cls = xgb.XGBClassifier
+                extra = {'objective': 'binary:logistic'}
+                config_clean = clean_config_for_estimator(est_cls, config_clean, extra, model_name)
+                # Capture values in closure to avoid reference issues
+                config_final = config_clean.copy()
+                extra_final = extra.copy()
+                return lambda **kwargs: est_cls(**config_final, **extra_final)
             elif task_type == TaskType.MULTICLASS_CLASSIFICATION:
                 # Extract n_classes from kwargs if provided, otherwise infer from data later
                 def make_multiclass_xgb(**kwargs):
                     n_classes = kwargs.get('n_classes', None)
+                    est_cls = xgb.XGBClassifier
+                    extra = {'objective': 'multi:softprob'}
                     if n_classes is not None:
-                        return xgb.XGBClassifier(objective='multi:softprob', num_class=n_classes, **config_clean)
-                    else:
-                        return xgb.XGBClassifier(objective='multi:softprob', **config_clean)
+                        extra['num_class'] = n_classes
+                    cleaned = clean_config_for_estimator(est_cls, config_clean, extra, model_name)
+                    return est_cls(**cleaned, **extra)
                 return make_multiclass_xgb
         except ImportError:
             return None
@@ -319,32 +350,60 @@ def _get_model_constructor(
     elif model_name == 'random_forest':
         # Standardized signature: all accept **kwargs (ignored for RandomForest)
         if task_type == TaskType.REGRESSION:
-            return lambda **kwargs: RandomForestRegressor(**config_clean)
+            est_cls = RandomForestRegressor
+            config_clean = clean_config_for_estimator(est_cls, config_clean, {}, model_name)
+            # Capture value in closure to avoid reference issues
+            config_final = config_clean.copy()
+            return lambda **kwargs: est_cls(**config_final)
         elif task_type in {TaskType.BINARY_CLASSIFICATION, TaskType.MULTICLASS_CLASSIFICATION}:
-            return lambda **kwargs: RandomForestClassifier(**config_clean)
+            est_cls = RandomForestClassifier
+            config_clean = clean_config_for_estimator(est_cls, config_clean, {}, model_name)
+            # Capture value in closure to avoid reference issues
+            config_final = config_clean.copy()
+            return lambda **kwargs: est_cls(**config_final)
     
     elif model_name == 'neural_network':
         # Standardized signature: all accept **kwargs (ignored for MLP)
         if task_type == TaskType.REGRESSION:
-            return lambda **kwargs: MLPRegressor(**config_clean)
+            est_cls = MLPRegressor
+            config_clean = clean_config_for_estimator(est_cls, config_clean, {}, model_name)
+            # Capture value in closure to avoid reference issues
+            config_final = config_clean.copy()
+            return lambda **kwargs: est_cls(**config_final)
         elif task_type in {TaskType.BINARY_CLASSIFICATION, TaskType.MULTICLASS_CLASSIFICATION}:
-            return lambda **kwargs: MLPClassifier(**config_clean)
+            est_cls = MLPClassifier
+            config_clean = clean_config_for_estimator(est_cls, config_clean, {}, model_name)
+            # Capture value in closure to avoid reference issues
+            config_final = config_clean.copy()
+            return lambda **kwargs: est_cls(**config_final)
     
     elif model_name == 'catboost':
         try:
             import catboost as cb
             # Standardized signature: all accept **kwargs (CatBoost handles n_classes automatically)
             if task_type == TaskType.REGRESSION:
-                return lambda **kwargs: cb.CatBoostRegressor(**config_clean)
+                est_cls = cb.CatBoostRegressor
+                config_clean = clean_config_for_estimator(est_cls, config_clean, {}, model_name)
+                # Capture value in closure to avoid reference issues
+                config_final = config_clean.copy()
+                return lambda **kwargs: est_cls(**config_final)
             elif task_type in {TaskType.BINARY_CLASSIFICATION, TaskType.MULTICLASS_CLASSIFICATION}:
-                return lambda **kwargs: cb.CatBoostClassifier(**config_clean)
+                est_cls = cb.CatBoostClassifier
+                config_clean = clean_config_for_estimator(est_cls, config_clean, {}, model_name)
+                # Capture value in closure to avoid reference issues
+                config_final = config_clean.copy()
+                return lambda **kwargs: est_cls(**config_final)
         except ImportError:
             return None
     
     elif model_name == 'lasso':
         # Standardized signature: all accept **kwargs (ignored for Lasso)
         if task_type == TaskType.REGRESSION:
-            return lambda **kwargs: Lasso(**config_clean)
+            est_cls = Lasso
+            config_clean = clean_config_for_estimator(est_cls, config_clean, {}, model_name)
+            # Capture value in closure to avoid reference issues
+            config_final = config_clean.copy()
+            return lambda **kwargs: est_cls(**config_final)
         # Lasso doesn't support classification directly
         return None
     

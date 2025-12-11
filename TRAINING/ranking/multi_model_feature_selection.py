@@ -35,6 +35,7 @@ This avoids model-specific biases and finds truly predictive features.
 
 
 import argparse
+import inspect
 import logging
 import math
 import sys
@@ -96,6 +97,10 @@ logger = setup_logging(
 warnings.filterwarnings('ignore', category=FutureWarning)
 warnings.filterwarnings('ignore', category=UserWarning)
 warnings.filterwarnings('ignore', message='X does not have valid feature names')
+
+
+# Import shared config cleaner utility
+from TRAINING.utils.config_cleaner import clean_config_for_estimator as _clean_config_for_estimator
 
 
 @dataclass
@@ -321,18 +326,21 @@ def load_multi_model_config(config_path: Path = None) -> Dict[str, Any]:
         from CONFIG.config_loader import inject_defaults
         
         # Inject defaults into each model family config
-        if 'model_families' in config:
+        if 'model_families' in config and config['model_families']:
             for family_name, family_config in config['model_families'].items():
-                if 'config' in family_config:
+                if 'config' in family_config and family_config['config'] is not None:
                     family_config['config'] = inject_defaults(
                         family_config['config'], 
                         model_family=family_name
                     )
+                elif 'config' not in family_config or family_config.get('config') is None:
+                    # Initialize empty config if missing/None
+                    family_config['config'] = inject_defaults({}, model_family=family_name)
         
         # Inject defaults into top-level sections
-        if 'sampling' in config:
+        if 'sampling' in config and config.get('sampling') is not None:
             config['sampling'] = inject_defaults(config['sampling'])
-        if 'permutation' in config:
+        if 'permutation' in config and config.get('permutation') is not None:
             config['permutation'] = inject_defaults(config['permutation'])
             
     except Exception as e:
@@ -653,7 +661,7 @@ def train_model_and_get_importance(
             )
             
             # Clean config: remove params that don't apply to sklearn wrapper
-            # Remove early stopping (requires eval_set), unknown params, and global defaults
+            # Remove early stopping (requires eval_set) and other semantic params
             lgb_config = model_config.copy()
             lgb_config.pop('boosting_type', None)
             lgb_config.pop('device', None)
@@ -663,11 +671,15 @@ def train_model_and_get_importance(
             lgb_config.pop('threads', None)
             lgb_config.pop('min_samples_split', None)
             
-            # Explicitly set random_seed for determinism (overrides any injected global value)
-            if is_binary or is_multiclass:
-                model = LGBMClassifier(**lgb_config, random_seed=model_seed)
-            else:
-                model = LGBMRegressor(**lgb_config, random_seed=model_seed)
+            # Determine estimator class
+            est_cls = LGBMClassifier if (is_binary or is_multiclass) else LGBMRegressor
+            
+            # Clean config using systematic helper (removes duplicates and unknown params)
+            extra = {"random_seed": model_seed}
+            lgb_config = _clean_config_for_estimator(est_cls, lgb_config, extra, "lightgbm")
+            
+            # Instantiate with cleaned config + explicit params
+            model = est_cls(**lgb_config, **extra)
             
             model.fit(X, y)
             train_score = model.score(X, y)  # R² for regression, accuracy for classification
@@ -700,12 +712,15 @@ def train_model_and_get_importance(
             xgb_config.pop('eval_set', None)  # Remove if present
             xgb_config.pop('eval_metric', None)  # Often paired with early stopping
             
-            # Explicitly set random_state for determinism (overrides any injected global value)
-            # XGBoost accepts both random_state and random_seed (random_seed is alias)
-            if is_binary or is_multiclass:
-                model = xgb.XGBClassifier(**xgb_config, random_state=model_seed)
-            else:
-                model = xgb.XGBRegressor(**xgb_config, random_state=model_seed)
+            # Determine estimator class
+            est_cls = xgb.XGBClassifier if (is_binary or is_multiclass) else xgb.XGBRegressor
+            
+            # Clean config using systematic helper (removes duplicates and unknown params)
+            extra = {"random_state": model_seed}
+            xgb_config = _clean_config_for_estimator(est_cls, xgb_config, extra, "xgboost")
+            
+            # Instantiate with cleaned config + explicit params
+            model = est_cls(**xgb_config, **extra)
             
             try:
                 # No eval_set needed - early stopping params already removed from config
@@ -727,12 +742,26 @@ def train_model_and_get_importance(
             return None, pd.Series(0.0, index=feature_names), importance_method, 0.0
     
     elif model_family == 'random_forest':
-        from sklearn.ensemble import RandomForestRegressor
-        # Remove random_seed (sklearn uses random_state) and avoid duplicate random_state
-        rf_config = model_config.copy()
-        rf_config.pop('random_state', None)
-        rf_config.pop('random_seed', None)
-        model = RandomForestRegressor(**rf_config, random_state=model_seed)
+        from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+        
+        # Determine task type
+        unique_vals = np.unique(y[~np.isnan(y)])
+        is_binary = len(unique_vals) == 2 and set(unique_vals).issubset({0, 1, 0.0, 1.0})
+        is_multiclass = len(unique_vals) <= 10 and all(
+            isinstance(v, (int, np.integer)) or (isinstance(v, float) and v.is_integer())
+            for v in unique_vals
+        )
+        
+        # Determine estimator class
+        est_cls = RandomForestClassifier if (is_binary or is_multiclass) else RandomForestRegressor
+        
+        # Clean config using systematic helper (removes duplicates and unknown params)
+        # Note: RandomForest uses n_jobs, not num_threads/threads
+        extra = {"random_state": model_seed}
+        rf_config = _clean_config_for_estimator(est_cls, model_config, extra, "random_forest")
+        
+        # Instantiate with cleaned config + explicit params
+        model = est_cls(**rf_config, **extra)
         model.fit(X, y)
         train_score = model.score(X, y)
     
@@ -749,11 +778,13 @@ def train_model_and_get_importance(
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(X_imputed)
         
-        # Remove random_seed (sklearn uses random_state) and avoid duplicate random_state
-        nn_config = model_config.copy()
-        nn_config.pop('random_state', None)
-        nn_config.pop('random_seed', None)
-        model = MLPRegressor(**nn_config, random_state=model_seed)
+        # Clean config using systematic helper (removes duplicates and unknown params)
+        # MLPRegressor doesn't accept n_jobs, num_threads, or threads
+        extra = {"random_state": model_seed}
+        nn_config = _clean_config_for_estimator(MLPRegressor, model_config, extra, "neural_network")
+        
+        # Instantiate with cleaned config + explicit params
+        model = MLPRegressor(**nn_config, **extra)
         try:
             model.fit(X_scaled, y)
             train_score = model.score(X_scaled, y)
@@ -778,22 +809,33 @@ def train_model_and_get_importance(
                 for v in unique_vals
             )
             
-            # Remove task-specific params and n_jobs (CatBoost uses thread_count)
+            # Remove task-specific params (CatBoost uses thread_count, not n_jobs)
             cb_config = model_config.copy()
             cb_config.pop('verbose', None)
             cb_config.pop('loss_function', None)
             cb_config.pop('n_jobs', None)
             
-            # Explicitly set random_seed for determinism (overrides any injected global value)
+            # Determine estimator class and loss function
             if is_binary:
-                # Binary classification: use Logloss (default for CatBoostClassifier)
-                model = cb.CatBoostClassifier(**cb_config, verbose=False, loss_function='Logloss', random_seed=model_seed)
+                est_cls = cb.CatBoostClassifier
+                loss_fn = 'Logloss'
             elif is_multiclass:
-                # Multiclass: use MultiClass (default for CatBoostClassifier)
-                model = cb.CatBoostClassifier(**cb_config, verbose=False, loss_function='MultiClass', random_seed=model_seed)
+                est_cls = cb.CatBoostClassifier
+                loss_fn = 'MultiClass'
             else:
-                # Regression: use RMSE (default for CatBoostRegressor)
-                model = cb.CatBoostRegressor(**cb_config, verbose=False, loss_function='RMSE', random_seed=model_seed)
+                est_cls = cb.CatBoostRegressor
+                loss_fn = 'RMSE'
+            
+            # Clean config using systematic helper (removes duplicates and unknown params)
+            extra = {
+                "random_seed": model_seed,
+                "verbose": False,
+                "loss_function": loss_fn
+            }
+            cb_config = _clean_config_for_estimator(est_cls, cb_config, extra, "catboost")
+            
+            # Instantiate with cleaned config + explicit params
+            model = est_cls(**cb_config, **extra)
             
             try:
                 model.fit(X, y)
@@ -815,13 +857,14 @@ def train_model_and_get_importance(
         # Lasso doesn't handle NaNs - use sklearn-safe conversion
         X_dense, feature_names_dense = make_sklearn_dense_X(X, feature_names)
         
-        # Remove random_seed (sklearn uses random_state) and avoid duplicate random_state
+        # Clean config using systematic helper (removes duplicates and unknown params)
         # Note: Lasso's random_state only applies to 'saga' solver, but sklearn ignores it for others
         # We set it explicitly for determinism consistency (matches RandomForest/MLP pattern)
-        lasso_config = model_config.copy()
-        lasso_config.pop('random_state', None)
-        lasso_config.pop('random_seed', None)
-        model = Lasso(**lasso_config, random_state=model_seed)
+        extra = {"random_state": model_seed}
+        lasso_config = _clean_config_for_estimator(Lasso, model_config, extra, "lasso")
+        
+        # Instantiate with cleaned config + explicit params
+        model = Lasso(**lasso_config, **extra)
         model.fit(X_dense, y)
         train_score = model.score(X_dense, y)
         
