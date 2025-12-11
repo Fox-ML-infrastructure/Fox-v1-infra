@@ -2499,6 +2499,7 @@ def evaluate_target_predictability(
                 from TRAINING.common.leakage_auto_fixer import LeakageAutoFixer
                 
                 logger.info("🔧 Auto-fixing detected leaks...")
+                logger.info(f"   Initializing LeakageAutoFixer (backup_configs=True)...")
                 fixer = LeakageAutoFixer(backup_configs=True)
                 
                 # Convert X to DataFrame if needed (auto-fixer expects DataFrame)
@@ -2590,8 +2591,22 @@ def evaluate_target_predictability(
                         logger.info(f"   Rejected: {len(updates.get('feature_registry_updates', {}).get('rejected_features', []))} features in registry")
                     else:
                         logger.info("🔍 Auto-fix detected leaks but no configs were modified")
+                    # Log backup info if available
+                    if autofix_info.backup_files:
+                        logger.info(f"📦 Backup created: {len(autofix_info.backup_files)} backup file(s)")
                 else:
                     logger.info("🔍 Auto-fix detected no leaks (may need manual review)")
+                    # Still create backup even when no leaks detected (to preserve state history)
+                    # This ensures we have a backup whenever auto-fix mode is triggered
+                    try:
+                        backup_files = fixer._backup_configs(
+                            target_name=target_name,
+                            max_backups_per_target=None  # Use instance config
+                        )
+                        if backup_files:
+                            logger.info(f"📦 Backup created (no leaks detected): {len(backup_files)} backup file(s)")
+                    except Exception as backup_error:
+                        logger.warning(f"Failed to create backup when no leaks detected: {backup_error}")
             except Exception as e:
                 logger.warning(f"Auto-fix failed: {e}", exc_info=True)
         

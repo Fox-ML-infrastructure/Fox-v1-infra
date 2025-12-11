@@ -176,6 +176,14 @@ class LeakageAutoFixer:
         
         # Load backup settings from config
         self.max_backups_per_target = self._load_backup_config()
+        
+        # Log initialization for observability
+        logger.info(f"🔧 LeakageAutoFixer initialized:")
+        logger.info(f"   - Excluded features: {self.excluded_features_path} (exists: {self.excluded_features_path.exists()})")
+        logger.info(f"   - Feature registry: {self.feature_registry_path} (exists: {self.feature_registry_path.exists()})")
+        logger.info(f"   - Backup directory: {self.backup_dir} (exists: {self.backup_dir.exists()})")
+        logger.info(f"   - Backup enabled: {self.backup_configs}")
+        logger.info(f"   - Max backups per target: {self.max_backups_per_target}")
     
     def _load_excluded_features(self) -> Tuple[Set[str], Set[str]]:
         """Load already-excluded features from config files."""
@@ -272,6 +280,11 @@ class LeakageAutoFixer:
             perfect_score_threshold = float(safety_cfg.get('auto_fixer', {}).get('perfect_score_threshold', 0.99))
         except Exception:
             perfect_score_threshold = 0.99  # FALLBACK_DEFAULT_OK
+        
+        logger.debug(f"Leakage detection: train_score={train_score:.4f if train_score is not None else None}, "
+                    f"threshold={perfect_score_threshold:.4f}, "
+                    f"features={len(feature_names)}, "
+                    f"importance_keys={len(model_importance) if model_importance else 0}")
         
         if train_score is not None and train_score >= perfect_score_threshold:
             logger.debug(f"Method 1: Perfect score detected ({train_score:.4f} >= 0.99)")
@@ -461,6 +474,11 @@ class LeakageAutoFixer:
         
         # Deduplicate and merge confidence scores
         merged = self._merge_detections(detections)
+        logger.info(f"🔍 Leakage detection complete: {len(merged)} feature(s) detected "
+                   f"(from {len(detections)} raw detections)")
+        if merged:
+            top_3 = sorted(merged, key=lambda d: d.confidence, reverse=True)[:3]
+            logger.info(f"   Top detections: {', '.join([f'{d.feature_name} (conf={d.confidence:.2f})' for d in top_3])}")
         logger.debug(f"Total detections after merge: {len(merged)}")
         
         return merged

@@ -89,6 +89,9 @@ def inject_defaults(config: Dict[str, Any], model_family: Optional[str] = None) 
         logger.warning("Defaults config is empty or failed to load - defaults will not be injected. Config will use explicit values only.")
         return config
     
+    # Log when defaults injection starts (debug level to avoid spam)
+    logger.debug(f"Injecting defaults into config (model_family={model_family or 'N/A'})")
+    
     # Get random_state from determinism system if not set in defaults
     random_state = None
     if 'randomness' in defaults:
@@ -140,9 +143,15 @@ def inject_defaults(config: Dict[str, Any], model_family: Optional[str] = None) 
                 defaults_to_apply.update(defaults['linear_models'])
     
     # Inject defaults into config (only if key doesn't exist)
+    injected_keys = []
     for key, value in defaults_to_apply.items():
         if key not in config:
             config[key] = value
+            injected_keys.append(key)
+    
+    # Log what was injected (debug level to avoid spam, but useful for troubleshooting)
+    if injected_keys:
+        logger.debug(f"   Injected {len(injected_keys)} defaults: {', '.join(injected_keys[:10])}{'...' if len(injected_keys) > 10 else ''}")
     
     return config
 
@@ -199,6 +208,7 @@ def load_model_config(
         if config is None:
             logger.warning(f"Config file {config_file} is empty or invalid YAML, using empty config")
             return {}
+        logger.debug(f"Loaded model config: {model_family} from {config_file.name}")
     except Exception as e:
         logger.error(f"Failed to load config {config_file}: {e}")
         return {}
