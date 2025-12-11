@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Highlights
 
+- **Reproducibility Comparison Logging** (2025-12-11) — **NEW**: Added automatic reproducibility verification to target ranking pipeline. Compares current run results to previous runs, logging differences in scores, importance, and composite metrics. Stores run history in JSON format for easy analysis. Helps verify deterministic behavior and catch non-reproducibility issues early. Shows ✅ for reproducible runs (within 0.1% tolerance) and ⚠️ for differences.
 - **Model Config Parameter Sanitization Fix** (2025-12-11) — **FIXED**: Resolved critical TypeError and ValueError errors affecting 7 model families (RandomForest, MLPRegressor, Lasso, CatBoost, XGBoost, LightGBM) when global config defaults were injected. All models now sanitize configs before instantiation, removing incompatible parameters (`random_seed` → `random_state` for sklearn, `n_jobs` → `thread_count` for CatBoost, early stopping params for XGBoost/LightGBM). Determinism preserved with explicit per-symbol/target seed setting.
 - **Feature Importance Stability Tracking System** (2025-12-10) — **NEW**: Comprehensive system for tracking and analyzing feature importance stability across pipeline runs. Automatically captures snapshots from all integration points (target ranking, feature selection, quick pruning). Config-driven automation with stability metrics (top-K overlap, Kendall tau, selection frequency). Includes CLI tool for manual analysis and comprehensive documentation.
 - **Auto-Fixer Backup Fix** (2025-12-10) — Fixed critical bug where auto-fixer was not creating backups when no leaks were detected. Backups are now created whenever auto-fix mode is triggered, preserving state history for debugging. Added comprehensive observability logging to auto-fixer initialization and detection.
@@ -49,6 +50,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Reproducibility comparison logging** (2025-12-11) — Automatic comparison of target ranking results to previous runs:
+  - Stores run summaries in `reproducibility_log.json` (keeps last 10 runs per target)
+  - Compares current vs previous: mean score, std score, importance, composite score
+  - Logs differences with percentage changes and absolute deltas
+  - Flags reproducible runs (✅) vs different runs (⚠️) with configurable tolerance (0.1% for scores, 1% for importance)
+  - Helps verify deterministic behavior and catch non-reproducibility issues early
+  - Integrated into `rank_target_predictability.py` - logs after each target evaluation summary
 - **Feature Importance Stability Tracking System** (2025-12-10) — New `TRAINING/stability/feature_importance/` module with:
   - Automatic snapshot capture at all integration points (target ranking, feature selection, quick pruning)
   - Config-driven automation (`safety.feature_importance.auto_analyze_stability`)

@@ -82,6 +82,7 @@ import yaml
 
 # Import checkpoint utility (after path is set)
 from TRAINING.utils.checkpoint import CheckpointManager
+from TRAINING.utils.reproducibility_tracker import ReproducibilityTracker
 
 # Setup logging with journald support (after path is set)
 from TRAINING.utils.logging_setup import setup_logging
@@ -2301,6 +2302,36 @@ def main():
     if summary_df.empty:
         logger.error("❌ No features selected")
         return 1
+    
+    # Track reproducibility: compare to previous feature selection run
+    if args.output_dir:
+        tracker = ReproducibilityTracker(output_dir=args.output_dir)
+        
+        # Calculate summary metrics for reproducibility tracking
+        top_feature_score = summary_df.iloc[0]['consensus_score'] if not summary_df.empty else 0.0
+        mean_consensus = summary_df['consensus_score'].mean()
+        std_consensus = summary_df['consensus_score'].std()
+        n_features_selected = len(selected_features)
+        n_successful_families = len([s for s in all_family_statuses if s.get('status') == 'success'])
+        
+        tracker.log_comparison(
+            stage="feature_selection",
+            item_name=f"{args.target_column}",
+            metrics={
+                "metric_name": "Consensus Score",
+                "mean_score": mean_consensus,
+                "std_score": std_consensus,
+                "mean_importance": top_feature_score,  # Use top feature score as importance proxy
+                "composite_score": mean_consensus,  # Use mean consensus as composite
+                "n_features_selected": n_features_selected,
+                "n_successful_families": n_successful_families
+            },
+            additional_data={
+                "top_feature": summary_df.iloc[0]['feature'] if not summary_df.empty else None,
+                "top_n": args.top_n,
+                "n_symbols": len(labeled_files)
+            }
+        )
     
     # Save results
     metadata = {
