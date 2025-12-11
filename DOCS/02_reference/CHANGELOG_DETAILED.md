@@ -31,6 +31,35 @@ Phase 1 functioning properly - Ranking and selection pipelines unified with cons
 
 ### Added
 
+#### Cross-Sectional Sampling & Config Parameter Fixes (2025-12-11)
+
+**Critical Bug Fix: max_cs_samples Filtering**
+- **Issue**: `max_cs_samples` filtering code was in wrong code block (`else:` when `time_col is None`), so it never executed when timestamps exist
+- **Impact**: Large dataframes (25,000+ rows) were built despite `max_cs_samples=1000` setting, causing unnecessary memory usage and slower processing
+- **Fix**: Moved filtering code into `if time_col is not None:` block, right after `min_cs` filter
+- **Result**: Now properly limits cross-sectional samples per timestamp, dramatically reducing dataframe size
+- **File**: `TRAINING/utils/cross_sectional_data.py`
+
+**Config Parameter Passing Fix**
+- **Issue**: `min_cs`, `max_cs_samples`, and `max_rows_per_symbol` from test config were not being passed to `rank_targets()` function
+- **Impact**: Test config settings (e.g., `min_cs=3`) were ignored, default values (e.g., `min_cs=10`) were used instead
+- **Fix**: 
+  - Extract these values from `train_kwargs` at start of `train_with_intelligence()` method
+  - Pass them to `rank_targets_auto()` and then to `rank_targets()`
+  - Ensures config-driven settings are actually used throughout pipeline
+- **Files**: `TRAINING/orchestration/intelligent_trainer.py`
+
+**Comprehensive Reproducibility Tracking**
+- **Enhancement**: Added reproducibility tracking to all deterministic pipeline stages
+- **Target Ranking**: Tracks mean_score, std_score, mean_importance, composite_score after each target evaluation
+- **Model Training**: Tracks CV scores (mean/std) after each successful model training
+- **Feature Selection**: Already existed, now comprehensive across all stages
+- **Visibility**: Fixed issue where logs weren't appearing - now logs to both internal and main loggers
+- **Files**: 
+  - `TRAINING/ranking/predictability/main.py` - Added tracking after target evaluation
+  - `TRAINING/training_strategies/training.py` - Added tracking after model training
+  - `TRAINING/utils/reproducibility_tracker.py` - Enhanced with visibility fixes
+
 #### Config Parameter Validation & Silent Error Visibility (2025-12-11)
 
 **Config Cleaner Utility**

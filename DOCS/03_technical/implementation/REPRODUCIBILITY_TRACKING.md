@@ -33,10 +33,12 @@ tracker.log_comparison(
 
 - **Automatic comparison**: Compares current run to most recent previous run
 - **Tolerance-based verification**: Configurable tolerances for floating-point differences
-- **Multi-stage support**: Track different pipeline stages separately (target_ranking, feature_selection, etc.)
+- **Multi-stage support**: Track different pipeline stages separately (target_ranking, feature_selection, model_training, etc.)
+- **Comprehensive coverage**: Integrated into all deterministic pipeline stages (target ranking, feature selection, model training)
 - **Run history**: Keeps last N runs per item (configurable, default: 10)
 - **Structured logging**: Clear ✅/⚠️ indicators for reproducible vs different runs
 - **JSON storage**: Human-readable JSON format for easy analysis
+- **Visibility**: Logs appear in main script output for immediate feedback
 
 ## API Reference
 
@@ -145,6 +147,38 @@ if output_dir is not None:
             "leakage_flag": result.leakage_flag
         }
     )
+```
+
+### Model Training
+
+```python
+from TRAINING.utils.reproducibility_tracker import ReproducibilityTracker
+
+# After training a model successfully
+model_result = train_model_comprehensive(...)
+
+if model_result and model_result.get('success', False):
+    strategy_manager = model_result.get('strategy_manager')
+    
+    # Extract CV scores if available
+    if strategy_manager and hasattr(strategy_manager, 'cv_scores'):
+        cv_scores = strategy_manager.cv_scores
+        if cv_scores and len(cv_scores) > 0:
+            tracker = ReproducibilityTracker(output_dir=output_dir)
+            tracker.log_comparison(
+                stage="model_training",
+                item_name=f"{target}:{family}",
+                metrics={
+                    "metric_name": "CV Score",
+                    "mean_score": float(np.mean(cv_scores)),
+                    "std_score": float(np.std(cv_scores)),
+                    "composite_score": float(np.mean(cv_scores))
+                },
+                additional_data={
+                    "strategy": strategy,
+                    "n_features": len(feature_names)
+                }
+            )
 ```
 
 ### Feature Selection
@@ -425,6 +459,11 @@ The reproducibility tracker is currently integrated into:
 2. **Feature Selection** (`TRAINING/ranking/multi_model_feature_selection.py`)
    - Tracks: Consensus scores, top feature, number of features selected
    - Stage: `"feature_selection"`
+
+3. **Model Training** (`TRAINING/training_strategies/training.py`)
+   - Tracks: CV scores (mean/std), composite scores per target:family combination
+   - Stage: `"model_training"`
+   - Item name format: `"{target}:{family}"` (e.g., `"y_will_peak_60m_0.8:lightgbm"`)
 
 ## Extending to New Stages
 
