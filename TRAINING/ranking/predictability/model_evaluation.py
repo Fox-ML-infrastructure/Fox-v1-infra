@@ -2891,7 +2891,9 @@ def evaluate_target_predictability(
                 }
             )
         except Exception as e:
-            logger.debug(f"Reproducibility tracking failed for {target_name}: {e}")
+            logger.warning(f"Reproducibility tracking failed for {target_name}: {e}")
+            import traceback
+            logger.debug(f"Reproducibility tracking traceback: {traceback.format_exc()}")
     
     return result
 
