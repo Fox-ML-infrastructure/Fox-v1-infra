@@ -27,7 +27,22 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 from datetime import datetime
 
+# Use root logger to ensure messages are visible regardless of calling script's logger setup
 logger = logging.getLogger(__name__)
+# Ensure this logger propagates to root so messages are visible
+logger.propagate = True
+
+# Also try to get the calling script's logger if available (for better integration)
+def _get_main_logger():
+    """Try to get the main script's logger for better log integration"""
+    # Check common logger names used in scripts (in order of preference)
+    for logger_name in ['rank_target_predictability', 'multi_model_feature_selection', '__main__']:
+        main_logger = logging.getLogger(logger_name)
+        if main_logger.handlers:
+            return main_logger
+    # Fallback to root logger (always has handlers if logging is configured)
+    root_logger = logging.getLogger()
+    return root_logger
 
 
 class ReproducibilityTracker:
@@ -172,6 +187,9 @@ class ReproducibilityTracker:
         previous = self.load_previous_run(stage, item_name)
         
         if previous is None:
+            # Use main logger if available for better visibility
+            main_logger = _get_main_logger()
+            main_logger.info(f"📊 Reproducibility: First run for {stage}:{item_name} (no previous run to compare)")
             logger.info(f"📊 Reproducibility: First run for {stage}:{item_name} (no previous run to compare)")
             # Save current run for next time
             self.save_run(stage, item_name, metrics, additional_data)
@@ -211,18 +229,34 @@ class ReproducibilityTracker:
         status_emoji = "✅" if is_reproducible else "⚠️"
         status_text = "REPRODUCIBLE" if is_reproducible else "DIFFERENT"
         
-        # Build comparison log message
-        logger.info(f"{status_emoji} Reproducibility ({status_text}):")
-        logger.info(f"   Previous: {metric_name}={previous_mean:.3f}±{previous_std:.3f}, "
-                   f"importance={previous_importance:.2f}, composite={previous_composite:.3f}")
-        logger.info(f"   Current:  {metric_name}={current_mean:.3f}±{current_std:.3f}, "
-                   f"importance={current_importance:.2f}, composite={current_composite:.3f}")
-        logger.info(f"   Diff:     {metric_name}={mean_diff:+.4f} ({mean_pct:+.2f}%), "
-                   f"composite={composite_diff:+.4f} ({composite_pct:+.2f}%), "
-                   f"importance={importance_diff:+.2f}")
+        # Use main logger if available for better visibility
+        main_logger = _get_main_logger()
+        
+        # Build comparison log message - log to both loggers for visibility
+        log_msg = f"{status_emoji} Reproducibility ({status_text}):"
+        main_logger.info(log_msg)
+        logger.info(log_msg)
+        
+        prev_msg = f"   Previous: {metric_name}={previous_mean:.3f}±{previous_std:.3f}, " \
+                   f"importance={previous_importance:.2f}, composite={previous_composite:.3f}"
+        main_logger.info(prev_msg)
+        logger.info(prev_msg)
+        
+        curr_msg = f"   Current:  {metric_name}={current_mean:.3f}±{current_std:.3f}, " \
+                   f"importance={current_importance:.2f}, composite={current_composite:.3f}"
+        main_logger.info(curr_msg)
+        logger.info(curr_msg)
+        
+        diff_msg = f"   Diff:     {metric_name}={mean_diff:+.4f} ({mean_pct:+.2f}%), " \
+                   f"composite={composite_diff:+.4f} ({composite_pct:+.2f}%), " \
+                   f"importance={importance_diff:+.2f}"
+        main_logger.info(diff_msg)
+        logger.info(diff_msg)
         
         if not is_reproducible:
-            logger.warning(f"   ⚠️  Results differ from previous run - check for non-deterministic behavior")
+            warn_msg = f"   ⚠️  Results differ from previous run - check for non-deterministic behavior"
+            main_logger.warning(warn_msg)
+            logger.warning(warn_msg)
         
         # Save current run for next time
         self.save_run(stage, item_name, metrics, additional_data)
