@@ -337,24 +337,43 @@ class ReproducibilityTracker:
         rel_thr = thresholds.get('rel', 0.02)
         z_thr = thresholds.get('z_score', 1.0)
         
-        # Classification logic: must pass BOTH abs AND rel thresholds for STABLE
-        # Use z-score if available, otherwise use abs/rel
+        # Classification logic: require BOTH effect size AND statistical significance for DIVERGED
+        # This prevents flagging tiny, statistically insignificant changes as DIVERGED
+        # 
+        # STABLE: small change AND not statistically significant
+        # DRIFTING: moderate change OR borderline statistical significance
+        # DIVERGED: large change AND statistically significant
+        
         if z_score is not None:
-            # Use z-score as primary criterion
-            if z_score < z_thr and abs_diff < abs_thr and rel_diff < rel_thr:
+            # Use z-score for statistical significance, abs/rel for effect size
+            # Require BOTH big effect AND statistical significance for DIVERGED
+            big_effect = abs_diff >= abs_thr or rel_diff >= rel_thr
+            statistically_significant = z_score >= z_thr
+            
+            # For DIVERGED: need BOTH big effect AND statistical significance
+            # Use stricter z_thr (2.0) for DIVERGED to require ~95% confidence
+            div_thr = max(z_thr * 2.0, 2.0)  # At least 2.0 for DIVERGED
+            is_diverged = big_effect and z_score >= div_thr
+            
+            if not big_effect and not statistically_significant:
                 classification = 'STABLE'
-            elif z_score < 2 * z_thr and abs_diff < 2 * abs_thr and rel_diff < 2 * rel_thr:
-                classification = 'DRIFTING'
-            else:
+            elif is_diverged:
                 classification = 'DIVERGED'
+            else:
+                classification = 'DRIFTING'
         else:
-            # Fallback to abs/rel thresholds
-            if abs_diff < abs_thr and rel_diff < rel_thr:
+            # Fallback to abs/rel thresholds (no z-score available)
+            # Still require both abs AND rel for DIVERGED
+            big_abs = abs_diff >= abs_thr
+            big_rel = rel_diff >= rel_thr
+            is_diverged = big_abs and big_rel
+            
+            if not big_abs and not big_rel:
                 classification = 'STABLE'
-            elif abs_diff < 2 * abs_thr and rel_diff < 2 * rel_thr:
-                classification = 'DRIFTING'
-            else:
+            elif is_diverged:
                 classification = 'DIVERGED'
+            else:
+                classification = 'DRIFTING'
         
         return classification, abs_diff, rel_diff, z_score
     
@@ -382,8 +401,11 @@ class ReproducibilityTracker:
         if previous is None:
             # Use main logger if available for better visibility
             main_logger = _get_main_logger()
-            main_logger.info(f"📊 Reproducibility: First run for {stage}:{item_name} (no previous run to compare)")
-            logger.info(f"📊 Reproducibility: First run for {stage}:{item_name} (no previous run to compare)")
+            # Only log once - use main logger if available, otherwise use module logger
+            if main_logger != logger:
+                main_logger.info(f"📊 Reproducibility: First run for {stage}:{item_name} (no previous run to compare)")
+            else:
+                logger.info(f"📊 Reproducibility: First run for {stage}:{item_name} (no previous run to compare)")
             # Save current run for next time
             self.save_run(stage, item_name, metrics, additional_data)
             return
@@ -456,37 +478,47 @@ class ReproducibilityTracker:
         else:  # DIVERGED
             status_msg += f" (Δ {metric_name}={mean_diff:+.4f} ({mean_rel:+.2f}%{z_info}); exceeds tolerance)"
         
-        log_level(status_msg)
+        # Only log once - use main logger if available, otherwise use module logger
         if main_logger != logger:
             if overall_class == 'DIVERGED':
                 main_logger.warning(status_msg)
             else:
                 main_logger.info(status_msg)
+        else:
+            log_level(status_msg)
         
         # Detailed comparison (always log for traceability)
         prev_msg = f"   Previous: {metric_name}={previous_mean:.3f}±{previous_std:.3f}, " \
                    f"importance={previous_importance:.2f}, composite={previous_composite:.3f}"
-        main_logger.info(prev_msg)
-        logger.info(prev_msg)
+        if main_logger != logger:
+            main_logger.info(prev_msg)
+        else:
+            logger.info(prev_msg)
         
         curr_msg = f"   Current:  {metric_name}={current_mean:.3f}±{current_std:.3f}, " \
                    f"importance={current_importance:.2f}, composite={current_composite:.3f}"
-        main_logger.info(curr_msg)
-        logger.info(curr_msg)
+        if main_logger != logger:
+            main_logger.info(curr_msg)
+        else:
+            logger.info(curr_msg)
         
         # Diff line with classifications
         diff_parts = [f"{metric_name}={mean_diff:+.4f} ({mean_rel:+.2f}%{', z=' + f'{mean_z:.2f}' if mean_z else ''}) [{mean_class}]"]
         diff_parts.append(f"composite={composite_diff:+.4f} ({composite_rel:+.2f}%) [{composite_class}]")
         diff_parts.append(f"importance={importance_diff:+.2f} ({importance_rel:+.2f}%) [{importance_class}]")
         diff_msg = f"   Diff:     {', '.join(diff_parts)}"
-        main_logger.info(diff_msg)
-        logger.info(diff_msg)
+        if main_logger != logger:
+            main_logger.info(diff_msg)
+        else:
+            logger.info(diff_msg)
         
         # Warning only for DIVERGED
         if overall_class == 'DIVERGED':
             warn_msg = f"   ⚠️  Results differ significantly from previous run - check for non-deterministic behavior, config changes, or data differences"
-            main_logger.warning(warn_msg)
-            logger.warning(warn_msg)
+            if main_logger != logger:
+                main_logger.warning(warn_msg)
+            else:
+                logger.warning(warn_msg)
         
         # Save current run for next time
         self.save_run(stage, item_name, metrics, additional_data)

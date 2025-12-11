@@ -120,6 +120,10 @@ def setup_logging(
     # Remove existing handlers to avoid duplicates
     logger.handlers.clear()
     
+    # Prevent propagation to root logger to avoid duplicate log lines
+    # Root logger should not have handlers - only module loggers should
+    logger.propagate = False
+    
     # Default format
     if format_string is None:
         format_string = '%(asctime)s - %(levelname)s - %(message)s'

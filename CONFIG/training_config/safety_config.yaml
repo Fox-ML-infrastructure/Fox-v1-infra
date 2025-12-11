@@ -88,19 +88,19 @@ safety:
     thresholds:
       # ROC-AUC / R² / primary score thresholds
       roc_auc:
-        abs: 0.005      # 0.5 AUC points absolute difference
-        rel: 0.02       # 2% relative difference
-        z_score: 1.0    # z-score threshold (uses reported σ)
+        abs: 0.005      # 0.5 AUC points absolute difference (effect size threshold)
+        rel: 0.02       # 2% relative difference (effect size threshold)
+        z_score: 2.0    # z-score threshold for DIVERGED (requires ~95% confidence, i.e., statistically significant)
       # Composite score thresholds
       composite:
-        abs: 0.02       # 0.02 in composite space
-        rel: 0.05       # 5% relative difference
-        z_score: 1.5    # z-score threshold
+        abs: 0.02       # 0.02 in composite space (effect size threshold)
+        rel: 0.05       # 5% relative difference (effect size threshold)
+        z_score: 2.0    # z-score threshold for DIVERGED (requires ~95% confidence)
       # Importance thresholds
       importance:
-        abs: 0.05       # 0.05 absolute difference
+        abs: 0.05       # 0.05 absolute difference (effect size threshold)
         rel: 0.20       # 20% relative difference (importance is more variable)
-        z_score: 2.0    # z-score threshold
+        z_score: 2.5    # z-score threshold for DIVERGED (importance is more variable, so require higher confidence)
     # Classification rules: differences must be within BOTH abs AND rel thresholds for STABLE
     # DRIFTING: within 2x thresholds, DIVERGED: exceeds 2x thresholds
     use_z_score: true   # If true, use z-score (|Δ| / σ) when std_score is available
