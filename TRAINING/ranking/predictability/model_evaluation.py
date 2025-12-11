@@ -521,6 +521,8 @@ def train_and_evaluate_models(
                     name for name, config in model_families_dict.items()
                     if config is not None and isinstance(config, dict) and config.get('enabled', False)
                 ]
+                # Sort for deterministic order (ensures reproducible aggregations)
+                model_families = sorted(model_families)
             logger.debug(f"Using {len(model_families)} models from config: {', '.join(model_families)}")
         else:
             model_families = ['lightgbm', 'random_forest', 'neural_network']
@@ -1776,14 +1778,16 @@ def _save_feature_importances(
     importances_dir.mkdir(parents=True, exist_ok=True)
     
     # Save per-model CSV files
-    for model_name, importances in feature_importances.items():
+    # Sort model names for deterministic order (ensures reproducible file output)
+    for model_name in sorted(feature_importances.keys()):
+        importances = feature_importances[model_name]
         if not importances:
             continue
         
         # Create DataFrame sorted by importance
         df = pd.DataFrame([
             {'feature': feat, 'importance': imp}
-            for feat, imp in importances.items()
+            for feat, imp in sorted(importances.items())  # Sort features for deterministic order
         ])
         df = df.sort_values('importance', ascending=False)
         
@@ -2517,15 +2521,17 @@ def evaluate_target_predictability(
                 # Aggregate feature importances across all models
                 aggregated_importance = {}
                 if feature_importances:
-                    for model_name, importances in feature_importances.items():
+                    # Sort model names for deterministic order (ensures reproducible aggregations)
+                    for model_name in sorted(feature_importances.keys()):
+                        importances = feature_importances[model_name]
                         if isinstance(importances, dict):
                             for feat, imp in importances.items():
                                 if feat not in aggregated_importance:
                                     aggregated_importance[feat] = []
                                 aggregated_importance[feat].append(imp)
                 
-                # Average importance across models
-                avg_importance = {feat: np.mean(imps) for feat, imps in aggregated_importance.items()} if aggregated_importance else {}
+                # Average importance across models (sort features for deterministic order)
+                avg_importance = {feat: np.mean(imps) for feat, imps in sorted(aggregated_importance.items())} if aggregated_importance else {}
                 
                 # Get actual training accuracy from model_metrics (not CV scores)
                 # This is critical - we detected perfect training accuracy, so pass that value
