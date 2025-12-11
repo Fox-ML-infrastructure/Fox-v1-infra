@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Highlights
 
+- **Systematic Config Parameter Validation System** (2025-12-11) — **NEW**: Created shared `TRAINING/utils/config_cleaner.py` utility to systematically prevent parameter passing errors across all model constructors. Uses `inspect.signature()` to validate parameters against actual estimator signatures, automatically removing duplicate and unknown parameters. Prevents entire class of "got multiple values for keyword argument" and "unexpected keyword argument" errors. Integrated into all model instantiation paths (multi-model feature selection, task types, cross-sectional ranking). Makes codebase resilient to future config drift from `inject_defaults`. Maintains SST (Single Source of Truth) while ensuring only valid parameters reach constructors.
 - **Reproducibility Tracking Module** (2025-12-11) — **NEW**: Extracted reproducibility tracking into reusable `TRAINING/utils/reproducibility_tracker.py` module. Integrated into both target ranking and feature selection pipelines. Provides automatic comparison of run results with tolerance-based verification. Comprehensive documentation added in `DOCS/03_technical/implementation/REPRODUCIBILITY_TRACKING.md`. Generic design allows easy integration into any pipeline stage. Shows ✅ for reproducible runs (within 0.1% tolerance) and ⚠️ for differences.
 - **Model Config Parameter Sanitization Fix** (2025-12-11) — **FIXED**: Resolved critical TypeError and ValueError errors affecting 7 model families (RandomForest, MLPRegressor, Lasso, CatBoost, XGBoost, LightGBM) when global config defaults were injected. All models now sanitize configs before instantiation, removing incompatible parameters (`random_seed` → `random_state` for sklearn, `n_jobs` → `thread_count` for CatBoost, early stopping params for XGBoost/LightGBM). Determinism preserved with explicit per-symbol/target seed setting.
 - **Feature Importance Stability Tracking System** (2025-12-10) — **NEW**: Comprehensive system for tracking and analyzing feature importance stability across pipeline runs. Automatically captures snapshots from all integration points (target ranking, feature selection, quick pruning). Config-driven automation with stability metrics (top-K overlap, Kendall tau, selection frequency). Includes CLI tool for manual analysis and comprehensive documentation.
@@ -50,6 +51,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Config cleaner utility** (2025-12-11) — New `TRAINING/utils/config_cleaner.py` module providing systematic parameter validation:
+  - `clean_config_for_estimator()` function uses `inspect.signature()` to validate parameters against actual estimator constructors
+  - Automatically removes duplicate parameters (if also passed explicitly via `extra_kwargs`)
+  - Automatically removes unknown parameters (not in estimator's `__init__` signature)
+  - Logs what was stripped for visibility (DEBUG level, can be raised to WARNING for auditing)
+  - Handles edge cases: None configs, non-dict configs, None extra_kwargs
+  - Maintains SST (Single Source of Truth) - values still come from config/defaults, but only valid keys are passed
+  - Prevents entire class of parameter passing errors that would occur with config drift
+  - Integrated into: `multi_model_feature_selection.py`, `task_types.py`, `cross_sectional_feature_ranker.py`
+  - Makes codebase resilient to future changes in `inject_defaults` or model library updates
 - **Reproducibility tracking module** (2025-12-11) — Reusable `ReproducibilityTracker` class for automatic reproducibility verification:
   - Generic module (`TRAINING/utils/reproducibility_tracker.py`) usable across all pipeline stages
   - Integrated into target ranking and feature selection pipelines
@@ -89,6 +100,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Systematic parameter passing error prevention** (2025-12-11) — Implemented systematic fix for parameter passing errors using shared config cleaner utility:
+  - **All model families in multi_model_feature_selection.py**: LightGBM, XGBoost, RandomForest, MLPRegressor, CatBoost, Lasso now use `clean_config_for_estimator()` helper
+  - **All model constructors in task_types.py**: Fixed with proper closure handling (explicit copies in lambda closures to prevent reference issues)
+  - **Cross-sectional feature ranker**: LightGBM and XGBoost now use config cleaner
+  - **inject_defaults hardening**: Now handles None configs gracefully, prevents "argument of type 'NoneType' is not iterable" errors
+  - Prevents "got multiple values for keyword argument" errors (e.g., `random_seed` passed both in config and explicitly)
+  - Prevents "unexpected keyword argument" errors (e.g., `num_threads` for RandomForest, `n_jobs` for MLPRegressor/Lasso)
+  - Lambda closure fix: All lambda functions in `task_types.py` now capture explicit copies (`config_final`, `extra_final`) to prevent reference issues
+  - Future-proof: Any new parameters added by `inject_defaults` will be automatically filtered if they're duplicates or unknown
 - **Model config parameter sanitization** (2025-12-11) — Fixed critical TypeError and ValueError errors when global config defaults (`random_seed`, `n_jobs`, `early_stopping_rounds`) were injected into model constructors. All model families now sanitize configs before instantiation:
   - **sklearn models** (RandomForest, MLPRegressor, Lasso): Remove `random_seed` (use `random_state` instead)
   - **CatBoost**: Remove `n_jobs` (uses `thread_count` instead)
