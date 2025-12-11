@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Highlights
 
+- **Auto-Fixer Backup Fix** (2025-12-10) — Fixed critical bug where auto-fixer was not creating backups when no leaks were detected. Backups are now created whenever auto-fix mode is triggered, preserving state history for debugging. Added comprehensive observability logging to auto-fixer initialization and detection.
 - **Reproducibility Settings Centralization** (2025-12-10) — Centralized all reproducibility-critical settings (`random_state`, `shuffle`, validation splits) to Single Source of Truth. Removed 30+ hardcoded `random_state: 42` values across configs. All models now use `pipeline.determinism.base_seed` for consistent reproducibility.
 - **Auto-Fixer Training Accuracy Fix** (2025-12-10) — Fixed critical bug where training accuracy was calculated but not stored in `model_metrics`, preventing auto-fixer from triggering on 100% training accuracy. Auto-fixer now correctly detects and creates backups when leakage is detected.
 - **Silent Failures Fixed** (2025-12-10) — Added warnings for all silent config loading failures. Fixed YAML `None` return handling. Defaults injection now logs warnings when `defaults.yaml` is missing/broken. Random state fallback now logs warnings.
@@ -46,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Observability logging** (2025-12-10) — Added comprehensive initialization and operation logging to auto-fixer, config loading, and defaults injection. Now logs: auto-fixer initialization (paths, settings), detection results with confidence scores, defaults injection details, and config loading status.
 - **Reproducibility settings centralization** (2025-12-10) — Created `CONFIG/defaults.yaml` with centralized `random_state`, `shuffle`, `validation_split` settings. All models inherit from Single Source of Truth.
 - **Internal documentation organization** (2025-12-10) — Unified all internal docs into `INTERNAL_DOCS/` directory (never tracked). Moved audit trails, refactoring notes, and internal verification docs.
 - **Config defaults system** (2025-12-10) — New `inject_defaults()` function automatically applies common defaults (dropout, activation, patience, n_jobs, etc.) to model configs unless explicitly overridden.
@@ -60,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Auto-fixer backup creation** (2025-12-10) — Fixed critical bug where backups were not created when auto-fix mode triggered but no leaks were detected. Backups are now created whenever auto-fix mode is enabled, preserving state history for debugging.
 - **Auto-fixer training accuracy detection** (2025-12-10) — Fixed critical bug where 100% training accuracy was logged but not stored in `model_metrics`, preventing auto-fixer from triggering. Now stores `training_accuracy` and `training_r2` in `model_metrics` for proper leakage detection.
 - **Silent config loading failures** (2025-12-10) — Added warnings when `defaults.yaml` is missing/broken, when `pipeline_config.yaml` can't be loaded, and when YAML files return `None`. All silent failures now log warnings.
 - **Empty directory cleanup** (2025-12-10) — Removed sloppy empty directories (`CONFIG/data/`, `CONFIG/leakage/`, `CONFIG/system/`). Added `.gitkeep` to `CONFIG/backups/` for structure preservation.
