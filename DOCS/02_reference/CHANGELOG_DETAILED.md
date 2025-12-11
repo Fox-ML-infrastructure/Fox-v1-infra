@@ -68,6 +68,35 @@ Phase 1 functioning properly - Ranking and selection pipelines unified with cons
   - `TRAINING/common/leakage_auto_fixer.py`
   - `TRAINING/ranking/predictability/model_evaluation.py`
 
+#### Reproducibility Tracking Tolerance Bands & Enhancements (2025-12-11)
+
+**Tolerance Bands with STABLE/DRIFTING/DIVERGED Classification**
+- **Enhancement**: Replaced binary SAME/DIFFERENT classification with three-tier system
+- **Problem**: Binary system flagged tiny differences (0.08% shifts) as DIFFERENT, causing alert fatigue
+- **Solution**: Three-tier classification:
+  - **STABLE**: Differences within noise (passes both abs and rel thresholds, optional z-score) → INFO level
+  - **DRIFTING**: Small but noticeable changes (within 2x thresholds) → INFO level
+  - **DIVERGED**: Real reproducibility issues (exceeds 2x thresholds) → WARNING level
+- **Features**:
+  - Configurable thresholds per metric (roc_auc, composite, importance) in `safety_config.yaml`
+  - Supports absolute, relative, and z-score thresholds
+  - Uses reported σ (std_score) when available for statistical significance
+  - Example: 0.08% ROC-AUC shift with z=0.06 is now STABLE (INFO) instead of DIFFERENT (WARNING)
+- **Config**: Added `safety.reproducibility` section with thresholds and `use_z_score` option
+- **Files**: 
+  - `TRAINING/utils/reproducibility_tracker.py` - Complete rewrite of classification logic
+  - `CONFIG/training_config/safety_config.yaml` - Added reproducibility thresholds config
+
+**Reproducibility Tracking Error Handling Fixes**
+- **Issue**: Missing `List` and `Tuple` imports causing `NameError: name 'List' is not defined`
+- **Impact**: Reproducibility tracking failed silently, breaking output generation
+- **Fix**: 
+  - Added `List` and `Tuple` to typing imports
+  - Added comprehensive error handling in `_find_previous_log_files()` to prevent crashes
+  - Changed exception logging from DEBUG to WARNING level for visibility
+  - Added traceback logging for debugging
+- **Files**: `TRAINING/utils/reproducibility_tracker.py`
+
 #### Reproducibility Tracking & Auto-Fixer Fixes (2025-12-11)
 
 **Reproducibility Tracking Directory Structure Fix**

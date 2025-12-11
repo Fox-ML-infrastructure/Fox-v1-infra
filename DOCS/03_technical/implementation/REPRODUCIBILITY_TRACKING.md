@@ -32,15 +32,22 @@ tracker.log_comparison(
 ## Features
 
 - **Automatic comparison**: Compares current run to most recent previous run
-- **Tolerance-based verification**: Configurable tolerances for floating-point differences
+- **Tolerance bands with three-tier classification**: STABLE/DRIFTING/DIVERGED system prevents alert fatigue
+  - **STABLE**: Differences within noise (INFO level) - tiny shifts within CV noise
+  - **DRIFTING**: Small but noticeable changes (INFO level) - minor drift detected
+  - **DIVERGED**: Real reproducibility issues (WARNING level) - significant differences requiring investigation
+- **Configurable thresholds**: Per-metric thresholds (roc_auc, composite, importance) with absolute, relative, and z-score support
+- **Statistical significance**: Optional z-score calculation using reported σ (std_score) when available
 - **Multi-stage support**: Track different pipeline stages separately (target_ranking, feature_selection, model_training, etc.)
 - **Comprehensive coverage**: Integrated into all deterministic pipeline stages (target ranking, feature selection, model training)
 - **Architectural design**: Tracking is integrated into computation modules, not entry points
   - Works regardless of which entry point calls the computation functions
   - Single source of tracking logic (no duplication)
   - Computation functions handle their own tracking
+- **Module-specific storage**: Each module (target_rankings/, feature_selections/, training_results/) has its own log
+- **Cross-run search**: Finds previous runs across different timestamped output directories
 - **Run history**: Keeps last N runs per item (configurable, default: 10)
-- **Structured logging**: Clear ✅/⚠️ indicators for reproducible vs different runs
+- **Structured logging**: Clear classification indicators (STABLE/DRIFTING/DIVERGED) with appropriate log levels
 - **JSON storage**: Human-readable JSON format for easy analysis
 - **Visibility**: Logs appear in main script output for immediate feedback
 
@@ -67,6 +74,8 @@ tracker = ReproducibilityTracker(
 - Model training: `{output_dir}/training_results/`
 
 This ensures each module has its own reproducibility log and can find previous runs across different timestamped output directories.
+
+**Thresholds Configuration**: Thresholds are loaded from `CONFIG/training_config/safety_config.yaml` under `safety.reproducibility.thresholds`. You can override them by passing `thresholds` parameter to `__init__()`.
 
 #### Methods
 
@@ -424,20 +433,69 @@ Results are stored in `reproducibility_log.json` in the output directory:
 
 ## Configuration
 
-### Tolerance Settings
+### Tolerance Settings & Classification
 
-Default tolerances are conservative to catch even small non-determinism:
+The tracker uses **tolerance bands** with three-tier classification to prevent alert fatigue:
 
-- **Score tolerance**: 0.001 (0.1%) - For mean_score and composite_score
-- **Importance tolerance**: 0.01 (1%) - For mean_importance
+### Classification Tiers
 
-Adjust when initializing:
+1. **STABLE** (INFO level): Differences within noise
+   - Passes both absolute and relative thresholds
+   - Optional: z-score < threshold (when std_score available)
+   - Example: 0.08% ROC-AUC shift with z=0.06 → STABLE
+
+2. **DRIFTING** (INFO level): Small but noticeable changes
+   - Within 2x thresholds (but exceeds 1x)
+   - Minor drift detected, worth noting but not alarming
+
+3. **DIVERGED** (WARNING level): Real reproducibility issues
+   - Exceeds 2x thresholds
+   - Significant differences requiring investigation
+
+### Configurable Thresholds
+
+Thresholds are configured in `CONFIG/training_config/safety_config.yaml`:
+
+```yaml
+safety:
+  reproducibility:
+    enabled: true
+    thresholds:
+      roc_auc:
+        abs: 0.005      # 0.5 AUC points absolute difference
+        rel: 0.02       # 2% relative difference
+        z_score: 1.0    # z-score threshold (uses reported σ)
+      composite:
+        abs: 0.02       # 0.02 in composite space
+        rel: 0.05       # 5% relative difference
+        z_score: 1.5
+      importance:
+        abs: 0.05       # 0.05 absolute difference
+        rel: 0.20       # 20% relative difference (importance is more variable)
+        z_score: 2.0
+    use_z_score: true   # Use z-score when std_score available
+```
+
+### Z-Score Calculation
+
+When `use_z_score=True` and `std_score` is available, the tracker calculates:
+- `z = |Δ| / σ` where σ is the previous run's std_score
+- Uses z-score as primary criterion (more statistically meaningful)
+- Falls back to abs/rel thresholds if z-score unavailable
+
+### Override Thresholds
+
+You can override config thresholds programmatically:
 
 ```python
 tracker = ReproducibilityTracker(
     output_dir=output_dir,
-    score_tolerance=0.005,      # 0.5% tolerance (more lenient)
-    importance_tolerance=0.02   # 2% tolerance (more lenient)
+    thresholds={
+        'roc_auc': {'abs': 0.01, 'rel': 0.05, 'z_score': 1.5},
+        'composite': {'abs': 0.03, 'rel': 0.10, 'z_score': 2.0},
+        'importance': {'abs': 0.10, 'rel': 0.30, 'z_score': 2.5}
+    },
+    use_z_score=True
 )
 ```
 
@@ -502,7 +560,9 @@ if output_dir is not None:
 
 ## Troubleshooting
 
-### "Results differ from previous run"
+### "Reproducibility: DIVERGED" (WARNING)
+
+**When this appears**: Differences exceed tolerance thresholds (2x abs/rel or z-score thresholds)
 
 **Possible causes:**
 1. **Non-deterministic random seeds**: Check that all models use deterministic seeds
@@ -512,11 +572,24 @@ if output_dir is not None:
 5. **Hardware differences**: GPU vs CPU, different CPU architectures
 
 **Debugging steps:**
-1. Check `reproducibility_log.json` to see exact differences
+1. Check `reproducibility_log.json` to see exact differences and z-scores
 2. Verify deterministic seeds are set correctly
 3. Compare configs between runs
 4. Check library versions
 5. Review additional_data for environment differences
+6. Check if z-score is high (e.g., z > 2) - indicates statistically significant difference
+
+### "Reproducibility: DRIFTING" (INFO)
+
+**When this appears**: Small but noticeable changes (within 2x thresholds but exceeds 1x)
+
+**Action**: Usually safe to ignore, but worth monitoring if it persists across multiple runs
+
+### "Reproducibility: STABLE" (INFO)
+
+**When this appears**: Differences are within noise (within thresholds)
+
+**Action**: No action needed - this is expected behavior for deterministic runs
 
 ### Log File Not Created
 
