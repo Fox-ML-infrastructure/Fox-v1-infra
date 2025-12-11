@@ -1,0 +1,229 @@
+"""
+Copyright (c) 2025-2026 Fox ML Infrastructure LLC
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
+
+"""
+Feature Importance Stability Hooks
+
+Non-invasive hooks that can be called from pipeline endpoints.
+These functions handle snapshot creation and automatic stability analysis.
+"""
+
+import logging
+from pathlib import Path
+from typing import Dict, Optional, List, Union
+from datetime import datetime
+import uuid
+
+from .schema import FeatureImportanceSnapshot
+from .io import save_importance_snapshot, get_snapshot_base_dir
+from .analysis import analyze_stability_auto
+
+logger = logging.getLogger(__name__)
+
+
+def save_snapshot_hook(
+    target_name: str,
+    method: str,
+    importance_dict: Dict[str, float],
+    universe_id: Optional[str] = None,
+    output_dir: Optional[Path] = None,
+    run_id: Optional[str] = None,
+    auto_analyze: Optional[bool] = None,  # None = load from config
+) -> Optional[Path]:
+    """
+    Hook function to save feature importance snapshot.
+    
+    This is the main entry point for saving snapshots from pipeline code.
+    
+    Args:
+        target_name: Target name (e.g., "peak_60m_0.8")
+        method: Method name (e.g., "lightgbm", "quick_pruner", "rfe")
+        importance_dict: Dictionary mapping feature names to importance values
+        universe_id: Optional universe identifier (symbol name, "ALL", etc.)
+        output_dir: Optional output directory (defaults to artifacts/feature_importance)
+        run_id: Optional run ID (generates UUID if not provided)
+        auto_analyze: If True, automatically run stability analysis after saving.
+                     If None, loads from config (safety.feature_importance.auto_analyze_stability)
+    
+    Returns:
+        Path to saved snapshot, or None if saving failed
+    """
+    try:
+        # Load auto_analyze setting from config if not explicitly provided
+        if auto_analyze is None:
+            try:
+                from CONFIG.config_loader import get_cfg
+                auto_analyze = get_cfg(
+                    "safety.feature_importance.auto_analyze_stability",
+                    default=True,
+                    config_name="safety_config"
+                )
+            except Exception:
+                auto_analyze = True  # Default to enabled
+        
+        # Create snapshot
+        snapshot = FeatureImportanceSnapshot.from_dict_series(
+            target_name=target_name,
+            method=method,
+            importance_dict=importance_dict,
+            universe_id=universe_id,
+            run_id=run_id,
+        )
+        
+        # Save snapshot
+        base_dir = get_snapshot_base_dir(output_dir)
+        snapshot_path = save_importance_snapshot(snapshot, base_dir)
+        
+        logger.debug(f"Saved importance snapshot: {snapshot_path}")
+        
+        # Auto-analyze if enabled
+        if auto_analyze:
+            try:
+                # Load config for auto-analysis settings
+                min_overlap_threshold = 0.7
+                min_tau_threshold = 0.6
+                top_k = 20
+                
+                try:
+                    from CONFIG.config_loader import get_cfg
+                    stability_thresholds = get_cfg(
+                        "safety.feature_importance.stability_thresholds",
+                        default={},
+                        config_name="safety_config"
+                    )
+                    min_overlap_threshold = stability_thresholds.get('min_top_k_overlap', 0.7)
+                    min_tau_threshold = stability_thresholds.get('min_kendall_tau', 0.6)
+                    top_k = stability_thresholds.get('top_k', 20)
+                except Exception:
+                    pass  # Use defaults
+                
+                analyze_stability_auto(
+                    base_dir=base_dir,
+                    target_name=target_name,
+                    method=method,
+                    log_to_console=True,
+                    save_report=True,
+                    min_overlap_threshold=min_overlap_threshold,
+                    min_tau_threshold=min_tau_threshold,
+                    top_k=top_k,
+                )
+            except Exception as e:
+                logger.debug(f"Auto-analysis failed (non-critical): {e}")
+        
+        return snapshot_path
+    
+    except Exception as e:
+        logger.warning(f"Failed to save importance snapshot: {e}")
+        return None
+
+
+def save_snapshot_from_series_hook(
+    target_name: str,
+    method: str,
+    importance_series,  # pd.Series
+    universe_id: Optional[str] = None,
+    output_dir: Optional[Path] = None,
+    run_id: Optional[str] = None,
+    auto_analyze: Optional[bool] = None,  # None = load from config
+) -> Optional[Path]:
+    """
+    Hook function to save snapshot from pandas Series.
+    
+    Convenience wrapper for Series-based importance data.
+    
+    Args:
+        target_name: Target name
+        method: Method name
+        importance_series: pandas Series with feature names as index
+        universe_id: Optional universe identifier
+        output_dir: Optional output directory
+        run_id: Optional run ID
+        auto_analyze: If True, automatically run stability analysis.
+                     If None, loads from config (safety.feature_importance.auto_analyze_stability)
+    
+    Returns:
+        Path to saved snapshot, or None if saving failed
+    """
+    # Convert Series to dict
+    importance_dict = importance_series.to_dict()
+    return save_snapshot_hook(
+        target_name=target_name,
+        method=method,
+        importance_dict=importance_dict,
+        universe_id=universe_id,
+        output_dir=output_dir,
+        run_id=run_id,
+        auto_analyze=auto_analyze,
+    )
+
+
+def analyze_all_stability_hook(
+    output_dir: Optional[Path] = None,
+    target_name: Optional[str] = None,
+    method: Optional[str] = None,
+) -> Dict[str, Dict[str, float]]:
+    """
+    Hook function to analyze stability for all available snapshots.
+    
+    Can be called at end of pipeline run to generate comprehensive stability report.
+    
+    Args:
+        output_dir: Optional output directory (defaults to artifacts/feature_importance)
+        target_name: Optional target name filter (None = all targets)
+        method: Optional method filter (None = all methods)
+    
+    Returns:
+        Dictionary mapping "{target_name}/{method}" to metrics dict
+    """
+    base_dir = get_snapshot_base_dir(output_dir)
+    
+    if not base_dir.exists():
+        logger.debug(f"No snapshots directory found: {base_dir}")
+        return {}
+    
+    all_metrics = {}
+    
+    # Find all target/method combinations
+    for target_path in base_dir.iterdir():
+        if not target_path.is_dir():
+            continue
+        
+        target = target_path.name
+        if target_name and target != target_name:
+            continue
+        
+        for method_path in target_path.iterdir():
+            if not method_path.is_dir():
+                continue
+            
+            method = method_path.name
+            if method and method != method:
+                continue
+            
+            # Analyze this target/method combination
+            metrics = analyze_stability_auto(
+                base_dir=base_dir,
+                target_name=target,
+                method=method,
+                log_to_console=True,
+                save_report=True,
+            )
+            
+            if metrics:
+                all_metrics[f"{target}/{method}"] = metrics
+    
+    return all_metrics
