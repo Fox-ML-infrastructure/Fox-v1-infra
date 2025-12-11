@@ -166,10 +166,10 @@ aggregation:
 ## CatBoost Configuration
 
 ### Problem
-Previously, CatBoost could use incorrect loss functions (e.g., `RMSE` for binary classification) if not explicitly configured.
+Previously, CatBoost could use incorrect loss functions (e.g., `RMSE` for binary classification) if not explicitly configured. Additionally, parameter conflicts could occur when defaults injection added synonyms like `n_estimators` while config already had `iterations`, or when both `random_state` and `random_seed` were present.
 
 ### Solution
-CatBoost now auto-detects target type and sets appropriate loss function:
+CatBoost now auto-detects target type and sets appropriate loss function. Parameter sanitization automatically resolves conflicts:
 
 ```python
 from TRAINING.utils.target_utils import is_classification_target, is_binary_classification_target
