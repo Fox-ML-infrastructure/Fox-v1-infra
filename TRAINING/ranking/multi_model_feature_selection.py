@@ -154,8 +154,9 @@ def normalize_importance(
         fallback_cfg = get_cfg("preprocessing.multi_model_feature_selection.aggregation.fallback", default={}, config_name="preprocessing_config")
         uniform_importance = fallback_cfg.get('uniform_importance', 1e-6)
         normalize_after_fallback = fallback_cfg.get('normalize_after_fallback', True)
-    except Exception:
+    except Exception as e:
         # Fallback defaults if config unavailable
+        logger.debug(f"Failed to load fallback config: {e}, using defaults")
         uniform_importance = config.get('uniform_importance', 1e-6) if config else 1e-6
         normalize_after_fallback = config.get('normalize_after_fallback', True) if config else True
     
@@ -367,19 +368,23 @@ def get_default_config() -> Dict[str, Any]:
         # Load model configs (load_model_config returns hyperparameters directly, like Phase 3)
         try:
             lgb_hyperparams = load_model_config('lightgbm')
-        except Exception:
+        except Exception as e:
+            logger.debug(f"Failed to load LightGBM config: {e}, using empty config")
             lgb_hyperparams = {}
-        
+
         try:
             xgb_hyperparams = load_model_config('xgboost')
-        except Exception:
+        except Exception as e:
+            logger.debug(f"Failed to load XGBoost config: {e}, using empty config")
             xgb_hyperparams = {}
-        
+
         try:
             mlp_hyperparams = load_model_config('mlp')
-        except Exception:
+        except Exception as e:
+            logger.debug(f"Failed to load MLP config: {e}, using empty config")
             mlp_hyperparams = {}
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Failed to load default config values: {e}, using hardcoded defaults")
         default_max_samples = 50000
         validation_split = 0.2
         agg_cfg = {}
@@ -517,7 +522,8 @@ def extract_shap_importance(model, X: np.ndarray, feature_names: List[str],
         try:
             from CONFIG.config_loader import get_cfg
             max_samples = int(get_cfg("pipeline.data_limits.max_cs_samples", default=1000, config_name="pipeline_config"))
-        except Exception:
+        except Exception as e:
+            logger.debug(f"Failed to load max_cs_samples from config: {e}, using default=1000")
             max_samples = 1000
     
     try:
@@ -549,7 +555,8 @@ def extract_shap_importance(model, X: np.ndarray, feature_names: List[str],
             try:
                 from CONFIG.config_loader import get_cfg
                 kernel_sample_size = int(get_cfg("preprocessing.multi_model_feature_selection.shap.kernel_explainer_sample_size", default=100, config_name="preprocessing_config"))
-            except Exception:
+            except Exception as e:
+                logger.debug(f"Failed to load kernel_explainer_sample_size from config: {e}, using default=100")
                 kernel_sample_size = 100
             explainer = shap.KernelExplainer(model.predict, X_sample[:kernel_sample_size])
         
@@ -977,7 +984,8 @@ def train_model_and_get_importance(
             estimator_max_depth = model_config.get('estimator_max_depth', rfe_cfg.get('estimator_max_depth', 10))
             estimator_n_jobs = model_config.get('estimator_n_jobs', rfe_cfg.get('estimator_n_jobs', 1))
             estimator_random_state = model_config.get('random_state', 42)  # Use model_config random_state if available
-        except Exception:
+        except Exception as e:
+            logger.debug(f"Failed to load RFE config: {e}, using model_config defaults")
             estimator_n_estimators = model_config.get('estimator_n_estimators', 100)
             estimator_max_depth = model_config.get('estimator_max_depth', 10)
             estimator_n_jobs = model_config.get('estimator_n_jobs', 1)
@@ -1073,7 +1081,8 @@ def train_model_and_get_importance(
                 boruta_max_iter = model_config.get('max_iter', boruta_cfg.get('max_iter', 100))
                 boruta_n_jobs = model_config.get('n_jobs', boruta_cfg.get('n_jobs', 1))
                 boruta_verbose = model_config.get('verbose', boruta_cfg.get('verbose', 0))
-            except Exception:
+            except Exception as e:
+                logger.debug(f"Failed to load Boruta config: {e}, using model_config defaults")
                 boruta_n_estimators = model_config.get('n_estimators', 500)
                 boruta_max_depth = model_config.get('max_depth', 6)
                 boruta_random_state = model_config.get('random_state', 42)
@@ -1331,7 +1340,8 @@ def process_single_symbol(
             try:
                 from CONFIG.config_loader import get_cfg
                 max_samples = int(get_cfg("pipeline.data_limits.default_max_samples_feature_selection", default=50000, config_name="pipeline_config"))
-            except Exception:
+            except Exception as e:
+                logger.debug(f"Failed to load default_max_samples_feature_selection from config: {e}, using default=50000")
                 max_samples = 50000
         else:
             max_samples = 50000
