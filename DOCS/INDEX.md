@@ -151,6 +151,7 @@ Research notes, design rationale, advanced topics.
 ### Implementation
 - [Feature Selection Implementation](03_technical/implementation/FEATURE_SELECTION_GUIDE.md) - Feature selection implementation details (see also [Ranking and Selection Consistency](01_tutorials/training/RANKING_SELECTION_CONSISTENCY.md) for unified pipeline behavior)
 - [Training Optimization](03_technical/implementation/TRAINING_OPTIMIZATION_GUIDE.md) - Training optimization guide
+- [Reproducibility Tracking](03_technical/implementation/REPRODUCIBILITY_TRACKING.md) - **NEW**: Automatic reproducibility verification across pipeline stages
 - [Safe Target Pattern](03_technical/implementation/SAFE_TARGET_PATTERN_IMPLEMENTATION.md) - Safe target pattern implementation
 - [First Batch Specs](03_technical/implementation/FIRST_BATCH_SPECS_IMPLEMENTATION.md) - First batch specifications
 - [Strategy Updates](03_technical/implementation/STRATEGY_UPDATES.md) - Training strategy updates
