@@ -865,8 +865,8 @@ For configuration questions or issues, refer to:
 - [Advanced Config](../../01_tutorials/configuration/ADVANCED_CONFIG.md) - Advanced configuration guide
 - [Config Loader API](CONFIG_LOADER_API.md) - Complete API reference (includes logging config utilities)
 - [Usage Examples](USAGE_EXAMPLES.md) - Practical examples (includes interval config and CatBoost examples)
-- [Ranking and Selection Consistency](../01_tutorials/training/RANKING_SELECTION_CONSISTENCY.md) - Unified pipeline behavior guide
-- [Intelligent Training Tutorial](../01_tutorials/training/INTELLIGENT_TRAINING_TUTORIAL.md) - Complete pipeline guide
+- [Ranking and Selection Consistency](../../01_tutorials/training/RANKING_SELECTION_CONSISTENCY.md) - Unified pipeline behavior guide
+- [Intelligent Training Tutorial](../../01_tutorials/training/INTELLIGENT_TRAINING_TUTORIAL.md) - Complete pipeline guide
 - [Config Schema](../api/CONFIG_SCHEMA.md) - Configuration schema documentation
 - [Environment Variables](ENVIRONMENT_VARIABLES.md) - Environment variable overrides
 - [Model Config Reference](../models/MODEL_CONFIG_REFERENCE.md) - Model-specific configurations

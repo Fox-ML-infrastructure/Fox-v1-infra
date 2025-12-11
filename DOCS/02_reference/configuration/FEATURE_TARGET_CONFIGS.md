@@ -373,7 +373,7 @@ confidence:
 - Per-target: `target_confidence.json`, `target_routing.json`
 - Run-level: `target_confidence_summary.json`, `target_confidence_summary.csv`
 
-See [Intelligent Training Tutorial](../01_tutorials/training/INTELLIGENT_TRAINING_TUTORIAL.md#target-confidence-and-routing) for details.
+See [Intelligent Training Tutorial](../../01_tutorials/training/INTELLIGENT_TRAINING_TUTORIAL.md) for details.
 
 ---
 
@@ -486,9 +486,9 @@ model_families:
 - **[Modular Config System](MODULAR_CONFIG_SYSTEM.md)** - Complete guide to modular configs (includes `logging_config.yaml`)
 - [Configuration System Overview](README.md) - Main configuration overview (includes `logging_config.yaml` documentation)
 - [Usage Examples](USAGE_EXAMPLES.md) - Practical configuration examples (includes interval config and CatBoost examples)
-- [Ranking and Selection Consistency](../01_tutorials/training/RANKING_SELECTION_CONSISTENCY.md) - Unified pipeline behavior guide
+- [Ranking and Selection Consistency](../../01_tutorials/training/RANKING_SELECTION_CONSISTENCY.md) - Unified pipeline behavior guide
 - [Training Pipeline Configs](TRAINING_PIPELINE_CONFIGS.md) - Training configuration
 - [Safety & Leakage Configs](SAFETY_LEAKAGE_CONFIGS.md) - Leakage detection settings
 - [Leakage Analysis](../../03_technical/research/LEAKAGE_ANALYSIS.md) - Detailed leakage documentation
-- [Intelligent Training Tutorial](../01_tutorials/training/INTELLIGENT_TRAINING_TUTORIAL.md) - Complete pipeline guide
+- [Intelligent Training Tutorial](../../01_tutorials/training/INTELLIGENT_TRAINING_TUTORIAL.md) - Complete pipeline guide
 

@@ -301,7 +301,7 @@ See [`DOCS/01_tutorials/training/RANKING_SELECTION_CONSISTENCY.md`](../01_tutori
   - **experimental**: Fragile signal (LOW confidence, especially boruta_zero_confirmed, `allowed_in_production: false`)
 - **Configurable thresholds** — All confidence thresholds, score tier thresholds, and routing rules configurable via `CONFIG/feature_selection/multi_model.yaml` `confidence` section. Backward compatible with sensible defaults matching previous hardcoded values.
 - **Run-level summaries** — Automatically generates `target_confidence_summary.json` (list of all targets) and `target_confidence_summary.csv` (human-readable table with all metrics + routing decisions) for easy inspection.
-- **Integration** — Wired into `intelligent_trainer.py` to automatically compute and log confidence/routing decisions per target after feature selection. Creates run-level summary after training completes. See [`TRAINING/orchestration/target_routing.py`](../../../TRAINING/orchestration/target_routing.py) and [Intelligent Training Tutorial](../01_tutorials/training/INTELLIGENT_TRAINING_TUTORIAL.md#target-confidence-and-routing).
+- **Integration** — Wired into `intelligent_trainer.py` to automatically compute and log confidence/routing decisions per target after feature selection. Creates run-level summary after training completes. See `TRAINING/orchestration/target_routing.py` and [Intelligent Training Tutorial](../../01_tutorials/training/INTELLIGENT_TRAINING_TUTORIAL.md).
 - **Output artifacts**:
   - Per-target: `target_confidence.json`, `target_routing.json`
   - Run-level: `target_confidence_summary.json`, `target_confidence_summary.csv`

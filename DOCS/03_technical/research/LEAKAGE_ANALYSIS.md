@@ -92,6 +92,10 @@ safe_features = filter_features_for_target(
 
 The system automatically detects leakage during training and can auto-fix it:
 
+![Leakage detection and auto fixer at work](../images/leakage_detection_auto_fixer.png)
+
+*Leakage detection and auto fixer at work*
+
 **Detection Methods:**
 - Perfect CV scores (≥99%)
 - Perfect training accuracy (≥99.9%)
