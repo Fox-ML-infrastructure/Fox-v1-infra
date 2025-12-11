@@ -310,20 +310,89 @@ class LeakageAutoFixer:
                         ))
                 logger.debug(f"Method 1: Created {len(detections)} detections from perfect score")
             else:
-                logger.debug(f"Method 1: No model_importance provided or empty (len={len(model_importance) if model_importance else 0})")
-                # Even without importance, if we have perfect score, check for known leaky patterns in top features
-                # This is a fallback - check all features for known patterns
-                logger.debug("Method 1: Falling back to pattern-based detection for all features")
-                for feat_name in candidate_features:
-                    if self._is_known_leaky_pattern(feat_name):
-                        detections.append(LeakageDetection(
-                            feature_name=feat_name,
-                            confidence=0.9,  # High confidence for known patterns with perfect score
-                            reason=f"Known leaky pattern in perfect-score model (train_score={train_score:.4f})",
-                            source="perfect_score_pattern",
-                            suggested_action=self._suggest_action(feat_name)
-                        ))
-                logger.debug(f"Method 1: Pattern-based fallback found {len(detections)} detections")
+                logger.warning(f"Method 1: No model_importance provided or empty (len={len(model_importance) if model_importance else 0})")
+                logger.warning(f"   Perfect score ({train_score:.4f}) detected but no feature importances available!")
+                logger.warning(f"   This limits detection effectiveness. Computing importances on-the-fly...")
+                
+                # CRITICAL: When we have perfect score but no importances, we MUST compute them
+                # Otherwise we can't identify which features are causing the leakage
+                try:
+                    import pandas as pd
+                    import numpy as np
+                    from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+                    from sklearn.linear_model import LogisticRegression, LinearRegression
+                    
+                    # Convert to DataFrame if needed
+                    if not isinstance(X, pd.DataFrame):
+                        X_df = pd.DataFrame(X, columns=feature_names)
+                    else:
+                        X_df = X
+                    
+                    if not isinstance(y, pd.Series):
+                        y_series = pd.Series(y)
+                    else:
+                        y_series = y
+                    
+                    # Get deterministic seed
+                    try:
+                        from TRAINING.common.determinism import BASE_SEED, stable_seed_from
+                        target_name = getattr(self, 'target_name', target_column)
+                        leak_seed = stable_seed_from(['leakage_auto_fixer', target_name]) if BASE_SEED is not None else 42
+                    except:
+                        leak_seed = 42
+                    
+                    # Train a quick model to get feature importances
+                    logger.debug(f"   Training quick model for importance extraction (seed={leak_seed})...")
+                    if task_type == 'classification':
+                        quick_model = RandomForestClassifier(n_estimators=50, max_depth=10, random_state=leak_seed, n_jobs=1)
+                    else:
+                        quick_model = RandomForestRegressor(n_estimators=50, max_depth=10, random_state=leak_seed, n_jobs=1)
+                    
+                    # Use sample if data is too large
+                    if len(X_df) > 10000:
+                        sample_idx = np.random.RandomState(leak_seed).choice(len(X_df), size=10000, replace=False)
+                        X_sample = X_df.iloc[sample_idx]
+                        y_sample = y_series.iloc[sample_idx]
+                    else:
+                        X_sample = X_df
+                        y_sample = y_series
+                    
+                    quick_model.fit(X_sample, y_sample)
+                    
+                    # Extract importances
+                    computed_importance = dict(zip(feature_names, quick_model.feature_importances_))
+                    logger.debug(f"   Computed importances for {len(computed_importance)} features")
+                    
+                    # Now use computed importances
+                    sorted_features = sorted(computed_importance.items(), key=lambda x: x[1], reverse=True)
+                    top_features = sorted_features[:10]  # Top 10 most important
+                    logger.debug(f"Method 1: Found {len(top_features)} top features from computed importance")
+                    
+                    for feat_name, importance in top_features:
+                        if feat_name in candidate_features:
+                            detections.append(LeakageDetection(
+                                feature_name=feat_name,
+                                confidence=min(0.9, importance),  # Scale importance to confidence
+                                reason=f"High importance ({importance:.2%}) in perfect-score model (train_score={train_score:.4f}, computed on-the-fly)",
+                                source="perfect_score_computed_importance",
+                                suggested_action=self._suggest_action(feat_name)
+                            ))
+                    logger.info(f"Method 1: Created {len(detections)} detections from computed importance")
+                    
+                except Exception as e:
+                    logger.warning(f"   Failed to compute importances on-the-fly: {e}")
+                    logger.warning("   Falling back to pattern-based detection for all features")
+                    # Fallback: check all features for known patterns
+                    for feat_name in candidate_features:
+                        if self._is_known_leaky_pattern(feat_name):
+                            detections.append(LeakageDetection(
+                                feature_name=feat_name,
+                                confidence=0.9,  # High confidence for known patterns with perfect score
+                                reason=f"Known leaky pattern in perfect-score model (train_score={train_score:.4f})",
+                                source="perfect_score_pattern",
+                                suggested_action=self._suggest_action(feat_name)
+                            ))
+                    logger.debug(f"Method 1: Pattern-based fallback found {len(detections)} detections")
         
         # Method 2: Leakage sentinels
         try:
@@ -483,11 +552,24 @@ class LeakageAutoFixer:
         
         # Deduplicate and merge confidence scores
         merged = self._merge_detections(detections)
+        
+        # Enhanced logging for visibility
         logger.info(f"🔍 Leakage detection complete: {len(merged)} feature(s) detected "
                    f"(from {len(detections)} raw detections)")
         if merged:
             top_3 = sorted(merged, key=lambda d: d.confidence, reverse=True)[:3]
-            logger.info(f"   Top detections: {', '.join([f'{d.feature_name} (conf={d.confidence:.2f})' for d in top_3])}")
+            logger.info(f"   Top detections: {', '.join([f'{d.feature_name} (conf={d.confidence:.2f}, source={d.source})' for d in top_3])}")
+        else:
+            # If no detections but we have perfect score, this is suspicious
+            if train_score is not None and train_score >= perfect_score_threshold:
+                logger.warning(f"   ⚠️  WARNING: Perfect score ({train_score:.4f}) detected but NO leaks found!")
+                logger.warning(f"   This may indicate:")
+                logger.warning(f"   1. Leakage is structural (in target construction, not features)")
+                logger.warning(f"   2. Leaky features are already excluded (check excluded_features.yaml)")
+                logger.warning(f"   3. Detection methods need improvement")
+                logger.warning(f"   Candidate features checked: {len(candidate_features)} (total features: {len(feature_names)})")
+                if len(candidate_features) < len(feature_names):
+                    logger.warning(f"   {len(feature_names) - len(candidate_features)} features already excluded")
         logger.debug(f"Total detections after merge: {len(merged)}")
         
         return merged
