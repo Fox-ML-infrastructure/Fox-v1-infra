@@ -272,6 +272,17 @@ X_dense, feature_names_dense = make_sklearn_dense_X(X, feature_names)
 
 **Note:** Tree-based models (LightGBM, XGBoost, Random Forest, CatBoost) continue to use raw data as they handle NaNs natively.
 
+### Parameter Sanitization
+
+All model constructors use `clean_config_for_estimator()` to prevent parameter conflicts:
+
+- **CatBoost iteration synonyms**: Removes `n_estimators`, `num_boost_round`, `num_trees` if `iterations` is present (CatBoost accepts only one)
+- **CatBoost random_state/random_seed**: Converts `random_state` to `random_seed` or removes if duplicate
+- **MLPRegressor verbose**: Sanitizes `verbose=-1` to `verbose=0` (sklearn requires `>= 0`)
+- **RandomForest verbose**: Removes negative verbose values
+
+This ensures models work correctly even when global defaults injection adds conflicting parameters. See [Config Cleaner API](../../02_reference/configuration/CONFIG_CLEANER_API.md) for details.
+
 ## Verification
 
 ### Check Interval Handling

@@ -220,16 +220,101 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 ```
 
+## Special Parameter Handling
+
+The config cleaner includes special handling for known parameter conflicts and invalid values:
+
+### MLPRegressor/MLPClassifier Verbose Parameter
+
+sklearn's MLPRegressor/MLPClassifier requires `verbose >= 0`, but global config defaults may inject `verbose=-1` (silent mode). The cleaner automatically sanitizes negative values to `0`:
+
+```python
+# Config might have verbose=-1 from defaults
+raw_config = {'verbose': -1, 'hidden_layer_sizes': (100, 50)}
+
+# Cleaner sanitizes to verbose=0
+clean_config = clean_config_for_estimator(MLPRegressor, raw_config, {}, 'neural_network')
+# clean_config['verbose'] == 0
+```
+
+### CatBoost Iteration Synonyms
+
+CatBoost accepts only ONE of `iterations`, `n_estimators`, `num_boost_round`, `num_trees` (they're synonyms). The cleaner removes all synonyms except `iterations` (CatBoost's native param):
+
+```python
+# Config might have both from defaults injection
+raw_config = {
+    'iterations': 300,      # From model config
+    'n_estimators': 1000    # From defaults.yaml injection
+}
+
+# Cleaner removes n_estimators, keeps iterations
+clean_config = clean_config_for_estimator(CatBoostRegressor, raw_config, {}, 'catboost')
+# clean_config has 'iterations': 300, no 'n_estimators'
+```
+
+### CatBoost Random State/Seed
+
+CatBoost accepts only ONE of `random_state` or `random_seed`. The cleaner converts `random_state` to `random_seed` (CatBoost's preferred name), or removes it if `random_seed` is already in `extra_kwargs`:
+
+```python
+# Config has random_state from defaults
+raw_config = {'random_state': 42, 'iterations': 300}
+extra = {'random_seed': 42}  # Explicit seed
+
+# Cleaner removes random_state (duplicate of random_seed in extra)
+clean_config = clean_config_for_estimator(CatBoostRegressor, raw_config, extra, 'catboost')
+# clean_config has no 'random_state', extra has 'random_seed'
+```
+
+### RandomForest Verbose Parameter
+
+RandomForest also requires `verbose >= 0`. Negative values are removed (RandomForest will use default):
+
+```python
+raw_config = {'verbose': -1, 'n_estimators': 100}
+clean_config = clean_config_for_estimator(RandomForestRegressor, raw_config, {}, 'random_forest')
+# clean_config has no 'verbose' (removed)
+```
+
 ## Best Practices
 
 1. **Always use before estimator instantiation** - Clean configs before passing to constructors
 2. **Pass explicit parameters in `extra_kwargs`** - If you need to override config values or pass parameters that might be duplicated, use `extra_kwargs`
-3. **Use descriptive `family_name`** - Helps with debugging when logs show what was stripped
+3. **Use descriptive `family_name`** - Helps with debugging when logs show what was stripped and enables special parameter handling
 4. **Handle None configs gracefully** - The function returns `{}` for None/invalid configs, but your code should handle empty configs appropriately
 5. **Capture copies in closures** - When creating lambdas or closures, explicitly copy configs to avoid reference issues
+6. **Trust the special handling** - The cleaner automatically handles known conflicts (MLPRegressor verbose, CatBoost synonyms, etc.) - you don't need to manually sanitize these
+
+## Troubleshooting
+
+### "got multiple values for keyword argument"
+
+This means a parameter is in both `raw_config` and `extra_kwargs`. The cleaner should remove it from `raw_config`, but if you still see this error:
+
+1. Check that you're calling `clean_config_for_estimator()` before model instantiation
+2. Verify the parameter isn't being added after cleaning
+3. Check logs for "stripped duplicate" messages
+
+### "unexpected keyword argument"
+
+This means a parameter isn't in the estimator's `__init__` signature. The cleaner should remove it, but if you still see this error:
+
+1. Check that `family_name` is set correctly (enables special handling)
+2. Verify the estimator class is correct
+3. Check logs for "stripped unknown" messages
+
+### CatBoost "only one of iterations/n_estimators/num_boost_round/num_trees"
+
+This means multiple iteration synonyms are present. The cleaner should remove all except `iterations`, but if you still see this:
+
+1. Check that `family_name='catboost'` is passed to enable special handling
+2. Verify the cleaner is called before model instantiation
+3. Check for any code that adds parameters after cleaning
 
 ## See Also
 
 - [Config Loader API](CONFIG_LOADER_API.md) - How configs are loaded and injected
 - [Reproducibility Tracking Guide](../../03_technical/implementation/REPRODUCIBILITY_TRACKING.md) - Tracking run reproducibility
 - [Feature Selection Tutorial](../../01_tutorials/training/FEATURE_SELECTION_TUTORIAL.md) - How feature selection uses config cleaner
+- [Ranking and Selection Consistency](../../01_tutorials/training/RANKING_SELECTION_CONSISTENCY.md) - Unified pipeline behavior including parameter sanitization
