@@ -68,6 +68,40 @@ Phase 1 functioning properly - Ranking and selection pipelines unified with cons
   - `TRAINING/common/leakage_auto_fixer.py`
   - `TRAINING/ranking/predictability/model_evaluation.py`
 
+#### Reproducibility Tracking & Auto-Fixer Fixes (2025-12-11)
+
+**Reproducibility Tracking Directory Structure Fix**
+- **Issue**: Reproducibility logs were stored in shared location, mixing different modules (target ranking, feature selection, model training). Also couldn't find previous runs because each run uses timestamped directory (e.g., `test_e2e_ranking_unified_20251211_133358`).
+- **Impact**: 
+  - Modules couldn't be properly separated (all logs in one place)
+  - Previous runs weren't found (stored in different timestamped directories)
+  - Always showed "First run" even when previous runs existed
+- **Fix**: 
+  - Each module now has its own reproducibility log in module-specific subdirectory:
+    - Target ranking: `{output_dir}/target_rankings/reproducibility_log.json`
+    - Feature selection: `{output_dir}/feature_selections/reproducibility_log.json`
+    - Model training: `{output_dir}/training_results/reproducibility_log.json`
+  - Added `search_previous_runs` option (enabled for all modules)
+  - `_find_previous_log_files()` searches parent directories (up to 3 levels) for previous runs from same module
+  - Merges runs from current log + previous logs, sorts by timestamp, uses most recent
+- **Result**: Modules are properly separated, and previous runs are found across different timestamped output directories
+- **Files**: 
+  - `TRAINING/utils/reproducibility_tracker.py` - Added module-specific directory support and previous run search
+  - `TRAINING/ranking/predictability/model_evaluation.py` - Updated to use target_rankings/ subdirectory
+  - `TRAINING/ranking/feature_selector.py` - Updated to use feature_selections/ subdirectory
+  - `TRAINING/training_strategies/training.py` - Updated to use training_results/ subdirectory
+
+**Auto-Fixer Logging Format Error Fix**
+- **Issue**: `ValueError: Invalid format specifier` when logging auto-fixer inputs. Code tried to use conditional expression (`actual_train_score:.4f if actual_train_score else None`) directly in format specifier, which is invalid Python syntax.
+- **Impact**: Auto-fixer logging crashed with format error, preventing visibility into what was being passed to detection
+- **Fix**: Format the value first, then use in f-string:
+  ```python
+  train_score_str = f"{actual_train_score:.4f}" if actual_train_score is not None else "None"
+  logger.info(f"🔧 Auto-fixer inputs: train_score={train_score_str}, ...")
+  ```
+- **Result**: Auto-fixer logging now works correctly, showing inputs for debugging
+- **Files**: `TRAINING/ranking/predictability/model_evaluation.py`
+
 #### Cross-Sectional Sampling & Config Parameter Fixes (2025-12-11)
 
 **Critical Bug Fix: max_cs_samples Filtering**

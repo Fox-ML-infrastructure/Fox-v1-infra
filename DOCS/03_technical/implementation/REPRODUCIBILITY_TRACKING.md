@@ -52,13 +52,21 @@ tracker.log_comparison(
 
 ```python
 tracker = ReproducibilityTracker(
-    output_dir: Path,                    # Directory for storing logs
+    output_dir: Path,                    # Module-specific directory for storing logs
     log_file_name: str = "reproducibility_log.json",  # Log file name
     max_runs_per_item: int = 10,         # Max runs to keep per item
     score_tolerance: float = 0.001,      # 0.1% tolerance for scores
-    importance_tolerance: float = 0.01   # 1% tolerance for importance
+    importance_tolerance: float = 0.01,   # 1% tolerance for importance
+    search_previous_runs: bool = False  # Search parent directories for previous runs
 )
 ```
+
+**Important**: `output_dir` should be the module-specific subdirectory:
+- Target ranking: `{output_dir}/target_rankings/`
+- Feature selection: `{output_dir}/feature_selections/`
+- Model training: `{output_dir}/training_results/`
+
+This ensures each module has its own reproducibility log and can find previous runs across different timestamped output directories.
 
 #### Methods
 
@@ -543,24 +551,37 @@ This ensures that reproducibility comparisons (✅/⚠️ indicators) are always
 
 **Architecture**: Tracking is integrated into computation modules, not entry points. This ensures tracking works regardless of which entry point calls these functions.
 
+**Directory Structure**: Each module stores its reproducibility log in its own subdirectory:
+- Target ranking: `{output_dir}/target_rankings/reproducibility_log.json`
+- Feature selection: `{output_dir}/feature_selections/reproducibility_log.json`
+- Model training: `{output_dir}/training_results/reproducibility_log.json`
+
+This allows comparing runs across different timestamped output directories while keeping modules properly separated.
+
 1. **Target Ranking** (`TRAINING/ranking/predictability/model_evaluation.py`)
    - **Function**: `evaluate_target_predictability()`
    - **Tracks**: ROC-AUC/R², importance, composite score per target
    - **Stage**: `"target_ranking"`
+   - **Log location**: `{output_dir}/target_rankings/reproducibility_log.json`
    - **Works for**: intelligent_trainer, standalone scripts, programmatic calls
+   - **Previous run search**: Enabled - searches parent directories for previous runs
 
 2. **Feature Selection** (`TRAINING/ranking/feature_selector.py`)
    - **Function**: `select_features_for_target()`
    - **Tracks**: Consensus scores, top feature, number of features selected, successful families
    - **Stage**: `"feature_selection"`
+   - **Log location**: `{output_dir}/feature_selections/reproducibility_log.json`
    - **Works for**: intelligent_trainer, standalone scripts, programmatic calls
+   - **Previous run search**: Enabled - searches parent directories for previous runs
 
 3. **Model Training** (`TRAINING/training_strategies/training.py`)
    - **Function**: Training loop in `train_models_for_interval_comprehensive()`
    - **Tracks**: CV scores (mean/std), composite scores per target:family combination
    - **Stage**: `"model_training"`
    - **Item name format**: `"{target}:{family}"` (e.g., `"y_will_peak_60m_0.8:lightgbm"`)
+   - **Log location**: `{output_dir}/training_results/reproducibility_log.json`
    - **Works for**: intelligent_trainer, standalone scripts, programmatic calls
+   - **Previous run search**: Enabled - searches parent directories for previous runs
 
 ## Extending to New Stages
 
