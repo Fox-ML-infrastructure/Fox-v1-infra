@@ -62,9 +62,9 @@ Step-by-step guides for common tasks.
 - [Model Training Guide](01_tutorials/training/MODEL_TRAINING_GUIDE.md) - Manual training workflow (how to run it)
 - [Walk-Forward Validation](01_tutorials/training/WALKFORWARD_VALIDATION.md) - Validation workflow
 - [Feature Selection Tutorial](01_tutorials/training/FEATURE_SELECTION_TUTORIAL.md) - Manual feature selection
-- [Experiments Workflow](01_tutorials/training/EXPERIMENTS_WORKFLOW.md) - 3-phase optimized training workflow
-- [Experiments Quick Start](01_tutorials/training/EXPERIMENTS_QUICK_START.md) - Quick start guide
 - [Experiments Operations](01_tutorials/training/EXPERIMENTS_OPERATIONS.md) - Step-by-step operations
+- ⚠️ **Legacy**: [EXPERIMENTS Workflow](../LEGACY/EXPERIMENTS_WORKFLOW.md) - **DEPRECATED**: Use [Intelligent Training Pipeline](training/INTELLIGENT_TRAINING_TUTORIAL.md) instead
+- ⚠️ **Legacy**: [EXPERIMENTS Quick Start](../LEGACY/EXPERIMENTS_QUICK_START.md) - **DEPRECATED**: Use [Intelligent Training Tutorial](training/INTELLIGENT_TRAINING_TUTORIAL.md) instead
 - [Phase 1: Feature Engineering](01_tutorials/training/PHASE1_FEATURE_ENGINEERING.md) - Phase 1 documentation
 
 ### Configuration
@@ -179,7 +179,7 @@ Research notes, design rationale, advanced topics.
 - [Safe Target Pattern](03_technical/implementation/SAFE_TARGET_PATTERN_IMPLEMENTATION.md) - Safe target pattern implementation
 - [First Batch Specs](03_technical/implementation/FIRST_BATCH_SPECS_IMPLEMENTATION.md) - First batch specifications
 - [Strategy Updates](03_technical/implementation/STRATEGY_UPDATES.md) - Training strategy updates
-- [Experiments Implementation](03_technical/implementation/EXPERIMENTS_IMPLEMENTATION.md) - Experiments implementation summary
+- ⚠️ **Legacy**: [Experiments Implementation](../LEGACY/EXPERIMENTS_IMPLEMENTATION.md) - **DEPRECATED**: See [Intelligent Training Tutorial](../01_tutorials/training/INTELLIGENT_TRAINING_TUTORIAL.md) instead
 - [Pressure Test Plan](03_technical/implementation/PRESSURE_TEST_PLAN.md) - Testing plan
 - [Performance Optimization](03_technical/implementation/PERFORMANCE_OPTIMIZATION.md) - Optimization work
 - [Adding Proprietary Models](03_technical/implementation/ADDING_PROPRIETARY_MODELS.md) - Using BaseModelTrainer to add custom models
