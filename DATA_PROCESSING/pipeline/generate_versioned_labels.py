@@ -33,6 +33,8 @@ import subprocess
 from pathlib import Path
 from typing import List, Dict, Optional
 from datetime import datetime
+from concurrent.futures import ProcessPoolExecutor, as_completed
+import multiprocessing as mp
 import pandas as pd
 
 # Add project root to path
@@ -110,6 +112,12 @@ def read_parquet_with_fallback(path: Path) -> pd.DataFrame:
         except Exception as e_arrow:
             raise RuntimeError(f"Failed to read {path} with both engines. "
                                f"fastparquet: {e_fast}; pyarrow: {e_arrow}")
+
+
+def process_symbol_worker(args_tuple):
+    """Worker function for parallel processing (must be at module level for pickling)."""
+    symbol, input_dir, output_dir, horizons, barrier_sizes, interval_minutes = args_tuple
+    return process_symbol(symbol, input_dir, output_dir, horizons, barrier_sizes, interval_minutes)
 
 
 def process_symbol(
@@ -286,8 +294,17 @@ def main():
                        help="Barrier sizes (default: 0.3 0.5 0.8)")
     parser.add_argument("--interval-minutes", type=float, default=5.0,
                        help="Bar interval in minutes (default: 5.0)")
+    parser.add_argument("--n-workers", type=int, default=None,
+                       help="Number of parallel workers (default: min(8, num_symbols, cpu_count))")
+    parser.add_argument("--batch-size", type=int, default=5,
+                       help="Process symbols in batches for memory management (default: 5)")
     
     args = parser.parse_args()
+    
+    # Determine number of workers
+    if args.n_workers is None:
+        args.n_workers = min(8, len(args.symbols), mp.cpu_count())
+    logger.info(f"🔧 Using {args.n_workers} parallel workers")
     
     # Validate data_dir was provided (either from config or command line)
     if not args.data_dir:
@@ -316,35 +333,68 @@ def main():
     logger.info(f"📏 Barrier sizes: {args.barrier_sizes}")
     logger.info(f"🕐 Interval: {args.interval_minutes} minutes")
     
-    # Process each symbol
-    results = []
+    # Prepare symbol tasks
+    symbol_tasks = []
     for symbol in args.symbols:
-        logger.info(f"\n{'='*60}")
-        logger.info(f"Processing {symbol}...")
-        logger.info(f"{'='*60}")
-        
-        # Find symbol directory
         symbol_input_dir = interval_dir / f"symbol={symbol}"
         if not symbol_input_dir.exists():
             logger.warning(f"  ⚠️  Symbol directory not found: {symbol_input_dir}")
-            results.append({"symbol": symbol, "status": "error", "message": "Symbol directory not found"})
             continue
         
-        # Process symbol
-        result = process_symbol(
-            symbol=symbol,
-            input_dir=symbol_input_dir,
-            output_dir=output_dir,
-            horizons=args.horizons,
-            barrier_sizes=args.barrier_sizes,
-            interval_minutes=args.interval_minutes
-        )
-        results.append(result)
+        symbol_tasks.append((
+            symbol,
+            symbol_input_dir,
+            output_dir,
+            args.horizons,
+            args.barrier_sizes,
+            args.interval_minutes
+        ))
+    
+    if not symbol_tasks:
+        logger.error("No valid symbol directories found")
+        return
+    
+    # Process symbols in parallel batches
+    results = []
+    total_batches = (len(symbol_tasks) + args.batch_size - 1) // args.batch_size
+    
+    for batch_idx in range(total_batches):
+        batch_start = batch_idx * args.batch_size
+        batch_end = min(batch_start + args.batch_size, len(symbol_tasks))
+        batch_tasks = symbol_tasks[batch_start:batch_end]
         
-        if result["status"] == "success":
-            logger.info(f"  ✅ {symbol}: {result['files_processed']} files, {result['rows_processed']} rows")
-        else:
-            logger.error(f"  ❌ {symbol}: {result['message']}")
+        logger.info(f"\n{'='*60}")
+        logger.info(f"Processing batch {batch_idx + 1}/{total_batches} ({len(batch_tasks)} symbols)")
+        logger.info(f"{'='*60}")
+        
+        with ProcessPoolExecutor(max_workers=args.n_workers) as executor:
+            # Submit batch tasks
+            future_to_symbol = {
+                executor.submit(process_symbol_worker, task): task[0]
+                for task in batch_tasks
+            }
+            
+            # Process results as they complete
+            for future in as_completed(future_to_symbol):
+                symbol = future_to_symbol[future]
+                try:
+                    result = future.result()
+                    results.append(result)
+                    
+                    if result["status"] == "success":
+                        logger.info(f"  ✅ {symbol}: {result['files_processed']} files, {result['rows_processed']} rows")
+                    else:
+                        logger.error(f"  ❌ {symbol}: {result['message']}")
+                except Exception as e:
+                    logger.error(f"  ❌ {symbol}: Exception - {e}")
+                    results.append({"symbol": symbol, "status": "error", "message": str(e)})
+        
+        # Memory cleanup after each batch
+        import gc
+        gc.collect()
+        
+        if batch_idx < total_batches - 1:
+            logger.info(f"💤 Batch {batch_idx + 1} completed, starting next batch...")
     
     # Create metadata file
     successful_symbols = [r["symbol"] for r in results if r["status"] == "success"]
