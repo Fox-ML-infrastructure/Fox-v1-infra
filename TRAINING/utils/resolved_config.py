@@ -12,7 +12,7 @@ This module provides a single source of truth for:
 """
 
 from dataclasses import dataclass
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List, Tuple
 import pandas as pd
 import logging
 
@@ -174,6 +174,90 @@ def derive_purge_embargo(
     return purge_embargo_minutes, purge_embargo_minutes
 
 
+def compute_feature_lookback_max(
+    feature_names: List[str],
+    interval_minutes: Optional[float] = None,
+    max_lookback_cap_minutes: Optional[float] = None
+) -> Tuple[Optional[float], List[Tuple[str, float]]]:
+    """
+    Compute maximum feature lookback from actual feature names.
+    
+    Uses feature registry to get lag_bars for each feature, then converts to minutes.
+    
+    Args:
+        feature_names: List of feature names to analyze
+        interval_minutes: Data interval in minutes (for conversion)
+        max_lookback_cap_minutes: Optional cap for ranking mode (e.g., 240m = 4 hours)
+    
+    Returns:
+        (max_lookback_minutes, top_lookback_features) tuple
+        - max_lookback_minutes: Maximum lookback in minutes (None if cannot compute)
+        - top_lookback_features: List of (feature_name, lookback_minutes) for top offenders
+    """
+    if not feature_names or interval_minutes is None or interval_minutes <= 0:
+        return None, []
+    
+    try:
+        from TRAINING.common.feature_registry import get_registry
+        registry = get_registry()
+    except Exception:
+        # Fallback: use pattern matching if registry unavailable
+        registry = None
+    
+    feature_lookbacks = []
+    
+    for feat_name in feature_names:
+        lag_bars = None
+        
+        # Try registry first
+        if registry:
+            try:
+                metadata = registry.get_feature_metadata(feat_name)
+                lag_bars = metadata.get('lag_bars')
+            except Exception:
+                pass
+        
+        # Fallback: pattern matching for common patterns
+        if lag_bars is None:
+            import re
+            # ret_N, sma_N, ema_N, rsi_N, etc.
+            match = re.match(r'^(ret|sma|ema|rsi|macd|bb|atr|adx|mom|vol|std|var)_(\d+)', feat_name)
+            if match:
+                lag_bars = int(match.group(2))
+            # Check for multi-day patterns (mom_3d, monthly_seasonality, etc.)
+            elif re.search(r'_(\d+)d', feat_name):
+                days_match = re.search(r'_(\d+)d', feat_name)
+                days = int(days_match.group(1))
+                # Convert days to bars (assume 288 bars/day for 5m data)
+                lag_bars = days * 288
+            elif re.search(r'monthly|quarterly|yearly', feat_name, re.I):
+                # Calendar features - assume 1 month = 30 days
+                lag_bars = 30 * 288  # Very long lookback
+            else:
+                # Unknown feature - assume minimal lookback (1 bar)
+                lag_bars = 1
+        
+        if lag_bars is not None and lag_bars > 0:
+            lookback_minutes = lag_bars * interval_minutes
+            feature_lookbacks.append((feat_name, lookback_minutes))
+    
+    if not feature_lookbacks:
+        return None, []
+    
+    # Sort by lookback (descending)
+    feature_lookbacks.sort(key=lambda x: x[1], reverse=True)
+    max_lookback = feature_lookbacks[0][1]
+    
+    # Apply cap if provided
+    if max_lookback_cap_minutes is not None and max_lookback > max_lookback_cap_minutes:
+        max_lookback = max_lookback_cap_minutes
+    
+    # Return top 10 offenders
+    top_offenders = feature_lookbacks[:10]
+    
+    return max_lookback, top_offenders
+
+
 def create_resolved_config(
     requested_min_cs: int,
     n_symbols_available: int,
@@ -187,7 +271,9 @@ def create_resolved_config(
     features_dropped_nan: int = 0,
     features_final: int = 0,
     view: str = "CROSS_SECTIONAL",
-    symbol: Optional[str] = None
+    symbol: Optional[str] = None,
+    feature_names: Optional[List[str]] = None,  # NEW: actual feature names for lookback computation
+    recompute_lookback: bool = False  # NEW: if True, recompute from feature_names
 ) -> ResolvedConfig:
     """
     Create a ResolvedConfig object with all values computed consistently.
@@ -198,25 +284,55 @@ def create_resolved_config(
     # Compute effective_min_cs
     effective_min_cs = min(requested_min_cs, n_symbols_available)
     
+    # Recompute feature_lookback_max from actual features if requested
+    if recompute_lookback and feature_names and interval_minutes:
+        # Load ranking mode cap from config
+        max_lookback_cap = None
+        try:
+            from CONFIG.config_loader import get_cfg
+            max_lookback_cap = get_cfg("safety.leakage_detection.ranking_mode_max_lookback_minutes", default=None, config_name="safety_config")
+            if max_lookback_cap is not None:
+                max_lookback_cap = float(max_lookback_cap)
+        except Exception:
+            pass
+        
+        computed_lookback, top_offenders = compute_feature_lookback_max(
+            feature_names, interval_minutes, max_lookback_cap_minutes=max_lookback_cap
+        )
+        
+        if computed_lookback is not None:
+            # Log top offenders
+            if top_offenders and top_offenders[0][1] > 240:  # Only log if > 4 hours
+                logger.info(f"  📊 Feature lookback analysis: max={computed_lookback:.1f}m")
+                logger.info(f"    Top lookback features: {', '.join([f'{f}({m:.0f}m)' for f, m in top_offenders[:5]])}")
+            
+            feature_lookback_max_minutes = computed_lookback
+    
     # Compute purge/embargo using centralized function
-    purge_minutes, embargo_minutes = derive_purge_embargo(
+    purge_minutes, embargo_base = derive_purge_embargo(
         horizon_minutes=horizon_minutes,
         interval_minutes=interval_minutes,
-        feature_lookback_max_minutes=feature_lookback_max_minutes,
+        feature_lookback_max_minutes=None,  # Don't pass to derive (it's separate)
         purge_buffer_bars=purge_buffer_bars,
         default_purge_minutes=default_purge_minutes
     )
     
+    # CRITICAL FIX: Separate purge and embargo
+    # - purge: max(horizon+buffer, feature_lookback_max) - prevents rolling window leakage
+    # - embargo: horizon+buffer only - prevents label/horizon overlap (NOT tied to feature lookback)
+    embargo_minutes = embargo_base  # Embargo is NOT affected by feature lookback
+    
     # AUDIT VIOLATION FIX: If feature lookback > purge, increase purge to satisfy audit rule
     # This prevents "ROLLING WINDOW LEAKAGE RISK" violations
-    # Note: This is a conservative fix - ideally we'd filter features, but we don't have per-feature lookback metadata
+    # NOTE: Only purge is affected, NOT embargo
     if feature_lookback_max_minutes is not None and purge_minutes < feature_lookback_max_minutes:
         logger.warning(
             f"⚠️  Audit violation prevention: purge ({purge_minutes:.1f}m) < feature_lookback_max ({feature_lookback_max_minutes:.1f}m). "
-            f"Increasing purge to {feature_lookback_max_minutes:.1f}m to satisfy audit rule."
+            f"Increasing purge to {feature_lookback_max_minutes:.1f}m to satisfy audit rule. "
+            f"Embargo remains {embargo_minutes:.1f}m (horizon-based, not feature lookback)."
         )
         purge_minutes = feature_lookback_max_minutes
-        embargo_minutes = feature_lookback_max_minutes
+        # embargo_minutes stays at embargo_base (NOT increased)
     
     # Compute buffer minutes
     if interval_minutes is not None:

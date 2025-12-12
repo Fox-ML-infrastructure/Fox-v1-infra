@@ -277,7 +277,8 @@ def train_and_evaluate_models(
     time_vals: Optional[np.ndarray] = None,  # Timestamps for each sample (for fold timestamp tracking)
     explicit_interval: Optional[Union[int, str]] = None,  # Explicit interval from config (for consistency)
     experiment_config: Optional[Any] = None,  # Optional ExperimentConfig (for data.bar_interval)
-    output_dir: Optional[Path] = None  # Optional output directory for stability snapshots
+    output_dir: Optional[Path] = None,  # Optional output directory for stability snapshots
+    resolved_config: Optional[Any] = None  # NEW: ResolvedConfig with correct purge/embargo (post-pruning)
 ) -> Tuple[Dict[str, Dict[str, float]], Dict[str, float], float, Dict[str, List[Tuple[str, float]]], Dict[str, Dict[str, float]], List[Dict[str, Any]]]:
     """
     Train multiple models and return task-aware metrics + importance magnitude
@@ -491,6 +492,16 @@ def train_and_evaluate_models(
                 from TRAINING.utils.cross_sectional_data import _log_feature_set
                 _log_feature_set("PRUNER_SELECTED", feature_names, previous_names=None, logger_instance=logger)
             
+            # CRITICAL: Recompute feature_lookback_max from PRUNED features (not pre-prune candidates)
+            # This prevents paying 1440m purge for features we don't even use
+            from TRAINING.utils.resolved_config import compute_feature_lookback_max, create_resolved_config
+            
+            # Get n_symbols_available from mtf_data
+            n_symbols_available = len(mtf_data)
+            
+            # NOTE: resolved_config will be created after pruning completes
+            # This is handled in the outer scope to ensure it's available for train_and_evaluate_models
+            
             # Save stability snapshot for quick pruning (non-invasive hook)
             # Only save if output_dir is available (optional feature)
             if 'full_importance_dict' in pruning_stats and output_dir is not None:
@@ -509,6 +520,64 @@ def train_and_evaluate_models(
         except Exception as e:
             logger.warning(f"  Feature pruning failed: {e}, using all features")
             # Continue with original features
+    
+    # CRITICAL: Create resolved_config AFTER pruning (or if pruning skipped)
+    # This ensures feature_lookback_max is computed from actual features used in training
+    if resolved_config is None:
+        from TRAINING.utils.resolved_config import compute_feature_lookback_max, create_resolved_config
+        
+        # Get n_symbols_available from cohort_context
+        n_symbols_available = len(mtf_data) if 'mtf_data' in locals() else 1
+        
+        # Compute feature lookback from actual features (pruned or unpruned)
+        computed_lookback, top_offenders = compute_feature_lookback_max(
+            feature_names, data_interval_minutes, max_lookback_cap_minutes=None  # No cap for now
+        )
+        
+        if computed_lookback is not None:
+            feature_lookback_max_minutes = computed_lookback
+            if top_offenders and top_offenders[0][1] > 240:  # Only log if > 4 hours
+                logger.info(f"  📊 Feature lookback analysis: max={computed_lookback:.1f}m")
+                logger.info(f"    Top lookback features: {', '.join([f'{f}({m:.0f}m)' for f, m in top_offenders[:5]])}")
+        else:
+            # Fallback: use conservative estimate if cannot compute
+            if data_interval_minutes is not None and data_interval_minutes > 0:
+                max_lookback_bars = 288  # 1 day of 5m bars
+                feature_lookback_max_minutes = max_lookback_bars * data_interval_minutes
+            else:
+                feature_lookback_max_minutes = None
+        
+        # Extract horizon from target_column if available
+        target_horizon_minutes = None
+        if target_column:
+            try:
+                from TRAINING.utils.leakage_filtering import _extract_horizon, _load_leakage_config
+                leakage_config = _load_leakage_config()
+                target_horizon_minutes = _extract_horizon(target_column, leakage_config)
+            except Exception:
+                pass
+        
+        # Create resolved config with actual feature lookback
+        resolved_config = create_resolved_config(
+            requested_min_cs=1,  # Not used in train_and_evaluate_models context
+            n_symbols_available=n_symbols_available,
+            max_cs_samples=None,
+            interval_minutes=data_interval_minutes,
+            horizon_minutes=target_horizon_minutes,
+            feature_lookback_max_minutes=feature_lookback_max_minutes,
+            purge_buffer_bars=5,
+            default_purge_minutes=85.0,
+            features_safe=original_feature_count,
+            features_dropped_nan=0,
+            features_final=len(feature_names),
+            view="CROSS_SECTIONAL",  # Default for train_and_evaluate_models
+            symbol=None,
+            feature_names=feature_names,
+            recompute_lookback=False  # Already computed above
+        )
+        
+        if log_cfg.cv_detail:
+            logger.info(f"  ✅ Resolved config created: purge={resolved_config.purge_minutes:.1f}m, embargo={resolved_config.embargo_minutes:.1f}m")
     
     # Get CV config
     cv_config = multi_model_config.get('cross_validation', {}) if multi_model_config else {}
@@ -591,33 +660,41 @@ def train_and_evaluate_models(
         # Use parameter value (default: 5)
         logger.info(f"  Using data interval from parameter: {data_interval_minutes}m")
     
-    # ARCHITECTURAL FIX: Use centralized purge/embargo derivation
-    # This ensures consistency across all modules
-    from TRAINING.utils.resolved_config import derive_purge_embargo
-    
-    # Load purge settings from config
-    if _CONFIG_AVAILABLE:
-        try:
-            purge_buffer_bars = int(get_cfg("pipeline.leakage.purge_buffer_bars", default=5, config_name="pipeline_config"))
-        except Exception:
-            purge_buffer_bars = 5
+    # ARCHITECTURAL FIX: Use resolved_config if provided (has correct purge/embargo post-pruning)
+    # Otherwise compute here (fallback for legacy calls)
+    if resolved_config is not None:
+        purge_minutes_val = resolved_config.purge_minutes
+        embargo_minutes_val = resolved_config.embargo_minutes
+        feature_lookback_max_minutes = None  # Not needed here, already in resolved_config
+        if log_cfg.cv_detail:
+            logger.info(f"  Using purge/embargo from resolved_config: purge={purge_minutes_val:.1f}m, embargo={embargo_minutes_val:.1f}m")
     else:
-        purge_buffer_bars = 5  # Safety buffer (5 bars = 25 minutes)
-    
-    # Estimate feature lookback (conservative: 1 day = 288 bars for 5m data)
-    feature_lookback_max_minutes = None
-    if data_interval_minutes is not None and data_interval_minutes > 0:
-        max_lookback_bars = 288  # 1 day of 5m bars
-        feature_lookback_max_minutes = max_lookback_bars * data_interval_minutes
-    
-    # Use centralized derivation function
-    purge_minutes_val, embargo_minutes_val = derive_purge_embargo(
-        horizon_minutes=target_horizon_minutes,
-        interval_minutes=data_interval_minutes,
-        feature_lookback_max_minutes=feature_lookback_max_minutes,
-        purge_buffer_bars=purge_buffer_bars,
-        default_purge_minutes=85.0
-    )
+        # Fallback: compute here (legacy path)
+        from TRAINING.utils.resolved_config import derive_purge_embargo
+        
+        # Load purge settings from config
+        if _CONFIG_AVAILABLE:
+            try:
+                purge_buffer_bars = int(get_cfg("pipeline.leakage.purge_buffer_bars", default=5, config_name="pipeline_config"))
+            except Exception:
+                purge_buffer_bars = 5
+        else:
+            purge_buffer_bars = 5  # Safety buffer (5 bars = 25 minutes)
+        
+        # Estimate feature lookback (conservative: 1 day = 288 bars for 5m data)
+        feature_lookback_max_minutes = None
+        if data_interval_minutes is not None and data_interval_minutes > 0:
+            max_lookback_bars = 288  # 1 day of 5m bars
+            feature_lookback_max_minutes = max_lookback_bars * data_interval_minutes
+        
+        # Use centralized derivation function
+        purge_minutes_val, embargo_minutes_val = derive_purge_embargo(
+            horizon_minutes=target_horizon_minutes,
+            interval_minutes=data_interval_minutes,
+            feature_lookback_max_minutes=feature_lookback_max_minutes,
+            purge_buffer_bars=purge_buffer_bars,
+            default_purge_minutes=85.0
+        )
     
     purge_time = pd.Timedelta(minutes=purge_minutes_val)
     
@@ -2506,31 +2583,9 @@ def evaluate_target_predictability(
     # Get n_symbols_available from mtf_data
     n_symbols_available = len(mtf_data)
     
-    # Estimate feature lookback (conservative: 1 day = 288 bars for 5m data)
-    feature_lookback_max_minutes = None
-    if detected_interval > 0:
-        max_lookback_bars = 288  # 1 day of 5m bars
-        feature_lookback_max_minutes = max_lookback_bars * detected_interval
-    
-    # Create resolved config
-    resolved_config = create_resolved_config(
-        requested_min_cs=min_cs if view != "SYMBOL_SPECIFIC" else 1,
-        n_symbols_available=n_symbols_available,
-        max_cs_samples=max_cs_samples,
-        interval_minutes=detected_interval,
-        horizon_minutes=target_horizon_minutes,
-        feature_lookback_max_minutes=feature_lookback_max_minutes,
-        purge_buffer_bars=5,  # Default from config
-        default_purge_minutes=85.0,
-        features_safe=features_safe,
-        features_dropped_nan=features_dropped_nan,
-        features_final=features_final,
-        view=view,
-        symbol=symbol
-    )
-    
-    # Log single authoritative summary
-    resolved_config.log_summary(logger)
+    # NOTE: resolved_config will be created AFTER pruning so we can compute
+    # feature_lookback_max from actual pruned features (not pre-prune candidates)
+    # This prevents paying 1440m purge/embargo for features we don't even use
     
     logger.info(f"Cross-sectional data: {len(X)} samples, {X.shape[1]} features")
     logger.info(f"Symbols: {len(set(symbols_array))} unique symbols")
@@ -2694,6 +2749,70 @@ def evaluate_target_predictability(
                 model_scores={}
             )
     
+    # CRITICAL: Create resolved_config AFTER pruning (if not already created)
+    # This ensures feature_lookback_max is computed from actual features used in training
+    if resolved_config is None:
+        from TRAINING.utils.resolved_config import compute_feature_lookback_max, create_resolved_config
+        
+        # Get n_symbols_available from cohort_context
+        n_symbols_available = len(mtf_data) if 'mtf_data' in locals() else 1
+        
+        # Auto-detect interval if not already detected
+        if 'detected_interval' not in locals() or detected_interval is None:
+            detected_interval = 5  # Default fallback
+            if time_vals is not None and len(time_vals) > 1:
+                try:
+                    if isinstance(time_vals[0], (int, float)):
+                        time_series = pd.to_datetime(time_vals, unit='ns')
+                    else:
+                        time_series = pd.Series(time_vals)
+                    time_diffs = time_series.diff().dropna()
+                    median_diff_minutes = abs(time_diffs.median().total_seconds()) / 60.0
+                    common_intervals = [1, 5, 15, 30, 60]
+                    detected_interval = min(common_intervals, key=lambda x: abs(x - median_diff_minutes))
+                except Exception:
+                    pass
+        
+        # Compute feature lookback from actual features (pruned or unpruned)
+        computed_lookback, top_offenders = compute_feature_lookback_max(
+            feature_names, detected_interval, max_lookback_cap_minutes=None  # No cap for now
+        )
+        
+        if computed_lookback is not None:
+            feature_lookback_max_minutes = computed_lookback
+            if top_offenders and top_offenders[0][1] > 240:  # Only log if > 4 hours
+                logger.info(f"  📊 Feature lookback analysis: max={computed_lookback:.1f}m")
+                logger.info(f"    Top lookback features: {', '.join([f'{f}({m:.0f}m)' for f, m in top_offenders[:5]])}")
+        else:
+            # Fallback: use conservative estimate if cannot compute
+            if detected_interval > 0:
+                max_lookback_bars = 288  # 1 day of 5m bars
+                feature_lookback_max_minutes = max_lookback_bars * detected_interval
+            else:
+                feature_lookback_max_minutes = None
+        
+        # Create resolved config with actual feature lookback
+        resolved_config = create_resolved_config(
+            requested_min_cs=min_cs if view != "SYMBOL_SPECIFIC" else 1,
+            n_symbols_available=n_symbols_available,
+            max_cs_samples=max_cs_samples,
+            interval_minutes=detected_interval,
+            horizon_minutes=target_horizon_minutes,
+            feature_lookback_max_minutes=feature_lookback_max_minutes,
+            purge_buffer_bars=5,  # Default from config
+            default_purge_minutes=85.0,
+            features_safe=features_safe,
+            features_dropped_nan=features_dropped_nan,
+            features_final=len(feature_names),  # Use current count (pruned or not)
+            view=view,
+            symbol=symbol,
+            feature_names=feature_names,  # Pass actual features
+            recompute_lookback=False  # Already computed above
+        )
+        
+        # Log single authoritative summary (now with correct purge/embargo)
+        resolved_config.log_summary(logger)
+    
     # Train and evaluate on cross-sectional data (single evaluation, not per-symbol)
     all_model_scores = []
     all_importances = []
@@ -2701,28 +2820,8 @@ def evaluate_target_predictability(
     fold_timestamps = None  # Initialize fold_timestamps for later use
     
     try:
-        # Auto-detect data interval from timestamps if available
-        detected_interval = 5  # Default fallback
-        if time_vals is not None and len(time_vals) > 1:
-            try:
-                if isinstance(time_vals[0], (int, float)):
-                    time_series = pd.to_datetime(time_vals, unit='ns')
-                else:
-                    time_series = pd.Series(time_vals)
-                time_diffs = time_series.diff().dropna()
-                median_diff_minutes = abs(time_diffs.median().total_seconds()) / 60.0
-                common_intervals = [1, 5, 15, 30, 60]
-                detected_interval = min(common_intervals, key=lambda x: abs(x - median_diff_minutes))
-                # Load tolerance from config
-                try:
-                    from CONFIG.config_loader import get_cfg
-                    tolerance = float(get_cfg("safety.leakage_detection.model_evaluation.interval_detection_tolerance", default=0.2, config_name="safety_config"))
-                except Exception:
-                    tolerance = 0.2
-                if abs(median_diff_minutes - detected_interval) / detected_interval >= tolerance:
-                    detected_interval = 5  # Fallback if unclear
-            except Exception:
-                pass  # Use default
+        # Use detected_interval from outer scope (already computed above)
+        # No need to recompute here
         
         result = train_and_evaluate_models(
             X, y, feature_names, task_type, model_families, multi_model_config,
@@ -2731,7 +2830,8 @@ def evaluate_target_predictability(
             time_vals=time_vals,  # Pass timestamps for fold tracking
             explicit_interval=explicit_interval,  # Pass explicit interval for consistency
             experiment_config=experiment_config,  # Pass experiment config
-            output_dir=output_dir  # Pass output directory for stability snapshots
+            output_dir=output_dir,  # Pass output directory for stability snapshots
+            resolved_config=resolved_config  # Pass resolved config with correct purge/embargo (post-pruning)
         )
         
         if result is None or len(result) != 7:

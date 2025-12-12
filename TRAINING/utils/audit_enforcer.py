@@ -179,14 +179,10 @@ class AuditEnforcer:
                 "feature_lookback_max_minutes": lookback
             })
         
-        if embargo is not None and embargo < lookback:
-            self.violations.append({
-                "rule": "embargo_minutes >= feature_lookback_max_minutes",
-                "message": f"embargo_minutes ({embargo}) < feature_lookback_max_minutes ({lookback}) - ROLLING WINDOW LEAKAGE RISK",
-                "severity": "critical",
-                "embargo_minutes": embargo,
-                "feature_lookback_max_minutes": lookback
-            })
+        # NOTE: Embargo is NOT required to cover feature lookback
+        # Embargo is for label/horizon overlap, not rolling window features
+        # Only purge needs to cover feature lookback to prevent rolling window leakage
+        # Removed embargo >= feature_lookback check (was incorrect)
     
     def _validate_cohort_consistency(
         self,

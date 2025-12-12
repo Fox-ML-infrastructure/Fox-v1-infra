@@ -80,6 +80,10 @@ safety:
       min_features_required: 2  # Minimum features needed after filtering (for ranking)
       min_features_for_model: 3  # Minimum features needed for meaningful model training
       min_features_after_leak_removal: 2  # Minimum features after removing leaky features
+      # Maximum feature lookback cap for ranking mode (prevents 1440m purge/embargo inflation)
+      # Set to null to disable cap (use actual feature lookback)
+      # Set to number (e.g., 240) to cap lookback at 4 hours (excludes 1D+ lookback features)
+      ranking_mode_max_lookback_minutes: null  # null = no cap, or set to e.g., 240 for 4-hour cap
   
   # Reproducibility Tracking Thresholds
   reproducibility:
