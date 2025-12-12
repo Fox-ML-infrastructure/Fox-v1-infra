@@ -693,7 +693,7 @@ def rank_targets(
                     if not cs_succeeded:
                         logger.debug(f"  Skipping symbol-specific evaluation for {target_name} (cross-sectional failed)")
                     else:
-                    for symbol in symbols:
+                        for symbol in symbols:
                         try:
                             if auto_rerun_enabled and _AUTOFIX_AVAILABLE:
                                 # Try with view/symbol, fallback to without if not supported
