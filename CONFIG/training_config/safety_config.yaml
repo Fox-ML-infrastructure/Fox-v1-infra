@@ -94,6 +94,21 @@ safety:
     # Set purge_include_feature_lookback to false if feature lookback is killing sample efficiency 
     # and you're confident features are strictly causal (only use past data)
   
+  # Active Sanitization (Ghost Buster)
+  # Automatically quarantines features with excessive lookback before training starts
+  # This prevents "ghost feature" discrepancies where audit and auto-fix see different lookback values
+  active_sanitization:
+    enabled: true  # Enable active sanitization (automatically quarantine problematic features)
+    max_safe_lookback_minutes: 240.0  # Maximum safe lookback in minutes (default: 4 hours)
+    # Features with lookback > this threshold will be automatically quarantined
+    # Set to null to disable lookback-based quarantine (only use pattern-based)
+    
+    # Pattern-based quarantine (more aggressive - quarantines by naming patterns)
+    pattern_quarantine:
+      enabled: false  # Default: disabled (more aggressive, use with caution)
+      patterns: []  # List of regex patterns to match (e.g., [".*_1d$", ".*daily.*"])
+      # If enabled, features matching these patterns will be quarantined regardless of computed lookback
+  
   # Reproducibility Tracking Thresholds
   reproducibility:
     enabled: true
