@@ -5,8 +5,8 @@ All notable changes to FoxML Core will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-**For more detailed information:**
-- [Detailed Changelog](DOCS/02_reference/CHANGELOG_DETAILED.md) - Comprehensive change details with file paths and config references
+**For detailed technical changes:**
+- [Detailed Changelog](DOCS/02_reference/CHANGELOG_DETAILED.md) – Comprehensive change details with file paths, config keys, and implementation notes.
 
 ---
 
@@ -14,94 +14,114 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Highlights
 
-- **Reproducibility Tracking System** (2025-12-11) — **NEW**: Comprehensive reproducibility tracking across all pipeline stages with per-model granularity. Three-tier classification (STABLE/DRIFTING/DIVERGED) prevents alert fatigue. Module-specific storage with cross-run search. Per-model tracking in feature selection stores delta_score, Jaccard@K, importance_corr in `model_metadata.json`. See [Reproducibility Tracking Guide](DOCS/03_technical/implementation/REPRODUCIBILITY_TRACKING.md).
-- **Model Parameter Sanitization** (2025-12-11) — **FIXED**: Resolved parameter validation issues for MLPRegressor (`verbose=-1`), CatBoost (iteration synonyms, random_state/random_seed conflicts), and univariate selection (signed F-statistics). Created shared `config_cleaner.py` utility using `inspect.signature()` to prevent parameter passing errors across all model constructors.
-- **Interval Detection Improvements** (2025-12-11) — **FIXED**: Added median-based gap filtering to ignore overnight/weekend gaps. Added `interval_detection.mode=fixed` to skip auto-detection for known intervals. Downgraded warnings to INFO level. Eliminates false warnings on clean 5m data.
-- **Leakage Detection Fixes** (2025-12-11) — **CRITICAL**: Fixed confidence calculation bug that filtered out valid detections. Enhanced detection to compute importances on-the-fly when missing. Improved diagnostics and logging.
-- **Config & Determinism** (2025-12-10) — **ENHANCED**: Complete config centralization with SST enforcement. Centralized determinism system. Removed 30+ hardcoded random_state values. All pipeline parameters load from YAML files.
-- **Code Quality** (2025-12-10) — Fixed 194 F821 errors, syntax errors, missing imports. Full end-to-end testing underway.
-- **Architecture** (2025-12-09) — Large file refactoring into modular components. Intelligent training framework Phase 1 completed. Leakage Safety Suite with auto-fixer. Modular configuration system.
+- **Reproducibility & Drift Tracking** (2025-12-11) – End-to-end reproducibility tracking across ranking, feature selection, and training with per-model metrics and three-tier classification (**STABLE / DRIFTING / DIVERGED**). Module-specific logs and cross-run comparison. See [Reproducibility Tracking Guide](DOCS/03_technical/implementation/REPRODUCIBILITY_TRACKING.md).
+- **Model Parameter Sanitization** (2025-12-11) – Shared `config_cleaner.py` utility using `inspect.signature()` to strip unknown/duplicate params and normalize tricky cases (MLPRegressor `verbose`, CatBoost iteration synonyms and RNG params, sklearn/univariate quirks). Eliminates an entire class of "got multiple values" / "unexpected keyword" failures.
+- **Interval Detection & Time Handling** (2025-12-11) – Median-based gap filtering for overnight/weekend gaps, `interval_detection.mode=fixed` for known bar intervals, and noise reduction (INFO instead of WARNING). Removes spurious "unclear interval" warnings on clean 5m data.
+- **Leakage Detection & Auto-Fix Reliability** (2025-12-11) – Critical fix to detection confidence (no longer tied to raw importance), on-the-fly importance computation when missing, richer diagnostics, and hardened auto-fixer logging + backup behavior.
+- **Single Source of Truth & Determinism** (2025-12-10) – Full config centralization for TRAINING; SST enforcement test; all hyperparameters and seeds now load from YAML, with centralized determinism system. 30+ hardcoded `random_state` and other defaults removed.
+- **Architecture & Docs** (2025-12-09+) – Large monolithic training scripts refactored into modular components, intelligent training framework Phase 1 completed, Leakage Safety Suite wired end-to-end, and docs reorganized into a 4-tier hierarchy with expanded legal/commercial material.
 
 ---
 
 ### Stability Guarantees
 
-- **Training results reproducible** across hardware (deterministic seeds, config-driven hyperparameters)
-- **Complete config centralization** — All pipeline parameters load from YAML files (single source of truth)
-- **SST enforcement** — Automated test prevents hardcoded hyperparameters
-- **Config schema backward compatible** (existing configs continue to work)
-- **Modular architecture** (self-contained TRAINING module, zero external script dependencies)
+- **Training results reproducible** across runs and hardware (centralized seeds + config-only hyperparameters).
+- **Complete config centralization** – Pipeline behavior is controlled by YAML (Single Source of Truth).
+- **SST enforcement** – Automated test prevents accidental reintroduction of hardcoded hyperparameters.
+- **Config schema backward compatible** – Existing configs continue to work with deprecation warnings where applicable.
+- **Modular architecture** – TRAINING module is self-contained with zero external script dependencies.
 
 ### Known Issues & Limitations
 
-- **Trading execution modules** removed from core repository; system focuses on ML research infrastructure
-- **Feature engineering** requires human review and validation
-- **End-to-end testing in progress** (2025-12-10) — Full pipeline validation underway after SST and Determinism fixes
+- **Trading / execution modules** are out of scope for the core repo; FoxML Core focuses on ML research & infra.
+- **Feature engineering** still requires human review and domain validation.
+- **Full end-to-end test suite** is being expanded following SST + determinism changes (as of 2025-12-10).
 
 ---
 
 ### Added
 
-- **Per-model reproducibility tracking** (2025-12-11) — Tracks delta_score, Jaccard@K, importance_corr per model family. Stores in `model_metadata.json` with compact logging.
-- **Config cleaner utility** (2025-12-11) — `TRAINING/utils/config_cleaner.py` for systematic parameter validation using `inspect.signature()`. Prevents parameter passing errors across all model constructors.
-- **Reproducibility tracking module** (2025-12-11) — Reusable `ReproducibilityTracker` class with tolerance-based verification and three-tier classification (STABLE/DRIFTING/DIVERGED).
-- **CLI/Config separation** (2025-12-11) — Policy document and enforcement. CLI only provides inputs, config overrides, operational flags. All settings from config files.
-- **Intelligent training config section** (2025-12-11) — Added `intelligent_training` section to `pipeline_config.yaml` with all settings configurable via YAML.
-- **Feature Importance Stability Tracking** (2025-12-10) — Automatic snapshot capture and config-driven automation for feature importance stability analysis.
-- **Observability improvements** (2025-12-10) — Enhanced logging for auto-fixer, config loading, defaults injection.
-- **Target confidence & routing system** — Automatic quality assessment with configurable thresholds
-- **Cross-sectional feature ranking** — Optional panel model for universe-level feature importance
-- **Modular configuration system** — Typed schemas, experiment configs, validation
-- **Leakage Safety Suite** — Production-grade backup system, automated detection and auto-fix
+- **Reproducibility Tracking System**
+  - Reusable `ReproducibilityTracker` with tolerance-based comparisons and STABLE/DRIFTING/DIVERGED classification.
+  - Per-model reproducibility metrics in feature selection (delta_score, Jaccard@K, importance_corr) stored in `model_metadata.json`.
+
+- **Config & Safety Utilities**
+  - `TRAINING/utils/config_cleaner.py` – shared parameter sanitization / validation for all model constructors.
+  - Config sections for intelligent training, safety, and logging (e.g. `intelligent_training`, `safety.reproducibility`, logging profiles).
+  - Target confidence & routing system (core / candidate / experimental) with configurable thresholds.
+  - Production-grade Leakage Safety Suite: backup system, auto-fixer, sentinels, feature/target schema, safety configs.
+
+- **Configuration & Observability**
+  - Modular configuration system with typed schemas, experiment configs, and validation.
+  - Structured logging config (`logging_config.yaml`) with profiles (default, debug_run, quiet) and backend verbosity control.
+
+---
 
 ### Fixed
 
-- **Interval detection** (2025-12-11) — Added median-based gap filtering (>10x median), fixed mode (`interval_detection.mode=fixed`), downgraded warnings to INFO. Eliminates false warnings on clean data.
-- **Model parameter validation** (2025-12-11) — Fixed MLPRegressor `verbose=-1`, CatBoost iteration synonyms conflict, CatBoost `random_state`/`random_seed` conflict, univariate selection signed F-statistics handling. All via `config_cleaner.py` utility.
-- **Leakage detection** (2025-12-11) — **CRITICAL**: Fixed confidence calculation bug (was using raw importance as confidence). Enhanced to compute importances on-the-fly when missing. Improved diagnostics and logging.
-- **Reproducibility tracking** (2025-12-11) — Moved to computation modules, added three-tier classification (STABLE/DRIFTING/DIVERGED), module-specific directories, improved error handling. Added per-symbol debug logging.
-- **Cross-sectional sampling** (2025-12-11) — **CRITICAL**: Fixed `max_cs_samples` filtering bug causing excessive memory usage.
-- **Config parameter passing** (2025-12-11) — Fixed missing config values not passed to ranking pipeline.
-- **Auto-fixer** (2025-12-11) — Fixed logging format error, backup creation bug, training accuracy detection bug.
-- **Silent errors** (2025-12-11) — Added comprehensive logging to all previously silent failure paths.
-- **Parameter passing errors** (2025-12-11) — Systematic fix prevents "got multiple values" and "unexpected keyword argument" errors across all model families.
-- **Config & code quality** (2025-12-10) — Fixed config loading, YAML None handling, 194 F821 errors, missing imports, syntax errors.
+- **Time & Interval Handling**
+  - Median-based gap filtering and fixed-interval mode to eliminate false "unclear interval" warnings and negative delta issues.
+
+- **Parameter Passing & Validation**
+  - Systematic fix for duplicated / incompatible params across all model families (MLPRegressor, CatBoost, RandomForest, Lasso, etc.).
+  - Resolved CatBoost iteration synonyms (`iterations` vs `n_estimators`/`num_trees`) and RNG param conflicts (`random_seed` vs `random_state`).
+
+- **Leakage Detection & Auto-Fixer**
+  - Critical fix to confidence calculation (no longer using raw importance as confidence).
+  - On-the-fly importance computation when upstream importances are missing.
+  - Fixed auto-fixer logging format errors and improved visibility into detection inputs and decisions.
+
+- **Reproducibility & Sampling**
+  - Corrected reproducibility log discovery across timestamped output directories and added module-specific log locations.
+  - Fixed `max_cs_samples` filtering so cross-sectional sampling respects config and avoids unnecessary memory blowups.
+
+- **Config & Code Quality**
+  - Hardened config loading (`inject_defaults`, YAML `None` handling) and eliminated silent fallback paths with new logging.
+  - Resolved missing imports / F821 errors and minor syntax issues uncovered by linting.
+
+---
 
 ### Changed
 
-- **Reproducibility settings** (2025-12-10) — Removed 30+ hardcoded `random_state: 42` values. All now use centralized determinism system.
-- **Config cleanup** (2025-12-10) — Removed ~35+ duplicate default values. All now auto-injected from `defaults.yaml`.
-- **Internal documentation** (2025-12-10) — Moved all internal docs to `INTERNAL_DOCS/` (never tracked). Cleaned up `CONFIG/` directory by removing internal audit/verification docs.
-- **Config loading patterns** (2025-12-10) — All function parameters now load from config instead of hardcoded defaults
-- **Logging system** — Replaced hardcoded flags with structured YAML configuration
+- **Determinism & Defaults**
+  - Removed hardcoded `random_state` and similar defaults; all now provided via the central determinism system and config.
+  - Cleaned duplicated default values; shared defaults now injected from a single location.
+
+- **Logging**
+  - Replaced scattered logging flags with structured YAML-driven configuration.
+  - Reduced unnecessary WARNING noise in interval detection and reproducibility tracking; meaningful issues remain surfaced.
+
+- **Docs & Legal**
+  - Documentation restructured into a 4-tier hierarchy with better navigation and cross-linking.
+  - Legal/commercial docs expanded and updated (compliance, license enforcement, pricing, corporate details).
 
 ---
 
 ### Security
 
-- Enhanced compliance documentation for production use
-- License enforcement procedures documented
-- Copyright notice requirements standardized
+- Enhanced compliance and production-use documentation.
+- Documented license enforcement procedures and copyright notice requirements.
 
 ### Documentation
 
-- Documentation restructured into 4-tier hierarchy
-- 55+ new documentation files created, 50+ existing files rewritten
-- Comprehensive cross-linking and navigation improvements
+- 4-tier documentation hierarchy established.
+- 50+ existing docs rewritten; 50+ new docs added.
+- Cross-linking and indices improved for discoverability.
 
 ---
 
 ## Versioning
 
 Releases follow [Semantic Versioning](https://semver.org/):
-- **MAJOR** version for incompatible API changes
-- **MINOR** version for functionality added in a backwards-compatible manner
-- **PATCH** version for backwards-compatible bug fixes
+
+- **MAJOR** – Incompatible API changes
+- **MINOR** – Backwards-compatible functionality
+- **PATCH** – Backwards-compatible bug fixes
 
 ## Categories
 
-- **Added** – New features
-- **Changed** – Changes in existing functionality
-- **Fixed** – Bug fixes
-- **Security** – Security improvements
+- **Added** – New features  
+- **Changed** – Changes in existing functionality  
+- **Fixed** – Bug fixes  
+- **Security** – Security / compliance improvements  
 - **Documentation** – Documentation changes

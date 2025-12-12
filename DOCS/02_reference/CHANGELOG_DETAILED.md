@@ -6,6 +6,32 @@ This document provides comprehensive change details for FoxML Core. For a quick 
 
 ---
 
+## Table of Contents
+
+### 2025-12-11 Changes
+- **[Per-Model Reproducibility Tracking](#per-model-reproducibility-tracking-2025-12-11)** – Feature selection per-model metrics and tracking
+- **[Model Parameter Sanitization System](#model-parameter-sanitization-system-2025-12-11)** – Config cleaner utility and parameter validation fixes
+- **[Interval Detection Improvements](#interval-detection-improvements-2025-12-11)** – Gap filtering, fixed mode, warning noise reduction
+- **[Leakage Detection Critical Bug Fixes](#leakage-detection-critical-bug-fixes-2025-12-11)** – Confidence calculation fix, on-the-fly importance computation, diagnostics
+- **[Reproducibility Tracking Tolerance Bands & Enhancements](#reproducibility-tracking-tolerance-bands--enhancements-2025-12-11)** – STABLE/DRIFTING/DIVERGED classification, error handling, directory structure
+- **[Reproducibility Tracking & Auto-Fixer Fixes](#reproducibility-tracking--auto-fixer-fixes-2025-12-11)** – Directory structure, logging format errors
+- **[Cross-Sectional Sampling & Config Parameter Fixes](#cross-sectional-sampling--config-parameter-fixes-2025-12-11)** – max_cs_samples bug, config parameter passing
+- **[Config Parameter Validation & Silent Error Visibility](#config-parameter-validation--silent-error-visibility-2025-12-11)** – SST compliance, error logging improvements
+
+### 2025-12-10 Changes
+- **[SST Enforcement & Configuration Hardening](#sst-enforcement--configuration-hardening-2025-12-10)** – Config centralization across all trainers
+- **[Complete Single Source of Truth (SST) Implementation](#complete-single-source-of-truth-sst-implementation-2025-12-10)** – All hardcoded values replaced with config loading
+- **[Feature Selection Pipeline Fixes](#feature-selection-pipeline-fixes)** – Boruta fixes, interval detection, config hardcoded values
+- **[Configuration & Logging](#configuration--logging)** – Logging config, method name fixes, logger initialization
+
+### Other Sections
+- **[Intelligent Training & Ranking](#intelligent-training--ranking)** – Target ranking, feature selection, cross-sectional ranking
+- **[Leakage Safety Suite](#leakage-safety-suite)** – Auto-fixer, backup system, schema validation
+- **[Documentation & Legal](#documentation--legal)** – 4-tier hierarchy, legal docs, compliance
+- **[Commercial](#commercial)** – License updates, pricing, enterprise features
+
+---
+
 ## [Unreleased]
 
 ### Status
