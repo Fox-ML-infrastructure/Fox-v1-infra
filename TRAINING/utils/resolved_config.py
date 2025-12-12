@@ -232,16 +232,44 @@ def compute_feature_lookback_max(
         # Fallback: pattern matching for common patterns
         if lag_bars is None:
             import re
-            # ret_N, sma_N, ema_N, rsi_N, etc.
-            match = re.match(r'^(ret|sma|ema|rsi|macd|bb|atr|adx|mom|vol|std|var)_(\d+)', feat_name)
-            if match:
-                lag_bars = int(match.group(2))
-            # Check for multi-day patterns (mom_3d, monthly_seasonality, etc.)
-            elif re.search(r'_(\d+)d', feat_name):
-                days_match = re.search(r'_(\d+)d', feat_name)
+            # CRITICAL: Check for time-based patterns FIRST (before bar-based patterns)
+            # These are the "ghost features" that cause 1440m lookback
+            
+            # Daily/24h patterns (1 day = 1440 minutes) - CHECK FIRST to catch "ghost features"
+            # These patterns indicate 24-hour/1-day lookback windows
+            # CRITICAL: Check for 1440 (exact 24h) anywhere in name - this is the "ghost feature" pattern
+            # Pattern: _1d, _24h, daily_*, _1440m, or 1440 (not followed by digit) anywhere
+            if (re.search(r'_1d$|_1D$|_24h$|_24H$|^daily_|_daily$|_1440m|1440(?!\d)|rolling.*daily|daily.*high|daily.*low', feat_name, re.I) or
+                re.search(r'volatility.*day|vol.*day|volume.*day', feat_name, re.I)):
+                # 1 day = 1440 minutes (exact match for the "ghost feature")
+                # Convert to bars based on interval
+                if interval_minutes > 0:
+                    lag_bars = int(1440 / interval_minutes)  # 1 day in bars
+                else:
+                    lag_bars = 288  # Fallback: assume 5m bars (1440 / 5 = 288)
+            # Hour-based patterns (e.g., _12h, _24h)
+            elif re.search(r'_(\d+)h', feat_name, re.I):
+                hours_match = re.search(r'_(\d+)h', feat_name, re.I)
+                hours = int(hours_match.group(1))
+                # Convert hours to bars (assume 12 bars/hour for 5m data)
+                lag_bars = hours * 12
+            # Multi-day patterns (mom_3d, volatility_60d, etc.) - must be > 1 day
+            elif re.search(r'_(\d+)d', feat_name, re.I):
+                days_match = re.search(r'_(\d+)d', feat_name, re.I)
                 days = int(days_match.group(1))
                 # Convert days to bars (assume 288 bars/day for 5m data)
                 lag_bars = days * 288
+            # Minute-based patterns (e.g., _1440m, _720m)
+            elif re.search(r'_(\d+)m$', feat_name, re.I):
+                minutes_match = re.search(r'_(\d+)m$', feat_name, re.I)
+                minutes = int(minutes_match.group(1))
+                # Convert minutes to bars
+                lag_bars = int(minutes / interval_minutes) if interval_minutes > 0 else minutes // 5
+            # Bar-based patterns (ret_N, sma_N, ema_N, rsi_N, etc.)
+            elif re.match(r'^(ret|sma|ema|rsi|macd|bb|atr|adx|mom|vol|std|var)_(\d+)', feat_name):
+                match = re.match(r'^(ret|sma|ema|rsi|macd|bb|atr|adx|mom|vol|std|var)_(\d+)', feat_name)
+                lag_bars = int(match.group(2))
+            # Calendar features (monthly, quarterly, yearly)
             elif re.search(r'monthly|quarterly|yearly', feat_name, re.I):
                 # Calendar features - assume 1 month = 30 days
                 lag_bars = 30 * 288  # Very long lookback

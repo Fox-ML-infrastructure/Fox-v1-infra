@@ -19,6 +19,15 @@ always_exclude:
   - ^mfe_\d+m_
   - ^mdd_\d+m_
   - ^barrier_
+  # Daily/24h features that require 1440m lookback (exclude to prevent rolling window leakage)
+  - .*_1d$
+  - .*_24h$
+  - ^daily_.*
+  - .*_daily$
+  - .*1440(?!\d)  # 1440 not followed by digit (catches rolling_max_1440, feature_1440, etc.)
+  - .*volatility.*day
+  - .*vol.*day
+  - .*volume.*day
   prefix_patterns:
   - barrier_
   - excursion_
