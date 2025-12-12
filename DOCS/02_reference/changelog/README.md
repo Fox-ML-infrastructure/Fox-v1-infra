@@ -1,0 +1,23 @@
+# Changelog Index
+
+This directory contains detailed per-day changelogs for FoxML Core. For the lightweight root changelog, see [CHANGELOG.md](../../../../CHANGELOG.md).
+
+## 2025
+
+### December
+
+- **2025-12-11** — Reproducibility Tracking, Leakage Fixes, Interval Detection, Param Sanitization  
+  → [View](2025-12-11.md)
+
+- **2025-12-10** — SST Enforcement, Determinism System, Config Centralization  
+  → [View](2025-12-10.md)
+
+- **General** — Intelligent Training Framework, Leakage Safety Suite, Configuration System, Documentation  
+  → [View](general.md)
+
+---
+
+## Navigation
+
+- [Root Changelog](../../../../CHANGELOG.md) - Executive summary
+- [Documentation Index](../../INDEX.md) - Complete documentation navigation

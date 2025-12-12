@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 **For detailed technical changes:**
-- [Detailed Changelog](DOCS/02_reference/CHANGELOG_DETAILED.md) – Comprehensive change details with file paths, config keys, and implementation notes.
+- [Changelog Index](DOCS/02_reference/changelog/README.md) – Per-day detailed changelogs with file paths, config keys, and implementation notes.
 
 ---
 
