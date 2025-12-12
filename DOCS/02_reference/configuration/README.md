@@ -15,7 +15,12 @@ Centralized configuration management for FoxML Core training pipeline, model fam
 
 ## Overview
 
-The configuration system provides a **complete Single Source of Truth (SST)** for all training parameters, system settings, model hyperparameters, feature management, and safety controls. **As of 2025-12-10, ALL hardcoded configuration values have been removed from the TRAINING pipeline.** All 52+ model trainers and specialized models now load hyperparameters, test splits, and random seeds from centralized config files, ensuring complete reproducibility: same config → same results across all pipeline stages.
+The configuration system provides a **complete Single Source of Truth (SST)** for all training parameters, system settings, model hyperparameters, feature management, and safety controls. **As of 2025-12-12, ALL hardcoded configuration values have been removed from the TRAINING pipeline**, including decision policy thresholds, stability analysis parameters, and temporal safety defaults. All 52+ model trainers and specialized models now load hyperparameters, test splits, and random seeds from centralized config files, ensuring complete reproducibility: same config → same results across all pipeline stages.
+
+**NEW (2025-12-12)**: Decision-making and stability analysis thresholds are now fully config-driven:
+- **Decision Policies** (`decision_policies.yaml`): All thresholds for feature instability, route instability, feature explosion decline, and class balance drift
+- **Stability Analysis** (`stability_config.yaml`): Importance difference thresholds for stability analysis
+- **Temporal Safety** (`safety_config.yaml`): Default purge minutes and temporal safety parameters
 
 All configurations are stored as YAML files and loaded programmatically via `config_loader.py`.
 

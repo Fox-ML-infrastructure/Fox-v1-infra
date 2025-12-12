@@ -313,6 +313,106 @@ sequential:
 
 ---
 
+### `training_config/decision_policies.yaml` ⭐ NEW (2025-12-12)
+
+**Purpose:** Decision policy thresholds for automated decision-making system.
+
+**When to use:** When adjusting thresholds for feature instability, route instability, feature explosion decline, or class balance drift detection.
+
+**Key Settings:**
+- Feature instability thresholds (jaccard similarity)
+- Route instability thresholds (entropy, change frequency)
+- Feature explosion decline thresholds (AUC decline, feature increase)
+- Class balance drift thresholds (pos_rate drift)
+
+**Example: Adjusting Feature Instability Thresholds**
+
+```yaml
+feature_instability:
+  jaccard_threshold: 0.5  # Trigger if jaccard_topK < 0.5
+  jaccard_collapse_ratio: 0.8  # Trigger if jaccard drops by 20%
+  min_runs: 3  # Minimum runs needed to evaluate
+  min_recent_runs: 2  # Minimum recent runs for comparison
+```
+
+**Example: Adjusting Route Instability Thresholds**
+
+```yaml
+route_instability:
+  entropy_threshold: 1.5  # Trigger if route_entropy > 1.5
+  change_threshold: 3  # Trigger if 3+ route changes in last N runs
+  change_window: 5  # Number of recent runs to check
+  min_runs: 3
+```
+
+**How It Works:**
+- Policies are evaluated after each run using historical cohort data
+- When thresholds are exceeded, actions are triggered (e.g., `freeze_features`, `tighten_routing`)
+- All thresholds are config-driven (SST: Single Source of Truth)
+- See [Decision Engine Documentation](../../../TRAINING/decisioning/README.md) for details
+
+---
+
+### `training_config/stability_config.yaml` ⭐ NEW (2025-12-12)
+
+**Purpose:** Stability analysis thresholds for feature importance comparison.
+
+**When to use:** When adjusting thresholds for detecting importance differences between full and safe feature sets.
+
+**Key Settings:**
+- Absolute difference threshold
+- Relative difference threshold
+- Minimum importance threshold
+- Top N features to analyze
+
+**Example: Adjusting Importance Difference Thresholds**
+
+```yaml
+importance_diff:
+  diff_threshold: 0.1  # Minimum absolute difference to flag
+  relative_diff_threshold: 0.5  # Minimum relative difference (50%) to flag
+  min_importance_full: 0.01  # Minimum importance in full set to consider
+  top_n: 10  # Number of top features to compare
+```
+
+**How It Works:**
+- Compares feature importance between models trained with all features vs safe features only
+- Flags features with high importance in full set but low in safe set (potential leaks)
+- All thresholds are config-driven (SST: Single Source of Truth)
+- Used by `ImportanceDiffDetector` in stability analysis
+
+---
+
+### `training_config/safety_config.yaml` (Updated 2025-12-12)
+
+**Purpose:** Safety and temporal configuration, including default purge/embargo settings.
+
+**When to use:** When adjusting safety thresholds, temporal safety, or default purge minutes.
+
+**Key Settings:**
+- Feature clipping thresholds
+- Target capping settings
+- Numerical stability bounds
+- Gradient clipping
+- **Temporal safety** (NEW):
+  - `temporal.default_purge_minutes: 85.0` - Default purge if horizon cannot be determined (SST)
+
+**Example: Adjusting Default Purge Minutes**
+
+```yaml
+safety:
+  temporal:
+    default_purge_minutes: 85.0  # Default purge if horizon cannot be determined
+    purge_include_feature_lookback: true  # Include feature lookback in purge calculation
+```
+
+**How It Works:**
+- `default_purge_minutes` is used when horizon cannot be determined from data
+- All temporal safety parameters are config-driven (SST: Single Source of Truth)
+- Used by `derive_purge_embargo()` in `resolved_config.py`
+
+---
+
 ## Common Scenarios
 
 ### Scenario 1: Configuring for Multi-GPU Setup

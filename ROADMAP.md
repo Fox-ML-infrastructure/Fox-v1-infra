@@ -28,7 +28,9 @@ FoxML Core is maintained with an **enterprise reliability mindset**:
 * ✅ **Full TRAINING Pipeline** — Complete one-command workflow: target ranking → feature selection → training plan generation → model training
 * ✅ **Training Routing & Planning System** — Config-driven routing decisions, automatic training plan generation, 2-stage training pipeline (CPU → GPU), plan-aware filtering
 * ✅ **GPU-Accelerated Model Training** — Train all 20 model families (LightGBM, XGBoost, MLP, LSTM, Transformer, CNN1D, etc.) with GPU acceleration where available
-* ✅ **Centralized YAML Configuration** — Complete Single Source of Truth (SST) system with structured configs for experiments, model families, and system parameters
+* ✅ **Centralized YAML Configuration** — Complete Single Source of Truth (SST) system with structured configs for experiments, model families, system parameters, **decision policies, and stability analysis** (NEW 2025-12-12)
+* ✅ **Decision-Making System** — Automated decision policies with configurable thresholds for feature instability, route instability, feature explosion decline, and class balance drift (NEW 2025-12-12)
+* ✅ **Bayesian Patch Policy** — Thompson sampling over discrete patch templates for adaptive config tuning (NEW 2025-12-12)
 * ✅ **Reproducibility Tracking** — End-to-end reproducibility tracking with STABLE/DRIFTING/DIVERGED classification across ranking, feature selection, and training
 * ✅ **Leakage Detection & Auto-Fix** — Pre-training leak detection with automatic feature exclusion and comprehensive diagnostics
 * ✅ **Complete Documentation & Legal** — Full 4-tier docs hierarchy + enterprise legal package for commercial evaluation
@@ -49,7 +51,7 @@ FoxML Core is maintained with an **enterprise reliability mindset**:
   - Training plan auto-detection and filtering
   - See [Training Routing Guide](DOCS/02_reference/training_routing/README.md)
 
-* **Single Source of Truth (SST) & Determinism** ✅ (2025-12-10) — Complete config centralization for TRAINING; SST enforcement test; all hyperparameters and seeds load from YAML; centralized determinism system. 30+ hardcoded `random_state` and defaults removed.
+* **Single Source of Truth (SST) & Determinism** ✅ (2025-12-12) — Complete config centralization for TRAINING; SST enforcement test; all hyperparameters and seeds load from YAML; centralized determinism system. **NEW (2025-12-12)**: Decision-making and stability analysis thresholds are now fully config-driven. All 30+ hardcoded `random_state` and defaults removed, plus all decision policy thresholds, stability analysis parameters, and temporal safety defaults now load from config files (`decision_policies.yaml`, `stability_config.yaml`, `safety_config.yaml`).
 
 * **Reproducibility Tracking** ✅ (2025-12-11) — End-to-end reproducibility tracking across ranking, feature selection, and training with per-model metrics and three-tier classification (STABLE/DRIFTING/DIVERGED). Module-specific logs and cross-run comparison.
 

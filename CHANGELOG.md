@@ -14,6 +14,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Highlights
 
+- **Complete Config-Driven Decision System** (2025-12-12) – **NEW**: All decision-making and stability analysis thresholds are now fully config-driven:
+  - **Decision Policies Config** (`decision_policies.yaml`): All thresholds for feature instability, route instability, feature explosion decline, and class balance drift are now configurable. Previously hardcoded values (jaccard_threshold: 0.5, route_entropy_threshold: 1.5, etc.) now load from config.
+  - **Stability Config** (`stability_config.yaml`): Importance difference thresholds (diff_threshold, relative_diff_threshold, min_importance_full) are now configurable.
+  - **Temporal Safety Config** (`safety_config.yaml`): Added `temporal.default_purge_minutes: 85.0` to config (previously hardcoded).
+  - **SST Compliance**: All runtime parameters in decision-making and stability analysis now come from config files. No hardcoded thresholds remain in `TRAINING/decisioning/policies.py`, `TRAINING/common/importance_diff_detector.py`, or `TRAINING/utils/resolved_config.py`.
+  - **Config Organization**: Created `CONFIG/UNUSED_CONFIG_FILES.md` documenting which config files are used vs unused. Identified 4 unused files safe to remove: `comprehensive_feature_ranking.yaml`, `fast_target_ranking.yaml`, `feature_groups.yaml`, `multi_model_feature_selection.yaml.deprecated`.
+  - See [Config Audit](CONFIG/CONFIG_AUDIT.md) and [Unused Config Files](CONFIG/UNUSED_CONFIG_FILES.md) for details.
+
+---
+
 - **Critical Horizon Unit Fix & Versioned Labels** (2025-12-12) – **FIXED**: Critical bug in barrier target generation where `horizon_minutes` was incorrectly used as `horizon_bars`:
   - **Root cause**: Target computation functions used `horizon_minutes` directly in array slicing (e.g., `prices.iloc[i+1:i+horizon_minutes+1]`), causing incorrect lookahead windows. For 60m horizon on 5m data, old code used 60 bars instead of 12 bars (5x error).
   - **Fix**: All target functions now convert `horizon_minutes` to `horizon_bars` using `interval_minutes` before any array indexing. Added `interval_minutes` parameter to all `compute_*_targets` and `add_*_targets_to_dataframe` functions.
