@@ -34,15 +34,37 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+    # Time contract metadata
+TIME_CONTRACT = {
+    "decision_time": "bar_close",  # Prediction happens at bar close
+    "label_starts_at": "t+1",  # Label window starts at bar t+1 (never includes bar t)
+    "prices": "unknown"  # Price adjustment status (unknown/unadjusted/adjusted)
+}
+
+# Import time contract utilities
+try:
+    from DATA_PROCESSING.targets.time_contract import TimeContract, enforce_t_plus_one_boundary
+except ImportError:
+    # Fallback if time_contract module not available
+    TimeContract = None
+    enforce_t_plus_one_boundary = None
+
 def compute_barrier_targets(
     prices: pd.Series, 
     horizon_minutes: int = 15,
     barrier_size: float = 0.5,  # k * sigma
     vol_window: int = 20,
-    min_touch_prob: float = 0.15
+    min_touch_prob: float = 0.15,
+    interval_minutes: Optional[float] = None
 ) -> pd.DataFrame:
     """
     Compute barrier (first-touch) labels for will_peak/will_valley prediction.
+    
+    TIME CONTRACT:
+    - Features are known at bar close `t`
+    - Prediction happens at `t`
+    - Label starts at `t+1` (never includes bar `t`)
+    - Label window: bars [t+1, t+horizon_bars+1)
     
     Args:
         prices: Price series (mid or close)
@@ -50,6 +72,7 @@ def compute_barrier_targets(
         barrier_size: Barrier size as multiple of volatility (k * sigma)
         vol_window: Window for volatility estimation
         min_touch_prob: Minimum probability of touch for positive class
+        interval_minutes: Bar interval in minutes (for metadata)
         
     Returns:
         DataFrame with columns:
@@ -81,8 +104,10 @@ def compute_barrier_targets(
         
         if pd.isna(current_vol) or current_vol == 0:
             continue
-            
-        # Future path
+        
+        # TIME CONTRACT: Label starts at t+1 (never includes bar t)
+        # Future path: bars [i+1, i+horizon_minutes+1) = [t+1, t+horizon_minutes+1)
+        # This ensures the label at bar t is based on future bars starting at t+1
         future_prices = prices.iloc[i+1:i+horizon_minutes+1]
         
         if len(future_prices) < horizon_minutes:
@@ -157,6 +182,7 @@ def compute_zigzag_targets(
         if i + horizon_minutes >= len(prices):
             break
             
+        # TIME CONTRACT: Label starts at t+1 (never includes bar t)
         # Check if there will be a swing high/low in the future
         future_prices = prices.iloc[i+1:i+horizon_minutes+1]
         
@@ -251,6 +277,7 @@ def compute_mfe_mdd_targets(
         if i + horizon_minutes >= len(prices):
             break
             
+        # TIME CONTRACT: Label starts at t+1 (never includes bar t)
         current_price = prices.iloc[i]
         future_prices = prices.iloc[i+1:i+horizon_minutes+1]
         
@@ -550,6 +577,7 @@ def compute_path_quality(
         if i + horizon_minutes >= len(prices):
             break
             
+        # TIME CONTRACT: Label starts at t+1 (never includes bar t)
         current_price = prices.iloc[i]
         future_prices = prices.iloc[i+1:i+horizon_minutes+1]
         

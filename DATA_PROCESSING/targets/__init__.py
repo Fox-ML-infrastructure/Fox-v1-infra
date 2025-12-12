@@ -42,6 +42,11 @@ from .excess_returns import (
 __all__ = [
     # Barrier targets
     "compute_barrier_targets",
+    
+    # Time contract
+    "TimeContract",
+    "enforce_t_plus_one_boundary",
+    "validate_feature_as_of_safety",
     "add_barrier_targets_to_dataframe",
     "add_zigzag_targets_to_dataframe",
     "add_mfe_mdd_targets_to_dataframe",

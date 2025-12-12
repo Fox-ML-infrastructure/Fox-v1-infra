@@ -51,6 +51,11 @@ class ResolvedConfig:
     view: str = "CROSS_SECTIONAL"
     symbol: Optional[str] = None
     
+    # Time contract metadata (for reproducibility and validation)
+    decision_time: str = "bar_close"  # When prediction happens
+    label_starts_at: str = "t+1"  # When label window starts (t+1 = never includes bar t)
+    prices: str = "unknown"  # Price adjustment: unknown/unadjusted/adjusted
+    
     def __post_init__(self):
         """Compute derived values after initialization."""
         # Compute effective_min_cs if not set
