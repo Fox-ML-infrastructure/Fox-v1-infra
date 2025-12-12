@@ -18,6 +18,9 @@ Phase 1 functioning properly - Ranking and selection pipelines unified with cons
 
 ### Highlights
 
+- **Per-Model Reproducibility Tracking** (2025-12-11) — Added structured, thresholded per-model reproducibility tracking to feature selection. Computes delta_score, Jaccard@K, and importance_corr for each model family. Stores results in `model_metadata.json` for audit trails. Compact logging: stable models = one line (INFO), unstable = WARNING. Symbol-level summary shows reproducibility status across all families.
+- **Model Parameter Sanitization System** (2025-12-11) — Created shared `config_cleaner.py` utility to systematically prevent parameter passing errors. Fixed MLPRegressor `verbose=-1`, CatBoost iteration synonyms conflict, CatBoost `random_state`/`random_seed` conflict, univariate selection signed F-statistics handling.
+- **Interval Detection Improvements** (2025-12-11) — Added median-based gap filtering, fixed interval mode (`interval_detection.mode=fixed`), downgraded warnings to INFO level. Eliminates false warnings on clean 5m data.
 - **SST Enforcement System** (2025-12-10) — Automated test enforces Single Source of Truth. All hardcoded hyperparameters eliminated or properly marked. Training profiles added for batch_size. Top 10% importance patterns now configurable.
 - Phase 1 intelligent training framework completed and functioning properly
 - Ranking & selection pipelines unified (interval handling, preprocessing, CatBoost)
@@ -30,6 +33,99 @@ Phase 1 functioning properly - Ranking and selection pipelines unified with cons
 ---
 
 ### Added
+
+#### Per-Model Reproducibility Tracking (2025-12-11)
+
+**Feature Selection Per-Model Tracking**
+- **Enhancement**: Added structured, thresholded per-model reproducibility tracking to feature selection
+- **Metrics**: Computes delta_score, Jaccard@K, and importance_corr for each model family
+- **Storage**: Results stored in `model_metadata.json` for audit trails
+- **Logging**: Compact logging approach - stable models = one line (INFO), unstable = WARNING
+- **Summary**: Symbol-level summary shows reproducibility status across all families
+- **Thresholds**: Different thresholds for high-variance vs stable model families
+- **Non-spammy**: Only logs when it matters (unstable/borderline)
+- **Files**: 
+  - `TRAINING/ranking/multi_model_feature_selection.py` - Added `compute_per_model_reproducibility()`, `load_previous_model_results()`, `save_model_metadata()`
+  - Integrated into `_process_single_symbol()` with compact logging
+
+#### Model Parameter Sanitization System (2025-12-11)
+
+**Config Cleaner Utility**
+- **New Module**: `TRAINING/utils/config_cleaner.py` - Shared utility for systematic parameter validation
+- **Method**: Uses `inspect.signature()` to validate parameters against actual estimator signatures
+- **Features**: 
+  - Automatically removes duplicate and unknown parameters
+  - Prevents "got multiple values for keyword argument" errors
+  - Prevents "unexpected keyword argument" errors
+  - Special handling for known parameter conflicts (MLPRegressor, CatBoost, etc.)
+- **Integration**: Integrated into all model instantiation paths (multi-model feature selection, task types, cross-sectional ranking)
+- **SST Compliance**: Maintains Single Source of Truth while ensuring only valid parameters reach constructors
+- **Files**: 
+  - `TRAINING/utils/config_cleaner.py` - New module
+  - `TRAINING/ranking/multi_model_feature_selection.py` - Integrated config cleaning
+  - `DOCS/02_reference/configuration/CONFIG_CLEANER_API.md` - Comprehensive documentation
+
+**MLPRegressor Verbose Parameter Fix**
+- **Issue**: `verbose=-1` was being passed to MLPRegressor, but sklearn requires `verbose >= 0`
+- **Impact**: `ValueError: The 'verbose' parameter of MLPRegressor must be an int in the range [0, inf)`
+- **Fix**: Added sanitization in `config_cleaner.py` that converts negative verbose values to `0` for neural_network family
+- **Files**: `TRAINING/utils/config_cleaner.py`
+
+**CatBoost Iteration Synonyms Conflict Fix**
+- **Issue**: `CatBoostError: only one of the parameters iterations, n_estimators, num_boost_round, num_trees should be initialized`
+- **Root Cause**: Global defaults injection was adding `n_estimators: 1000` while config already had `iterations: 300`
+- **Fix**: 
+  - Added aggressive sanitization in `multi_model_feature_selection.py` that removes all synonyms before model construction
+  - Prefers `iterations` (CatBoost's native param)
+  - Double-check after `_clean_config_for_estimator` ensures no synonyms remain
+  - Also added sanitization in `config_cleaner.py` for global application
+- **Files**: 
+  - `TRAINING/utils/config_cleaner.py` - Global sanitization
+  - `TRAINING/ranking/multi_model_feature_selection.py` - Aggressive removal before model construction
+
+**CatBoost Random State/Random Seed Conflict Fix**
+- **Issue**: `CatBoostError: only one of the parameters random_seed, random_state should be initialized`
+- **Root Cause**: CatBoost accepts only one RNG parameter, but both were being passed
+- **Fix**: Added sanitization in `config_cleaner.py` that:
+  - Converts `random_state` to `random_seed` (CatBoost's preferred name)
+  - Or removes it if `random_seed` is already in extra_kwargs
+  - Prevents conflicts from defaults injection
+- **Files**: `TRAINING/utils/config_cleaner.py`
+
+**Univariate Selection Signed F-Statistics Handling**
+- **Issue**: Negative F-statistics caused negative importance sums, triggering uniform fallback (no real signal)
+- **Impact**: Univariate selection was losing signal when scores were negative
+- **Fix**: 
+  - Modified to use absolute values for ranking
+  - Treats negative correlations as weaker but still informative
+  - Preserves signal instead of falling back to uniform distribution
+  - Logs when negative scores are detected for debugging
+  - Also fixed `AssertionError: Importance sum should be positive` by adding multiple defensive fallback layers in `normalize_importance()`
+- **Files**: `TRAINING/ranking/multi_model_feature_selection.py`
+
+#### Interval Detection Improvements (2025-12-11)
+
+**Large Gap Filtering**
+- **Issue**: Large gaps (overnight/weekend, e.g., 270m, 1210m) were contaminating interval detection
+- **Impact**: False "unclear interval" warnings on clean 5m data
+- **Fix**: 
+  - Added median-based gap filtering that excludes gaps > 10x median
+  - Configurable via `pipeline.data_interval.max_gap_factor`
+  - Two-stage filtering: first removes gaps > 1 day, then removes gaps > 10x median
+  - Prevents 270m/1210m gaps from contaminating detection when base cadence is 5m
+- **Files**: `TRAINING/utils/data_interval.py`
+
+**Fixed Interval Mode**
+- **Enhancement**: Added `interval_detection.mode=fixed` config option to skip auto-detection entirely when interval is known
+- **Usage**: When `mode=fixed`, uses `data.bar_interval` directly without auto-detection
+- **Benefit**: Eliminates all warnings for known intervals
+- **Files**: `TRAINING/utils/data_interval.py`
+
+**Warning Noise Reduction**
+- **Enhancement**: Downgraded "unclear interval" warnings from WARNING to INFO level
+- **Rationale**: These messages are expected when large gaps are filtered out and the default is being used correctly
+- **Result**: All interval detection messages now at INFO/DEBUG level (not WARNING)
+- **Files**: `TRAINING/utils/data_interval.py`
 
 #### Leakage Detection Critical Bug Fixes (2025-12-11)
 
