@@ -265,6 +265,118 @@ def _log_canonical_summary(
         logger.info(f"repro: {cohort_path}")
     logger.info("=" * 60)
 
+def _enforce_final_safety_gate(
+    X: np.ndarray,
+    feature_names: List[str],
+    resolved_config: Any,
+    interval_minutes: float,
+    logger: logging.Logger
+) -> Tuple[np.ndarray, List[str]]:
+    """
+    Final Gatekeeper: Enforce safety at the last possible moment.
+    
+    This runs AFTER all loading/merging/sanitization is done.
+    It physically drops features that violate the purge limit from the dataframe.
+    This is the "worry-free" auto-corrector that handles race conditions.
+    
+    Why this is needed:
+    - Schema loader might add features after sanitization
+    - Registry might allow features that violate purge
+    - Ghost features might slip through multiple layers
+    - This is the absolute last check before data touches the model
+    
+    Args:
+        X: Feature matrix (numpy array)
+        feature_names: List of feature names
+        resolved_config: ResolvedConfig object with purge_minutes
+        interval_minutes: Data interval in minutes
+        logger: Logger instance
+    
+    Returns:
+        (filtered_X, filtered_feature_names) tuple
+    """
+    if X is None or len(feature_names) == 0:
+        return X, feature_names
+    
+    purge_limit = resolved_config.purge_minutes if resolved_config else None
+    if purge_limit is None or purge_limit == 0:
+        # No purge, no rules - allow all features
+        return X, feature_names
+    
+    # Define maximum allowed lookback (with 1% safety buffer)
+    # If purge is 100m, max lookback is ~99m
+    safe_lookback_max = purge_limit * 0.99
+    
+    dropped_features = []
+    dropped_indices = []
+    
+    # Get feature registry for lookback calculation
+    registry = None
+    try:
+        from TRAINING.common.feature_registry import get_registry
+        registry = get_registry()
+    except Exception:
+        pass
+    
+    # Iterate through features in the FINAL dataframe
+    for idx, feature_name in enumerate(feature_names):
+        should_drop = False
+        reason = None
+        
+        # Check explicit 24h/daily naming (very aggressive)
+        is_daily_name = any(x in feature_name.lower() for x in ['_1d', '_24h', 'daily', 'day'])
+        
+        # Check calculated lookback
+        lookback_minutes = None
+        try:
+            from TRAINING.utils.target_conditional_exclusions import compute_feature_lookback_minutes
+            lookback_minutes = compute_feature_lookback_minutes(
+                feature_name,
+                interval_minutes=interval_minutes,
+                registry=registry
+            )
+        except Exception:
+            # Fallback: simple pattern matching
+            import re
+            # Check for bar-based patterns (sma_200 = 200 bars * 5m = 1000m)
+            bar_match = re.match(r'^(ret|sma|ema|rsi|macd|bb|atr|adx|mom|vol|std|var)_(\d+)', feature_name)
+            if bar_match:
+                bars = int(bar_match.group(2))
+                lookback_minutes = bars * interval_minutes
+        
+        # The Logic: If it violates the purge, KILL IT
+        if is_daily_name:
+            should_drop = True
+            reason = "daily/24h naming pattern"
+        elif lookback_minutes is not None and lookback_minutes > safe_lookback_max:
+            should_drop = True
+            reason = f"lookback ({lookback_minutes:.1f}m) > safe_limit ({safe_lookback_max:.1f}m)"
+        
+        if should_drop:
+            dropped_features.append((feature_name, reason))
+            dropped_indices.append(idx)
+    
+    # Mutate the Dataframe (drop columns)
+    if dropped_features:
+        logger.warning(
+            f"🛡️ FINAL GATEKEEPER: Dropping {len(dropped_features)} features that violate purge limit "
+            f"({purge_limit:.1f}m, safe_lookback_max={safe_lookback_max:.1f}m)"
+        )
+        for feat_name, feat_reason in dropped_features[:10]:  # Show first 10
+            logger.warning(f"   🗑️ {feat_name}: {feat_reason}")
+        if len(dropped_features) > 10:
+            logger.warning(f"   ... and {len(dropped_features) - 10} more")
+        
+        # Drop columns from X (numpy array)
+        keep_indices = [i for i in range(X.shape[1]) if i not in dropped_indices]
+        X = X[:, keep_indices]
+        feature_names = [name for idx, name in enumerate(feature_names) if idx not in dropped_indices]
+        
+        logger.info(f"   ✅ After final gatekeeper: {X.shape[1]} features remaining")
+    
+    return X, feature_names
+
+
 def train_and_evaluate_models(
     X: np.ndarray,
     y: np.ndarray,
@@ -2927,7 +3039,33 @@ def evaluate_target_predictability(
     # Log baseline config summary
     if log_cfg.cv_detail:
         resolved_config.log_summary(logger)
+
+    # FINAL GATEKEEPER: Enforce safety at the last possible moment
+    # This runs AFTER all loading/merging/sanitization is done
+    # It physically drops features that violate the purge limit from the dataframe
+    # This is the "worry-free" auto-corrector that handles race conditions
+    X, feature_names = _enforce_final_safety_gate(
+        X=X,
+        feature_names=feature_names,
+        resolved_config=resolved_config,
+        interval_minutes=detected_interval,
+        logger=logger
+    )
     
+    if X.shape[1] == 0:
+        logger.error("❌ FINAL GATEKEEPER: All features were dropped! Cannot train models.")
+        return TargetPredictabilityScore(
+            target_name=target_name,
+            target_column=target_column,
+            task_type=task_type,
+            mean_score=-999.0,
+            std_score=1.0,
+            mean_importance=0.0,
+            consistency=0.0,
+            n_models=0,
+            model_scores={}
+        )
+
     # Train and evaluate on cross-sectional data (single evaluation, not per-symbol)
     all_model_scores = []
     all_importances = []
