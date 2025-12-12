@@ -40,7 +40,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from DATA_PROCESSING.targets.barrier import (
+from DATA_PROCESSING.targets import (
     add_barrier_targets_to_dataframe,
     add_zigzag_targets_to_dataframe,
     add_mfe_mdd_targets_to_dataframe,
