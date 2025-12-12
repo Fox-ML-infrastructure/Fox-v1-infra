@@ -1056,6 +1056,22 @@ class ReproducibilityTracker:
             logger.warning(f"Failed to update index.parquet: {e}, error_type={error_type}")
             self._increment_error_counter("index_update_failures", error_type)
             # Don't re-raise - index update failure shouldn't break the run
+        
+        # Post-run decision hook: Evaluate and persist decisions
+        try:
+            from TRAINING.decisioning.decision_engine import DecisionEngine
+            repro_dir = self.output_dir.parent / "REPRODUCIBILITY"
+            index_file = repro_dir / "index.parquet"
+            if index_file.exists():
+                engine = DecisionEngine(index_file, apply_mode=False)  # Assist mode by default
+                decision_result = engine.evaluate(cohort_id, run_id_clean, segment_id=None)
+                engine.persist(decision_result, self.output_dir.parent)
+                # Store decision fields in index for easy querying
+                if decision_result.decision_level > 0:
+                    logger.info(f"📊 Decision: level={decision_result.decision_level}, actions={decision_result.decision_action_mask}, reasons={decision_result.decision_reason_codes}")
+        except Exception as e:
+            logger.debug(f"Decision evaluation failed (non-critical): {e}")
+            # Don't re-raise - decision evaluation is optional
     
     def _get_git_commit(self) -> Optional[str]:
         """Get current git commit hash."""

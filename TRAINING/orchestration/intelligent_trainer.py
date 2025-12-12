@@ -994,6 +994,7 @@ class IntelligentTrainer:
         top_n_targets: int = 5,
         auto_features: bool = False,
         top_m_features: int = 100,
+        decision_apply_mode: bool = False,  # NEW: Enable apply mode for decisions
         targets: Optional[List[str]] = None,
         features: Optional[List[str]] = None,
         families: Optional[List[str]] = None,
@@ -1024,7 +1025,50 @@ class IntelligentTrainer:
         """
         logger.info("🚀 Starting intelligent training pipeline")
         
-        # Extract data limits from train_kwargs (passed from main)
+        # Pre-run decision hook: Load latest decision and optionally apply to config
+        resolved_config_patch = {}
+        try:
+            from TRAINING.decisioning.decision_engine import DecisionEngine
+            from TRAINING.utils.cohort_metadata_extractor import extract_cohort_metadata
+            
+            # Try to extract cohort metadata early (for decision loading)
+            # This is approximate - actual cohort_id will be computed later
+            try:
+                cohort_metadata = extract_cohort_metadata(
+                    symbols=self.symbols,
+                    min_cs=train_kwargs.get('min_cs', 10),
+                    max_cs_samples=train_kwargs.get('max_cs_samples')
+                )
+                cohort_id = None
+                if cohort_metadata:
+                    # Compute approximate cohort_id (will be refined later)
+                    from TRAINING.utils.reproducibility_tracker import ReproducibilityTracker
+                    temp_tracker = ReproducibilityTracker(output_dir=self.output_dir)
+                    cohort_id = temp_tracker._compute_cohort_id(cohort_metadata, route_type=None)
+                
+                if cohort_id:
+                    repro_dir = self.output_dir.parent / "REPRODUCIBILITY"
+                    index_file = repro_dir / "index.parquet"
+                    if index_file.exists():
+                        engine = DecisionEngine(index_file, apply_mode=decision_apply_mode)
+                        latest_decision = engine.load_latest(cohort_id, base_dir=self.output_dir.parent)
+                        if latest_decision and latest_decision.decision_level >= 2 and decision_apply_mode:
+                            # Apply decision patch to config
+                            # Note: This modifies train_kwargs which will be used downstream
+                            patched_config, patch = engine.apply_patch(train_kwargs, latest_decision)
+                            resolved_config_patch = patch
+                            train_kwargs.update(patched_config)
+                            logger.info(f"🔧 Applied decision patch: {patch}")
+                            # Update config_hash to reflect patch
+                            import hashlib
+                            patch_hash = hashlib.sha256(json.dumps(patch, sort_keys=True).encode()).hexdigest()[:8]
+                            train_kwargs['decision_patch_hash'] = patch_hash
+            except Exception as e:
+                logger.debug(f"Pre-run decision loading failed (non-critical): {e}")
+        except ImportError:
+            logger.debug("Decision engine not available, skipping pre-run hook")
+        
+        # Extract data limits from train_kwargs (passed from main, potentially patched by decisions)
         min_cs = train_kwargs.get('min_cs', 10)
         max_cs_samples = train_kwargs.get('max_cs_samples')
         max_rows_per_symbol = train_kwargs.get('max_rows_per_symbol')
