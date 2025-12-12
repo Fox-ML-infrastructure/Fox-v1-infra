@@ -72,7 +72,7 @@ def compute_barrier_targets(
         barrier_size: Barrier size as multiple of volatility (k * sigma)
         vol_window: Window for volatility estimation
         min_touch_prob: Minimum probability of touch for positive class
-        interval_minutes: Bar interval in minutes (for metadata)
+        interval_minutes: Bar interval in minutes (REQUIRED for correct horizon conversion)
         
     Returns:
         DataFrame with columns:
@@ -85,6 +85,22 @@ def compute_barrier_targets(
         - barrier_down: Down barrier level
     """
     
+    # CRITICAL: Convert horizon_minutes to horizon_bars
+    if interval_minutes is None or interval_minutes <= 0:
+        raise ValueError(
+            f"interval_minutes must be provided and > 0. "
+            f"Got: {interval_minutes}. "
+            f"This is required to convert horizon_minutes ({horizon_minutes}) to bars."
+        )
+    
+    # Validate horizon is a multiple of interval
+    horizon_bars = int(horizon_minutes / interval_minutes)
+    if abs(horizon_bars * interval_minutes - horizon_minutes) > 0.01:  # Allow small floating point error
+        logger.warning(
+            f"⚠️  Horizon {horizon_minutes}m is not a multiple of interval {interval_minutes}m. "
+            f"Using {horizon_bars} bars = {horizon_bars * interval_minutes:.1f}m (requested {horizon_minutes}m)"
+        )
+    
     # Compute rolling volatility
     returns = prices.pct_change().dropna()
     vol = returns.rolling(window=vol_window, min_periods=5).std()
@@ -96,7 +112,7 @@ def compute_barrier_targets(
     results = []
     
     for i in range(len(prices)):
-        if i + horizon_minutes >= len(prices):
+        if i + horizon_bars >= len(prices):
             break
             
         current_price = prices.iloc[i]
@@ -106,12 +122,19 @@ def compute_barrier_targets(
             continue
         
         # TIME CONTRACT: Label starts at t+1 (never includes bar t)
-        # Future path: bars [i+1, i+horizon_minutes+1) = [t+1, t+horizon_minutes+1)
+        # Future path: bars [i+1, i+horizon_bars+1) = [t+1, t+horizon_bars+1)
         # This ensures the label at bar t is based on future bars starting at t+1
-        future_prices = prices.iloc[i+1:i+horizon_minutes+1]
+        # NOTE: Using current_price at bar t is allowed (known at decision time)
+        future_prices = prices.iloc[i+1:i+horizon_bars+1]
         
-        if len(future_prices) < horizon_minutes:
+        if len(future_prices) < horizon_bars:
             continue
+        
+        # Enforce t+1 boundary (runtime validation if enabled)
+        if enforce_t_plus_one_boundary is not None:
+            label_start_idx, label_end_idx = enforce_t_plus_one_boundary(i, horizon_bars, label_start_offset=1)
+            if label_start_idx != i + 1:
+                logger.error(f"⚠️  TIME CONTRACT VIOLATION at bar {i}: label_start_idx={label_start_idx}, expected {i+1}")
             
         up_barrier = current_price * (1 + barrier_size * current_vol)
         down_barrier = current_price * (1 - barrier_size * current_vol)
@@ -158,20 +181,32 @@ def compute_zigzag_targets(
     prices: pd.Series,
     horizon_minutes: int = 15,
     reversal_pct: float = 0.1,  # Minimum reversal percentage
-    min_swing_bars: int = 3
+    min_swing_bars: int = 3,
+    interval_minutes: Optional[float] = None
 ) -> pd.DataFrame:
     """
     Compute ZigZag-based swing targets for will_peak/will_valley prediction.
     
     Args:
         prices: Price series
-        horizon_minutes: Lookahead horizon
+        horizon_minutes: Lookahead horizon in minutes
         reversal_pct: Minimum reversal percentage for swing
         min_swing_bars: Minimum bars for a swing
+        interval_minutes: Bar interval in minutes (REQUIRED for correct horizon conversion)
         
     Returns:
         DataFrame with swing-based targets
     """
+    
+    # CRITICAL: Convert horizon_minutes to horizon_bars
+    if interval_minutes is None or interval_minutes <= 0:
+        raise ValueError(
+            f"interval_minutes must be provided and > 0. "
+            f"Got: {interval_minutes}. "
+            f"This is required to convert horizon_minutes ({horizon_minutes}) to bars."
+        )
+    
+    horizon_bars = int(horizon_minutes / interval_minutes)
     
     # Simple ZigZag implementation
     zigzag = compute_zigzag(prices, reversal_pct, min_swing_bars)
@@ -179,12 +214,12 @@ def compute_zigzag_targets(
     results = []
     
     for i in range(len(prices)):
-        if i + horizon_minutes >= len(prices):
+        if i + horizon_bars >= len(prices):
             break
             
         # TIME CONTRACT: Label starts at t+1 (never includes bar t)
         # Check if there will be a swing high/low in the future
-        future_prices = prices.iloc[i+1:i+horizon_minutes+1]
+        future_prices = prices.iloc[i+1:i+horizon_bars+1]
         
         if len(future_prices) < min_swing_bars:
             continue
@@ -256,32 +291,44 @@ def compute_mfe_mdd_targets(
     prices: pd.Series,
     horizon_minutes: int = 15,
     threshold_up: float = 0.002,  # 20 bps
-    threshold_down: float = -0.002
+    threshold_down: float = -0.002,
+    interval_minutes: Optional[float] = None
 ) -> pd.DataFrame:
     """
     Compute Max Future Excursion (MFE) and Max Drawdown (MDD) targets.
     
     Args:
         prices: Price series
-        horizon_minutes: Lookahead horizon
+        horizon_minutes: Lookahead horizon in minutes
         threshold_up: Threshold for will_peak
         threshold_down: Threshold for will_valley
+        interval_minutes: Bar interval in minutes (REQUIRED for correct horizon conversion)
         
     Returns:
         DataFrame with MFE/MDD targets
     """
     
+    # CRITICAL: Convert horizon_minutes to horizon_bars
+    if interval_minutes is None or interval_minutes <= 0:
+        raise ValueError(
+            f"interval_minutes must be provided and > 0. "
+            f"Got: {interval_minutes}. "
+            f"This is required to convert horizon_minutes ({horizon_minutes}) to bars."
+        )
+    
+    horizon_bars = int(horizon_minutes / interval_minutes)
+    
     results = []
     
     for i in range(len(prices)):
-        if i + horizon_minutes >= len(prices):
+        if i + horizon_bars >= len(prices):
             break
             
         # TIME CONTRACT: Label starts at t+1 (never includes bar t)
         current_price = prices.iloc[i]
-        future_prices = prices.iloc[i+1:i+horizon_minutes+1]
+        future_prices = prices.iloc[i+1:i+horizon_bars+1]
         
-        if len(future_prices) < horizon_minutes:
+        if len(future_prices) < horizon_bars:
             continue
             
         # Compute max/min returns
@@ -309,7 +356,8 @@ def add_barrier_targets_to_dataframe(
     price_col: str = 'close',
     horizons: list = [5, 10, 15, 30, 60],
     barrier_sizes: list = [0.3, 0.5, 0.8],
-    vol_window: int = 20
+    vol_window: int = 20,
+    interval_minutes: Optional[float] = None
 ) -> pd.DataFrame:
     """
     Add barrier targets to existing DataFrame.
@@ -320,10 +368,18 @@ def add_barrier_targets_to_dataframe(
         horizons: List of horizons in minutes
         barrier_sizes: List of barrier sizes (k * sigma)
         vol_window: Window for volatility estimation
+        interval_minutes: Bar interval in minutes (REQUIRED for correct horizon conversion)
         
     Returns:
         DataFrame with added target columns
     """
+    
+    if interval_minutes is None or interval_minutes <= 0:
+        raise ValueError(
+            f"interval_minutes must be provided and > 0. "
+            f"Got: {interval_minutes}. "
+            f"This is required to convert horizon_minutes to bars."
+        )
     
     result_df = df.copy()
     prices = df[price_col]
@@ -337,7 +393,8 @@ def add_barrier_targets_to_dataframe(
                 prices, 
                 horizon_minutes=horizon,
                 barrier_size=barrier_size,
-                vol_window=vol_window
+                vol_window=vol_window,
+                interval_minutes=interval_minutes
             )
             
             if len(barrier_targets) == 0:
@@ -359,9 +416,17 @@ def add_zigzag_targets_to_dataframe(
     df: pd.DataFrame,
     price_col: str = 'close',
     horizons: list = [5, 10, 15, 30, 60],
-    reversal_pcts: list = [0.05, 0.1, 0.2]
+    reversal_pcts: list = [0.05, 0.1, 0.2],
+    interval_minutes: Optional[float] = None
 ) -> pd.DataFrame:
     """Add ZigZag targets to DataFrame."""
+    
+    if interval_minutes is None or interval_minutes <= 0:
+        raise ValueError(
+            f"interval_minutes must be provided and > 0. "
+            f"Got: {interval_minutes}. "
+            f"This is required to convert horizon_minutes to bars."
+        )
     
     result_df = df.copy()
     prices = df[price_col]
@@ -373,7 +438,8 @@ def add_zigzag_targets_to_dataframe(
             zigzag_targets = compute_zigzag_targets(
                 prices,
                 horizon_minutes=horizon,
-                reversal_pct=reversal_pct
+                reversal_pct=reversal_pct,
+                interval_minutes=interval_minutes
             )
             
             if len(zigzag_targets) == 0:
@@ -394,9 +460,17 @@ def add_mfe_mdd_targets_to_dataframe(
     df: pd.DataFrame,
     price_col: str = 'close',
     horizons: list = [5, 10, 15, 30, 60],
-    thresholds: list = [0.001, 0.002, 0.005]
+    thresholds: list = [0.001, 0.002, 0.005],
+    interval_minutes: Optional[float] = None
 ) -> pd.DataFrame:
     """Add MFE/MDD targets to DataFrame."""
+    
+    if interval_minutes is None or interval_minutes <= 0:
+        raise ValueError(
+            f"interval_minutes must be provided and > 0. "
+            f"Got: {interval_minutes}. "
+            f"This is required to convert horizon_minutes to bars."
+        )
     
     result_df = df.copy()
     prices = df[price_col]
@@ -409,7 +483,8 @@ def add_mfe_mdd_targets_to_dataframe(
                 prices,
                 horizon_minutes=horizon,
                 threshold_up=threshold,
-                threshold_down=-threshold
+                threshold_down=-threshold,
+                interval_minutes=interval_minutes
             )
             
             if len(mfe_mdd_targets) == 0:
@@ -435,23 +510,41 @@ def compute_time_to_hit(
     prices: pd.Series,
     horizon_minutes: int = 15,
     barrier_size: float = 0.5,
-    vol_window: int = 20
+    vol_window: int = 20,
+    interval_minutes: Optional[float] = None
 ) -> pd.DataFrame:
     """
     Compute time-to-hit (TTH) targets for survival/policy learning.
+    
+    Args:
+        prices: Price series
+        horizon_minutes: Lookahead horizon in minutes
+        barrier_size: Barrier size as multiple of volatility
+        vol_window: Window for volatility estimation
+        interval_minutes: Bar interval in minutes (REQUIRED for correct horizon conversion)
     
     Returns:
         - tth: signed bars to first touch (+ve = up first, -ve = down first, NaN = censored)
         - tth_abs: absolute bars to first touch (unsigned)
         - hit_direction: {-1, 0, +1} which barrier hit first
     """
+    # CRITICAL: Convert horizon_minutes to horizon_bars
+    if interval_minutes is None or interval_minutes <= 0:
+        raise ValueError(
+            f"interval_minutes must be provided and > 0. "
+            f"Got: {interval_minutes}. "
+            f"This is required to convert horizon_minutes ({horizon_minutes}) to bars."
+        )
+    
+    horizon_bars = int(horizon_minutes / interval_minutes)
+    
     returns = prices.pct_change().dropna()
     vol = returns.rolling(window=vol_window, min_periods=5).std()
     
     results = []
     
     for i in range(len(prices)):
-        if i + horizon_minutes >= len(prices):
+        if i + horizon_bars >= len(prices):
             break
             
         current_price = prices.iloc[i]
@@ -459,14 +552,15 @@ def compute_time_to_hit(
         
         if pd.isna(current_vol) or current_vol == 0:
             continue
-            
+        
         up_barrier = current_price * (1 + barrier_size * current_vol)
         down_barrier = current_price * (1 - barrier_size * current_vol)
         
+        # TIME CONTRACT: Label starts at t+1 (never includes bar t)
         # Future path
-        future_prices = prices.iloc[i+1:i+horizon_minutes+1]
+        future_prices = prices.iloc[i+1:i+horizon_bars+1]
         
-        if len(future_prices) < horizon_minutes:
+        if len(future_prices) < horizon_bars:
             continue
             
         # Find first touch
@@ -481,8 +575,8 @@ def compute_time_to_hit(
             up_idx = up_hits.idxmax() if up_hits.any() else len(future_prices)
             down_idx = down_hits.idxmax() if down_hits.any() else len(future_prices)
             
-            up_bars = future_prices.index.get_loc(up_idx) if up_hits.any() else horizon_minutes
-            down_bars = future_prices.index.get_loc(down_idx) if down_hits.any() else horizon_minutes
+            up_bars = future_prices.index.get_loc(up_idx) if up_hits.any() else horizon_bars
+            down_bars = future_prices.index.get_loc(down_idx) if down_hits.any() else horizon_bars
             
             if up_bars < down_bars:
                 tth = up_bars + 1
@@ -506,24 +600,43 @@ def compute_ordinal_magnitude(
     prices: pd.Series,
     horizon_minutes: int = 15,
     vol_window: int = 20,
-    cuts: tuple = (-2, -1, -0.5, 0.5, 1, 2)
+    cuts: tuple = (-2, -1, -0.5, 0.5, 1, 2),
+    interval_minutes: Optional[float] = None
 ) -> pd.DataFrame:
     """
     Compute vol-scaled ordinal magnitude buckets.
     
+    Args:
+        prices: Price series
+        horizon_minutes: Lookahead horizon in minutes
+        vol_window: Window for volatility estimation
+        cuts: Ordinal bin thresholds
+        interval_minutes: Bar interval in minutes (REQUIRED for correct horizon conversion)
+    
     Returns ordinal bins: {-3, -2, -1, 0, +1, +2, +3} based on σ-scaled forward returns.
     """
+    # CRITICAL: Convert horizon_minutes to horizon_bars
+    if interval_minutes is None or interval_minutes <= 0:
+        raise ValueError(
+            f"interval_minutes must be provided and > 0. "
+            f"Got: {interval_minutes}. "
+            f"This is required to convert horizon_minutes ({horizon_minutes}) to bars."
+        )
+    
+    horizon_bars = int(horizon_minutes / interval_minutes)
+    
     returns = prices.pct_change().dropna()
     vol = returns.rolling(window=vol_window, min_periods=5).std()
     
     results = []
     
     for i in range(len(prices)):
-        if i + horizon_minutes >= len(prices):
+        if i + horizon_bars >= len(prices):
             break
             
         current_price = prices.iloc[i]
-        future_price = prices.iloc[i + horizon_minutes]
+        # TIME CONTRACT: Label starts at t+1, so future_price is at t+horizon_bars (not t+horizon_minutes)
+        future_price = prices.iloc[i + horizon_bars]
         current_vol = vol.iloc[i]
         
         if pd.isna(current_vol) or current_vol == 0 or pd.isna(current_price) or pd.isna(future_price):
@@ -561,25 +674,41 @@ def compute_ordinal_magnitude(
 
 def compute_path_quality(
     prices: pd.Series,
-    horizon_minutes: int = 15
+    horizon_minutes: int = 15,
+    interval_minutes: Optional[float] = None
 ) -> pd.DataFrame:
     """
     Compute path-aware quality metrics.
+    
+    Args:
+        prices: Price series
+        horizon_minutes: Lookahead horizon in minutes
+        interval_minutes: Bar interval in minutes (REQUIRED for correct horizon conversion)
     
     Returns:
         - mfe_share: MFE / (MFE + |MDD|) in [0, 1]
         - time_in_profit: fraction of bars with positive return
         - flipcount: number of sign changes
     """
+    # CRITICAL: Convert horizon_minutes to horizon_bars
+    if interval_minutes is None or interval_minutes <= 0:
+        raise ValueError(
+            f"interval_minutes must be provided and > 0. "
+            f"Got: {interval_minutes}. "
+            f"This is required to convert horizon_minutes ({horizon_minutes}) to bars."
+        )
+    
+    horizon_bars = int(horizon_minutes / interval_minutes)
+    
     results = []
     
     for i in range(len(prices)):
-        if i + horizon_minutes >= len(prices):
+        if i + horizon_bars >= len(prices):
             break
             
         # TIME CONTRACT: Label starts at t+1 (never includes bar t)
         current_price = prices.iloc[i]
-        future_prices = prices.iloc[i+1:i+horizon_minutes+1]
+        future_prices = prices.iloc[i+1:i+horizon_bars+1]
         
         if len(future_prices) == 0:
             continue
@@ -618,22 +747,41 @@ def compute_asymmetric_barriers(
     horizon_minutes: int = 15,
     tp_mult: float = 1.0,  # Take-profit multiplier
     sl_mult: float = 0.5,  # Stop-loss multiplier
-    vol_window: int = 20
+    vol_window: int = 20,
+    interval_minutes: Optional[float] = None
 ) -> pd.DataFrame:
     """
     Compute asymmetric triple-barrier targets (e.g., 2:1 profit:stop).
+    
+    Args:
+        prices: Price series
+        horizon_minutes: Lookahead horizon in minutes
+        tp_mult: Take-profit multiplier
+        sl_mult: Stop-loss multiplier
+        vol_window: Window for volatility estimation
+        interval_minutes: Bar interval in minutes (REQUIRED for correct horizon conversion)
     
     Returns:
         - hit_asym: {+1 (tp), -1 (sl), 0 (none)}
         - tth_asym: signed time to hit asymmetric barriers
     """
+    # CRITICAL: Convert horizon_minutes to horizon_bars
+    if interval_minutes is None or interval_minutes <= 0:
+        raise ValueError(
+            f"interval_minutes must be provided and > 0. "
+            f"Got: {interval_minutes}. "
+            f"This is required to convert horizon_minutes ({horizon_minutes}) to bars."
+        )
+    
+    horizon_bars = int(horizon_minutes / interval_minutes)
+    
     returns = prices.pct_change().dropna()
     vol = returns.rolling(window=vol_window, min_periods=5).std()
     
     results = []
     
     for i in range(len(prices)):
-        if i + horizon_minutes >= len(prices):
+        if i + horizon_bars >= len(prices):
             break
             
         current_price = prices.iloc[i]
@@ -641,14 +789,15 @@ def compute_asymmetric_barriers(
         
         if pd.isna(current_vol) or current_vol == 0:
             continue
-            
+        
         # Asymmetric barriers
         tp_barrier = current_price * (1 + tp_mult * current_vol)
         sl_barrier = current_price * (1 - sl_mult * current_vol)
         
-        future_prices = prices.iloc[i+1:i+horizon_minutes+1]
+        # TIME CONTRACT: Label starts at t+1 (never includes bar t)
+        future_prices = prices.iloc[i+1:i+horizon_bars+1]
         
-        if len(future_prices) < horizon_minutes:
+        if len(future_prices) < horizon_bars:
             continue
             
         # Find first touch
@@ -662,8 +811,8 @@ def compute_asymmetric_barriers(
             tp_idx = tp_hits.idxmax() if tp_hits.any() else len(future_prices)
             sl_idx = sl_hits.idxmax() if sl_hits.any() else len(future_prices)
             
-            tp_bars = future_prices.index.get_loc(tp_idx) if tp_hits.any() else horizon_minutes
-            sl_bars = future_prices.index.get_loc(sl_idx) if sl_hits.any() else horizon_minutes
+            tp_bars = future_prices.index.get_loc(tp_idx) if tp_hits.any() else horizon_bars
+            sl_bars = future_prices.index.get_loc(sl_idx) if sl_hits.any() else horizon_bars
             
             if tp_bars < sl_bars:
                 hit_asym = 1
@@ -689,7 +838,8 @@ def add_enhanced_targets_to_dataframe(
     price_col: str = 'close',
     horizons: list = [5, 10, 15, 30, 60],
     barrier_sizes: list = [0.3, 0.5, 0.8],
-    tp_sl_ratios: list = [(1.0, 0.5), (1.5, 0.75), (2.0, 1.0)]
+    tp_sl_ratios: list = [(1.0, 0.5), (1.5, 0.75), (2.0, 1.0)],
+    interval_minutes: Optional[float] = None
 ) -> pd.DataFrame:
     """
     Add enhanced target families to DataFrame:
@@ -698,6 +848,13 @@ def add_enhanced_targets_to_dataframe(
     - Path quality metrics
     - Asymmetric barriers
     """
+    if interval_minutes is None or interval_minutes <= 0:
+        raise ValueError(
+            f"interval_minutes must be provided and > 0. "
+            f"Got: {interval_minutes}. "
+            f"This is required to convert horizon_minutes to bars."
+        )
+    
     result_df = df.copy()
     prices = df[price_col]
     
@@ -710,7 +867,8 @@ def add_enhanced_targets_to_dataframe(
             tth_targets = compute_time_to_hit(
                 prices,
                 horizon_minutes=horizon,
-                barrier_size=barrier_size
+                barrier_size=barrier_size,
+                interval_minutes=interval_minutes
             )
             
             if len(tth_targets) > 0:
@@ -723,7 +881,8 @@ def add_enhanced_targets_to_dataframe(
         logger.info(f"Computing ordinal magnitude for horizon={horizon}m")
         ordinal_targets = compute_ordinal_magnitude(
             prices,
-            horizon_minutes=horizon
+            horizon_minutes=horizon,
+            interval_minutes=interval_minutes
         )
         
         if len(ordinal_targets) > 0:
@@ -736,7 +895,8 @@ def add_enhanced_targets_to_dataframe(
         logger.info(f"Computing path quality for horizon={horizon}m")
         path_targets = compute_path_quality(
             prices,
-            horizon_minutes=horizon
+            horizon_minutes=horizon,
+            interval_minutes=interval_minutes
         )
         
         if len(path_targets) > 0:
@@ -752,7 +912,8 @@ def add_enhanced_targets_to_dataframe(
                 prices,
                 horizon_minutes=horizon,
                 tp_mult=tp_mult,
-                sl_mult=sl_mult
+                sl_mult=sl_mult,
+                interval_minutes=interval_minutes
             )
             
             if len(asym_targets) > 0:
