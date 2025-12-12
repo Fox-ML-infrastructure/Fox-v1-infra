@@ -68,6 +68,13 @@ class RouteType(str, Enum):
     INDIVIDUAL = "INDIVIDUAL"
 
 
+class TargetRankingView(str, Enum):
+    """View constants for target ranking evaluation."""
+    CROSS_SECTIONAL = "CROSS_SECTIONAL"
+    SYMBOL_SPECIFIC = "SYMBOL_SPECIFIC"
+    LOSO = "LOSO"  # Leave-One-Symbol-Out (optional)
+
+
 # Also try to get the calling script's logger if available (for better integration)
 def _get_main_logger():
     """Try to get the main script's logger for better log integration"""
@@ -619,7 +626,9 @@ class ReproducibilityTracker:
         Format: {mode}_{date_range}_{universe}_{config}_{version}
         Example: cs_2023Q1_universeA_min_cs3_v1
         """
-        mode_prefix = (mode or "cs").lower()[:2]  # cs or in
+        # For TARGET_RANKING: mode is view (CROSS_SECTIONAL→"cr", SYMBOL_SPECIFIC→"sy", LOSO→"lo")
+        # For FEATURE_SELECTION/TRAINING: mode is route_type (CROSS_SECTIONAL→"cr", INDIVIDUAL→"in")
+        mode_prefix = (mode or "cs").lower()[:2]
         
         # Extract date range
         date_start = cohort.get('date_range', {}).get('start_ts', '')
@@ -709,8 +718,21 @@ class ReproducibilityTracker:
         # Build path components
         path_parts = [stage_upper]
         
+        # For TARGET_RANKING, add view subdirectory (CROSS_SECTIONAL, SYMBOL_SPECIFIC, LOSO)
+        if stage_upper == "TARGET_RANKING":
+            # Check if view is provided in additional_data or route_type
+            view = None
+            if route_type and route_type.upper() in ["CROSS_SECTIONAL", "SYMBOL_SPECIFIC", "LOSO"]:
+                view = route_type.upper()
+            # If view not in route_type, check if we can infer from symbol presence
+            if view is None and symbol:
+                view = "SYMBOL_SPECIFIC"  # Default for symbol-specific
+            if view is None:
+                view = "CROSS_SECTIONAL"  # Default
+            path_parts.append(view)
+        
         # Add mode subdirectory for FEATURE_SELECTION and TRAINING
-        if stage_upper in ["FEATURE_SELECTION", "TRAINING"]:
+        elif stage_upper in ["FEATURE_SELECTION", "TRAINING"]:
             if route_type:
                 mode = route_type.upper()
                 if mode not in ["CROSS_SECTIONAL", "INDIVIDUAL"]:
@@ -722,8 +744,11 @@ class ReproducibilityTracker:
         # Add target/item_name
         path_parts.append(item_name)
         
-        # Add symbol for INDIVIDUAL mode
-        if route_type and route_type.upper() == "INDIVIDUAL" and symbol:
+        # Add symbol for SYMBOL_SPECIFIC/LOSO views (TARGET_RANKING) or INDIVIDUAL mode (FEATURE_SELECTION/TRAINING)
+        if stage_upper == "TARGET_RANKING":
+            if view in ["SYMBOL_SPECIFIC", "LOSO"] and symbol:
+                path_parts.append(f"symbol={symbol}")
+        elif route_type and route_type.upper() == "INDIVIDUAL" and symbol:
             path_parts.append(f"symbol={symbol}")
         
         # Add model_family for TRAINING
@@ -785,18 +810,27 @@ class ReproducibilityTracker:
             stage_normalized = stage.upper().replace("MODEL_TRAINING", "TRAINING")
         
         # Normalize route_type (accept both string and RouteType enum)
-        if route_type and isinstance(route_type, RouteType):
+        # For TARGET_RANKING, use view from RunContext if available
+        if stage_normalized == "TARGET_RANKING" and hasattr(ctx, 'view') and ctx.view:
+            route_type = ctx.view  # Use view as route_type for TARGET_RANKING
+        elif route_type and isinstance(route_type, RouteType):
             route_type = route_type.value
         
-        # Extract symbols list from cohort_metadata or additional_data
+        # Extract symbols list from cohort_metadata, additional_data, or RunContext
         # Try multiple sources to get the actual symbol list
         symbols_list = None
-        if additional_data and 'symbols' in additional_data:
+        if hasattr(ctx, 'symbols') and ctx.symbols is not None:
+            symbols_list = ctx.symbols
+        elif additional_data and 'symbols' in additional_data:
             symbols_list = additional_data['symbols']
         elif cohort_metadata and 'symbols' in cohort_metadata:
             symbols_list = cohort_metadata['symbols']
         elif additional_data and 'symbol_list' in additional_data:
             symbols_list = additional_data['symbol_list']
+        
+        # For TARGET_RANKING with SYMBOL_SPECIFIC/LOSO view, use ctx.symbol if available
+        if stage_normalized == "TARGET_RANKING" and hasattr(ctx, 'symbol') and ctx.symbol:
+            symbol = ctx.symbol  # Override symbol from RunContext
         
         # Normalize symbols: convert to list, remove duplicates, sort for stable diffs
         if symbols_list is not None:
@@ -818,12 +852,14 @@ class ReproducibilityTracker:
                 symbols_list = None
         
         # Build full metadata with schema version and explicit IDs
+        # For TARGET_RANKING, include view metadata
         full_metadata = {
             "schema_version": REPRODUCIBILITY_SCHEMA_VERSION,
             "cohort_id": cohort_id,
             "run_id": run_id_clean,
             "stage": stage_normalized,  # Already normalized to uppercase
             "route_type": route_type.upper() if route_type else None,
+            "view": getattr(ctx, 'view', None) if stage_normalized == "TARGET_RANKING" else None,  # Add view for TARGET_RANKING
             "target": item_name,
             "symbol": symbol,
             "model_family": model_family,
@@ -1128,10 +1164,13 @@ class ReproducibilityTracker:
             phase = stage.upper().replace("MODEL_TRAINING", "TRAINING")
         
         # Normalize route_type
+        # For TARGET_RANKING, route_type is actually the view (CROSS_SECTIONAL, SYMBOL_SPECIFIC, LOSO)
         if route_type and isinstance(route_type, RouteType):
             mode = route_type.value
         else:
             mode = route_type.upper() if route_type else None
+        
+        # For TARGET_RANKING, mode is the view (already handled in _get_cohort_dir)
         
         # Create new row
         new_row = {
@@ -1570,7 +1609,10 @@ class ReproducibilityTracker:
         stage: str,
         item_name: str,
         metrics: Dict[str, Any],
-        additional_data: Optional[Dict[str, Any]] = None
+        additional_data: Optional[Dict[str, Any]] = None,
+        route_type: Optional[str] = None,
+        symbol: Optional[str] = None,
+        model_family: Optional[str] = None
     ) -> None:
         """
         Compare current run to previous run and log the comparison for reproducibility verification.
@@ -1588,6 +1630,9 @@ class ReproducibilityTracker:
             item_name: Name of the item (e.g., target name, symbol name)
             metrics: Dictionary of metrics to track and compare
             additional_data: Optional additional data to store with the run
+            route_type: Optional route type (e.g., "CROSS_SECTIONAL", "SYMBOL_SPECIFIC", "INDIVIDUAL")
+            symbol: Optional symbol name (for symbol-specific views)
+            model_family: Optional model family (for training stage)
         """
         try:
             # Extract cohort metadata if available
@@ -1623,9 +1668,21 @@ class ReproducibilityTracker:
                 use_cohort_aware = False
             
             # Extract route_type, symbol, model_family
-            route_type = self._extract_route_type(additional_data) if stage.lower() in ["feature_selection", "model_training", "training"] else None
-            symbol = self._extract_symbol(additional_data)
-            model_family = self._extract_model_family(additional_data)
+            # Use provided parameters if available, otherwise extract from additional_data
+            # For TARGET_RANKING, route_type comes from "view" field in additional_data
+            if route_type is None:
+                if stage.upper() == "TARGET_RANKING":
+                    route_type = additional_data.get("view") if additional_data else None
+                    if route_type:
+                        route_type = route_type.upper()  # Normalize to uppercase
+                else:
+                    route_type = self._extract_route_type(additional_data) if stage.lower() in ["feature_selection", "model_training", "training"] else None
+            
+            if symbol is None:
+                symbol = self._extract_symbol(additional_data)
+            
+            if model_family is None:
+                model_family = self._extract_model_family(additional_data)
             
             if use_cohort_aware:
                 # Cohort-aware path: find matching cohort
@@ -2126,18 +2183,27 @@ class ReproducibilityTracker:
             label_def_str = f"{ctx.target_column}|{ctx.target_name or ctx.target_column}"
             additional_data["label_definition_hash"] = hashlib.sha256(label_def_str.encode()).hexdigest()[:16]
         
+        # Add view metadata for TARGET_RANKING
+        if ctx.stage == "target_ranking" and hasattr(ctx, 'view') and ctx.view:
+            additional_data["view"] = ctx.view
+        
         # Merge metrics
         metrics_with_cohort = {**metrics, **cohort_metrics}
         
         # 4. Load previous run metadata for comparison
-        cohort_id = self._compute_cohort_id(cohort_metadata, ctx.route_type)
+        # For TARGET_RANKING, use view as route_type
+        route_type_for_cohort = ctx.route_type
+        if ctx.stage == "target_ranking" and hasattr(ctx, 'view') and ctx.view:
+            route_type_for_cohort = ctx.view
+        
+        cohort_id = self._compute_cohort_id(cohort_metadata, route_type_for_cohort)
         previous_metadata = None
         try:
             cohort_dir = self._get_cohort_dir(
                 ctx.stage,
                 ctx.target_name or ctx.target_column or "unknown",
                 cohort_id,
-                ctx.route_type,
+                route_type_for_cohort,  # Use view for TARGET_RANKING
                 ctx.symbol,
                 ctx.model_family
             )
@@ -2178,22 +2244,34 @@ class ReproducibilityTracker:
             audit_report = {"mode": "off", "violations": [], "warnings": []}
         
         # 6. Save using existing log_comparison (which handles cohort-aware saving)
+        # For TARGET_RANKING, pass view as route_type
+        route_type_for_log = ctx.route_type
+        if ctx.stage == "target_ranking" and hasattr(ctx, 'view') and ctx.view:
+            route_type_for_log = ctx.view
+        
         self.log_comparison(
             stage=ctx.stage,
             item_name=ctx.target_name or ctx.target_column or "unknown",
             metrics=metrics_with_cohort,
-            additional_data=additional_data
+            additional_data=additional_data,
+            route_type=route_type_for_log,  # Use view for TARGET_RANKING
+            symbol=ctx.symbol
         )
         
         # 7. Write audit report
         audit_report_path = None
         cohort_dir = None
         try:
+            # Use view as route_type for TARGET_RANKING when getting cohort directory
+            route_type_for_cohort_dir = route_type_for_log  # Use same as log_comparison
+            if ctx.stage == "target_ranking" and hasattr(ctx, 'view') and ctx.view:
+                route_type_for_cohort_dir = ctx.view
+            
             cohort_dir = self._get_cohort_dir(
                 ctx.stage,
                 ctx.target_name or ctx.target_column or "unknown",
                 cohort_id,
-                ctx.route_type,
+                route_type_for_cohort_dir,  # Use view for TARGET_RANKING
                 ctx.symbol,
                 ctx.model_family
             )

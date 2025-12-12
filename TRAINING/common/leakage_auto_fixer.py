@@ -871,6 +871,11 @@ class LeakageAutoFixer:
         Returns:
             List of backup file paths
         """
+        # Safety check: don't create backups if backup_configs is False
+        if not self.backup_configs:
+            logger.debug("Backups disabled (backup_configs=False), skipping backup creation")
+            return []
+        
         import shutil
         from datetime import datetime
         import json

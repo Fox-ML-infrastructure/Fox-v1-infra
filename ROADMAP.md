@@ -39,7 +39,7 @@ FoxML Core is maintained with an **enterprise reliability mindset**:
 
 ## Core System Status
 
-* **TRAINING Pipeline — Phase 1** ✅ — Fully operational. Intelligent training framework (target ranking, feature selection, automated leakage detection) integrated and working. **End-to-end testing currently underway** to validate full pipeline from target ranking → feature selection → training plan → model training.
+* **TRAINING Pipeline — Phase 1** ✅ — Fully operational. Intelligent training framework (target ranking, feature selection, automated leakage detection) integrated and working. **End-to-end testing currently underway** to validate full pipeline from target ranking → feature selection → training plan → model training. **NEW** (2025-12-12): ResolvedConfig system ensures consistent logging and correct purge/embargo calculation across all modules.
 
 * **Training Routing & Planning System** 🔄 (2025-12-11) — **NEW - Currently being tested**: 
   - Config-driven routing decisions (cross-sectional vs symbol-specific vs both vs experimental vs blocked)
@@ -113,6 +113,7 @@ FoxML Core is maintained with an **enterprise reliability mindset**:
 * ✅ **Model parameter sanitization** (2025-12-11) — Systematic parameter validation to prevent errors
 * ✅ **Leakage detection improvements** (2025-12-11) — Critical confidence calculation fix, on-the-fly importance computation, enhanced diagnostics
 * ✅ **Training routing & planning system** (2025-12-11) — Config-driven routing, automatic plan generation, 2-stage training pipeline
+* ✅ **ResolvedConfig system & logging consistency** (2025-12-12) — Centralized configuration resolution, fixed purge/embargo calculation bug, consistent requested/effective value logging, fixed reproducibility tracker parameter errors
 
 **Current Testing:**
 * 🔄 **End-to-end testing underway** (2025-12-10) — Full pipeline validation from target ranking → feature selection → model training. Testing initiated after SST enforcement, Determinism system fixes, and complete F821 error elimination.

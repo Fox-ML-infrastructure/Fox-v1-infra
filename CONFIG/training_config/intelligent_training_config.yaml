@@ -1,0 +1,103 @@
+# Intelligent Training Pipeline Configuration
+# This config allows running the full pipeline with minimal command-line arguments
+
+# Data configuration
+data:
+  # Default data directory (can be overridden via --data-dir)
+  data_dir: "data/data_labeled/interval=5m"
+  
+  # Default symbols (can be overridden via --symbols)
+  symbols:
+    - AAPL
+    - MSFT
+    - GOOGL
+    - TSLA
+    - NVDA
+  
+  # Data limits
+  max_rows_per_symbol: null  # null = no limit, or set to integer (e.g., 50000)
+  max_rows_train: null  # null = no limit for training
+  max_cs_samples: 1000  # Max cross-sectional samples per timestamp
+  min_cs: 10  # Minimum cross-sectional samples per timestamp
+
+# Target selection
+targets:
+  # Automatically rank and select targets
+  auto_targets: true
+  
+  # Number of top targets to select (if auto_targets=true)
+  top_n_targets: 10
+  
+  # Limit number of targets to evaluate during ranking (for faster testing)
+  # null = evaluate all targets
+  max_targets_to_evaluate: null
+  
+  # Manual target list (overrides auto_targets if provided)
+  # Leave empty [] to use auto_targets, or specify: ["fwd_ret_5m", "fwd_ret_15m"]
+  manual_targets: []
+
+# Feature selection
+features:
+  # Automatically select features per target
+  auto_features: true
+  
+  # Number of top features to select per target (if auto_features=true)
+  top_m_features: 100
+  
+  # Manual feature list (overrides auto_features if provided)
+  # Leave empty [] to use auto_features, or specify: ["feature1", "feature2"]
+  manual_features: []
+
+# Model families to train
+# Options: lightgbm, xgboost, random_forest, catboost, neural_network, 
+#          lasso, mutual_information, univariate_selection, etc.
+model_families:
+  - lightgbm
+  - xgboost
+  - random_forest
+  - catboost
+  - neural_network
+  - lasso
+  - mutual_information
+  - univariate_selection
+
+# Training strategy
+strategy: "single_task"  # Options: "single_task", "multi_task", "ensemble"
+
+# Output configuration
+output:
+  # Default output directory (can be overridden via --output-dir)
+  output_dir: "intelligent_output"
+  
+  # Cache directory (default: output_dir/cache)
+  # null = auto-generate from output_dir
+  cache_dir: null
+
+# Cache control
+cache:
+  # Use cache for rankings/selections
+  use_cache: true
+  
+  # Force refresh of cached rankings/selections
+  force_refresh: false
+  
+  # Never refresh cache (use existing only)
+  no_refresh_cache: false
+
+# Advanced options
+advanced:
+  # Run leakage diagnostics after feature selection
+  run_leakage_diagnostics: false
+  
+  # Dual-view target ranking (CROSS_SECTIONAL + SYMBOL_SPECIFIC)
+  enable_dual_view_ranking: true
+  
+  # Enable LOSO (Leave-One-Symbol-Out) evaluation (optional, high value)
+  enable_loso: false
+
+# Test mode configuration (auto-detected if 'test' in output_dir name)
+test:
+  # Override settings for test runs
+  max_targets_to_evaluate: 3  # Limit targets for faster testing
+  top_n_targets: 3
+  top_m_features: 50

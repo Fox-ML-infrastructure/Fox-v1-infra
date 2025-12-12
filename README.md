@@ -3,7 +3,6 @@
 > **⚠️ ACTIVE DEVELOPMENT — EXPECT BREAKING CHANGES**  
 > This project is under **heavy active development**. Breaking changes may occur without notice. APIs, configuration schemas, directory structures, and file formats may change between commits. Use at your own risk in production environments. See [ROADMAP.md](ROADMAP.md) for current status and known issues.
 
-> **📋 See [ROADMAP.md](ROADMAP.md) for most recent updates, current development focus, and status of modules (including known broken/untested components).**  
 > **📝 See [CHANGELOG.md](CHANGELOG.md) for recent technical and compliance changes.**
 
 FoxML Core is:
@@ -29,6 +28,9 @@ Independent Contractor • ML Engineering • Cross-Sectional ML Systems • Sys
 FoxML Core demonstrates:
 
 - **Intelligent training pipeline** with automated target ranking and feature selection
+- **Dual-view target ranking** (NEW): Cross-sectional and symbol-specific evaluation views with automatic routing decisions
+- **Config-based simple usage** (NEW): Run full pipeline with minimal command-line arguments using configuration files
+- **ResolvedConfig system** (NEW): Centralized configuration resolution ensures consistent logging and correct purge/embargo calculation
 - **Training routing & planning system** (NEW - currently being tested): Config-driven routing decisions, automatic training plan generation, 2-stage training pipeline (CPU → GPU), one-command end-to-end flow
 - **Leakage-safe research architecture** with pre-training leak detection and auto-fix
 - **Scalable ML workflow design** with complete Single Source of Truth (SST) config system - all 52+ model trainers use config-driven hyperparameters for full reproducibility
@@ -46,7 +48,8 @@ FoxML Core is **general-purpose ML cross-sectional infrastructure** optimized fo
 
 **Core Capabilities:**
 - Config-driven orchestration
-- Automated target ranking and feature selection
+- Automated target ranking and feature selection (with dual-view support)
+- Simplified config-based pipeline usage (minimal command-line arguments)
 - Leakage-safe validation frameworks
 - Multi-model training systems
 - Time-series-aware cross-validation

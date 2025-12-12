@@ -14,6 +14,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Highlights
 
+- **Dual-View Target Ranking** (2025-01-XX) – **NEW**: Target ranking now supports both cross-sectional and symbol-specific evaluation views:
+  - **CROSS_SECTIONAL view**: Pooled cross-sectional samples (existing behavior)
+  - **SYMBOL_SPECIFIC view**: Evaluate each target separately on each symbol's own time series
+  - **LOSO view** (optional): Leave-One-Symbol-Out evaluation for generalization testing
+  - **Routing decisions**: Automatic routing logic determines which view(s) to use per target (CROSS_SECTIONAL, SYMBOL_SPECIFIC, BOTH, or BLOCKED)
+  - **View consistency**: Target ranking → feature ranking → training maintains the same view for consistency
+  - **Reproducibility integration**: Full integration with existing reproducibility suite, storing view/symbol metadata in cohort directories
+  - **Backward compatible**: Default behavior unchanged (CROSS_SECTIONAL only), existing code works without changes
+  - See [Dual-View Target Ranking Guide](DOCS/03_technical/implementation/DUAL_VIEW_TARGET_RANKING.md)
+
+- **Simplified Config-Based Pipeline** (2025-01-XX) – **NEW**: Intelligent training pipeline now supports minimal command-line usage via configuration files:
+  - **Config-driven defaults**: All settings (data, targets, features, model families) can be configured in `CONFIG/training_config/intelligent_training_config.yaml`
+  - **Simple commands**: Run full pipeline with just `--output-dir` argument
+  - **Quick test mode**: `--quick` flag for fast iteration (3 targets, 50 features)
+  - **CLI overrides**: Command-line arguments still override config when needed
+  - **Backward compatible**: Old command-line syntax still works
+  - See [Simple Pipeline Usage Guide](DOCS/01_tutorials/SIMPLE_PIPELINE_USAGE.md)
+
+- **Resolved Config System & Consistent Logging** (2025-12-12) – **NEW**: Centralized configuration resolution eliminates contradictory log messages:
+  - **ResolvedConfig object**: Single source of truth for all resolved values (requested vs effective min_cs, purge/embargo, feature counts)
+  - **Centralized purge/embargo derivation**: Fixed bug where purge was incorrectly calculated as `max(horizon, feature_lookback) + buffer` (causing 1465m purge for 60m horizon). Now correctly uses `horizon + buffer` only
+  - **Consistent logging**: Single authoritative log line per category showing requested → effective values with explicit reasons
+  - **Feature count chain**: Logs now show complete chain: `safe=307 → drop_all_nan=3 → final=304` instead of scattered messages
+  - **Reproducibility integration**: ResolvedConfig values stored in metadata.json ensuring CV splitter and reproducibility tracker use same purge/embargo values
+  - See [Resolved Config Fix Guide](DOCS/03_technical/implementation/RESOLVED_CONFIG_FIX.md)
+
 - **Trend Analysis System** (2025-12-12) – **NEW**: Automated trend analysis across all pipeline stages with exponential decay weighting and regression detection:
   - **Trend tracking**: Automatically computes performance trends (slope, EWMA) across runs within comparable series using exponential decay weighting
   - **Multi-stage support**: Trend analysis now integrated into target ranking, feature selection (single symbol + aggregated), and cross-sectional feature ranking
@@ -56,10 +82,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Trading / execution modules** are out of scope for the core repo; FoxML Core focuses on ML research & infra.
 - **Feature engineering** still requires human review and domain validation.
 - **Full end-to-end test suite** is being expanded following SST + determinism changes (as of 2025-12-10).
+- **LOSO CV splitter**: LOSO view currently uses combined data; dedicated CV splitter for train-on-all-but-one, validate-on-one is a future enhancement.
+- **Placebo test per symbol**: Symbol-specific strong targets should be validated with placebo tests (shuffle labels, assert AUC ~ 0.5) - future enhancement.
 
 ---
 
 ### Added
+
+- **Dual-View Target Ranking System** (2025-01-XX)
+  - `TargetRankingView` enum (CROSS_SECTIONAL, SYMBOL_SPECIFIC, LOSO) for view specification
+  - Extended `evaluate_target_predictability()` to accept `view` and `symbol` parameters
+  - Symbol-specific evaluation loop in `rank_targets()` for per-symbol target ranking
+  - Routing decision logic (`_compute_target_routing_decisions()`) with deterministic rules
+  - Routing decisions saved to `routing_decisions.json` with summary statistics
+  - `load_routing_decisions()` utility for loading routing decisions
+  - Feature selection respects view/symbol from target ranking for consistency
+  - Reproducibility tracker updated to handle view/symbol metadata
+  - Directory structure: `TARGET_RANKING/{view}/{target}/symbol={symbol}/cohort={cohort_id}/`
+  - `RunContext` extended with `view` field for target ranking
+  - Configuration support in `target_ranking_config.yaml` for enabling/disabling views and routing thresholds
+
+- **Config-Based Pipeline Interface** (2025-01-XX)
+  - New config file: `CONFIG/training_config/intelligent_training_config.yaml`
+  - Config sections: `data`, `targets`, `features`, `model_families`, `output`, `cache`, `advanced`, `test`
+  - Automatic config loading with CLI override support
+  - `--quick` flag for fast test mode (overrides config with test-friendly defaults)
+  - `--full` flag for explicit production mode
+  - Priority order: CLI > config > defaults
+  - Test mode auto-detection (when 'test' in output_dir name)
+  - Documentation: `DOCS/01_tutorials/SIMPLE_PIPELINE_USAGE.md`
 
 - **Sample Size Binning System** (2025-12-12)
   - Automatic binning of runs by sample size into readable ranges (e.g., `sample_25k-50k`) for easy comparison
@@ -93,6 +144,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Metrics aggregator collects metrics from feature selection, stability snapshots, and leakage detection.
   - Full documentation in `DOCS/02_reference/training_routing/`.
   - **Note**: Currently filters cross-sectional training targets; symbol-specific training execution is a future enhancement.
+  - **Dual-view integration**: Training routing now respects dual-view target ranking decisions (CROSS_SECTIONAL vs SYMBOL_SPECIFIC).
 
 - **Reproducibility Tracking System**
   - Reusable `ReproducibilityTracker` with tolerance-based comparisons and STABLE/DRIFTING/DIVERGED classification.
@@ -110,6 +162,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Structured logging config (`logging_config.yaml`) with profiles (default, debug_run, quiet) and backend verbosity control.
 
 ---
+
+### Fixed
+
+- **Resolved Config System & Consistent Logging** (2025-12-12) – **NEW**: Centralized configuration resolution and consistent logging:
+  - **ResolvedConfig object**: Single source of truth for resolved values (requested vs effective min_cs, purge/embargo, feature counts)
+  - **Centralized purge/embargo derivation**: Single `derive_purge_embargo()` function used everywhere (was causing 1465m purge instead of 85m for 60m horizon targets)
+  - **Consistent logging**: Single authoritative log line per category showing requested → effective values with reasons
+  - **Feature count chain**: Logs now show `safe=307 → drop_all_nan=3 → final=304` instead of scattered messages
+  - **Purge calculation fix**: Removed incorrect `max(horizon, feature_lookback)` formula - purge now correctly uses `horizon + buffer` only
+  - **Reproducibility integration**: ResolvedConfig values stored in metadata.json for audit trail
+  - See [Resolved Config Fix Guide](DOCS/03_technical/implementation/RESOLVED_CONFIG_FIX.md)
+
+- **Reproducibility Tracker Fixes** (2025-12-12):
+  - Fixed `log_comparison()` signature to accept `route_type`, `symbol`, and `model_family` parameters
+  - Fixed parameter extraction to prioritize explicit parameters over `additional_data`
+  - Ensured view/symbol metadata correctly passed through to reproducibility tracking
+  - Fixed cohort directory creation to use view as route_type for TARGET_RANKING stage
+
+- **Backup Creation Fix** (2025-12-12):
+  - Fixed backup creation when `backup_configs=False` - backups now only created when explicitly enabled
+  - Added safety check in `_backup_configs()` to return early if backups disabled
+  - Fixed direct call to `_backup_configs()` in `model_evaluation.py` to check `backup_configs` flag first
 
 ### Fixed
 

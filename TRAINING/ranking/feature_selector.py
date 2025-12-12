@@ -87,7 +87,9 @@ def select_features_for_target(
     output_dir: Path = None,
     feature_selection_config: Optional['FeatureSelectionConfig'] = None,  # New typed config (optional)
     explicit_interval: Optional[Union[int, str]] = None,  # Optional explicit interval (e.g., "5m" or 5)
-    experiment_config: Optional[Any] = None  # Optional ExperimentConfig (for data.bar_interval)
+    experiment_config: Optional[Any] = None,  # Optional ExperimentConfig (for data.bar_interval)
+    view: str = "CROSS_SECTIONAL",  # "CROSS_SECTIONAL" or "SYMBOL_SPECIFIC" - must match target ranking view
+    symbol: Optional[str] = None  # Required for SYMBOL_SPECIFIC view
 ) -> Tuple[List[str], pd.DataFrame]:
     """
     Select top features for a target using multi-model consensus.
@@ -152,15 +154,33 @@ def select_features_for_target(
         
         aggregation_config = multi_model_config.get('aggregation', {}) if multi_model_config else {}
     
-    logger.info(f"Selecting features for target: {target_column}")
-    logger.info(f"Processing {len(symbols)} symbols")
+    # Validate view and symbol parameters
+    if view == "SYMBOL_SPECIFIC" and symbol is None:
+        raise ValueError(f"symbol parameter required for SYMBOL_SPECIFIC view")
+    if view == "CROSS_SECTIONAL" and symbol is not None:
+        logger.warning(f"symbol={symbol} provided but view=CROSS_SECTIONAL, ignoring symbol")
+        symbol = None
+    
+    # Filter symbols based on view
+    symbols_to_process = symbols
+    if view == "SYMBOL_SPECIFIC" and symbol:
+        symbols_to_process = [symbol]
+        logger.info(f"SYMBOL_SPECIFIC view: Processing only symbol {symbol}")
+    elif view == "LOSO" and symbol:
+        # LOSO: train on all symbols except symbol, validate on symbol
+        symbols_to_process = [s for s in symbols if s != symbol]
+        logger.info(f"LOSO view: Training on {len(symbols_to_process)} symbols, validating on {symbol}")
+    else:
+        logger.info(f"CROSS_SECTIONAL view: Processing {len(symbols_to_process)} symbols")
+    
+    logger.info(f"Selecting features for target: {target_column} (view={view})")
     logger.info(f"Model families: {', '.join([f for f, cfg in model_families_config.items() if cfg.get('enabled', False)])}")
     
-    # Process each symbol
+    # Process each symbol (filtered by view)
     all_results = []
     all_family_statuses = []  # Collect status info for all families across all symbols
-    for idx, symbol in enumerate(symbols, 1):
-        logger.info(f"[{idx}/{len(symbols)}] Processing {symbol}...")
+    for idx, symbol in enumerate(symbols_to_process, 1):
+        logger.info(f"[{idx}/{len(symbols_to_process)}] Processing {symbol}...")
         
         # Find symbol data file
         symbol_dir = data_dir / f"symbol={symbol}"

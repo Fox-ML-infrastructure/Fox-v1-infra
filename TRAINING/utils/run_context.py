@@ -81,6 +81,7 @@ class RunContext:
     stage: str = "target_ranking"
     route_type: Optional[str] = None
     symbol: Optional[str] = None
+    view: Optional[str] = None  # "CROSS_SECTIONAL", "SYMBOL_SPECIFIC", "LOSO" for target ranking
     model_family: Optional[str] = None
     
     # Auto-derived fields (computed on demand)
@@ -90,9 +91,12 @@ class RunContext:
     
     def derive_purge_embargo(self, buffer_bars: int = 1) -> Tuple[float, float]:
         """
-        Automatically derive purge and embargo from horizon and feature lookback.
+        Automatically derive purge and embargo from horizon.
         
-        Rule: purge_minutes = embargo_minutes = max(horizon_minutes, feature_lookback_max_minutes) + buffer
+        Uses centralized derivation function for consistency.
+        
+        Rule: purge_minutes = embargo_minutes = horizon_minutes + buffer
+        (Feature lookback is NOT included - it's historical data that's safe to use)
         
         Args:
             buffer_bars: Additional safety buffer in bars (default: 1)
@@ -103,25 +107,22 @@ class RunContext:
         if self.horizon_minutes is None:
             raise ValueError("horizon_minutes is required for automatic derivation")
         
+        # Use centralized derivation function to ensure consistency
+        from TRAINING.utils.resolved_config import derive_purge_embargo
+        
         if self.data_interval_minutes is None:
             # Default to 5 minutes if not specified
             data_interval_minutes = 5.0
         else:
             data_interval_minutes = self.data_interval_minutes
         
-        buffer_minutes = buffer_bars * data_interval_minutes
-        
-        # Base purge/embargo = horizon
-        base_minutes = self.horizon_minutes
-        
-        # Add feature lookback if specified
-        if self.feature_lookback_max_minutes is not None:
-            base_minutes = max(base_minutes, self.feature_lookback_max_minutes)
-        
-        # Add buffer
-        purge_embargo_minutes = base_minutes + buffer_minutes
-        
-        return purge_embargo_minutes, purge_embargo_minutes
+        return derive_purge_embargo(
+            horizon_minutes=self.horizon_minutes,
+            interval_minutes=data_interval_minutes,
+            feature_lookback_max_minutes=self.feature_lookback_max_minutes,
+            purge_buffer_bars=buffer_bars,
+            default_purge_minutes=85.0
+        )
     
     def get_required_fields(self, reproducibility_mode: str = "COHORT_AWARE") -> List[str]:
         """

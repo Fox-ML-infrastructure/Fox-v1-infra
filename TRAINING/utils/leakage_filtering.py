@@ -665,7 +665,17 @@ def filter_features_for_target(
     excluded_hardcoded = _apply_exclusion_patterns(safe_columns, hardcoded_leaky_patterns, "hardcoded-safety-net")
     safe_columns = [c for c in safe_columns if c not in excluded_hardcoded]
     if excluded_hardcoded and verbose:
-        logger.info(f"  Excluded {len(excluded_hardcoded)} target/label columns from features (y_*, fwd_ret_*, etc.): {excluded_hardcoded[:10]}")
+        # INFO: Count + sample prefixes only (readable)
+        sample_prefixes = set()
+        for col in excluded_hardcoded[:20]:  # Sample first 20 to identify patterns
+            for prefix in ['y_', 'fwd_ret_', 'barrier_', 'p_', 'tth_', 'mfe_', 'mdd_']:
+                if col.startswith(prefix):
+                    sample_prefixes.add(prefix)
+                    break
+        prefix_str = ', '.join(sorted(sample_prefixes)) if sample_prefixes else 'various'
+        logger.info(f"  Excluded {len(excluded_hardcoded)} target/label columns (patterns: {prefix_str}, ...)")
+        # DEBUG: Full list for detailed analysis
+        logger.debug(f"  Full excluded target/label list ({len(excluded_hardcoded)}): {excluded_hardcoded}")
     
     # Apply always-exclude patterns from config (additional layer)
     # For ranking: only exclude obvious leaks, not basic OHLCV/TA features

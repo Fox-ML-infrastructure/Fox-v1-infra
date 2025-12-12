@@ -134,6 +134,137 @@ from TRAINING.ranking.predictability.composite_score import calculate_composite_
 from TRAINING.ranking.predictability.data_loading import load_sample_data, prepare_features_and_target, get_model_config
 from TRAINING.ranking.predictability.leakage_detection import detect_leakage, _save_feature_importances, _log_suspicious_features, find_near_copy_features, _detect_leaking_features
 
+
+def _compute_suspicion_score(
+    train_score: float,
+    cv_score: Optional[float],
+    feature_importances: Dict[str, float],
+    task_type: str = 'classification'
+) -> float:
+    """
+    Compute suspicion score for perfect train accuracy.
+    
+    Higher score = more suspicious (likely real leakage, not just overfitting).
+    
+    Signals that increase suspicion:
+    - CV too good to be true (cv_mean >= 0.85)
+    - Generalization gap too small with perfect train (gap < 0.05)
+    - Single feature domination (top1_importance / sum >= 0.40)
+    
+    Signals that decrease suspicion:
+    - CV is normal-ish (0.55-0.75)
+    - Large gap (classic overfit)
+    - Feature dominance not extreme
+    """
+    suspicion = 0.0
+    
+    # Signal 1: CV too good to be true
+    if cv_score is not None:
+        if cv_score >= 0.85:
+            suspicion += 0.4  # High suspicion
+        elif cv_score >= 0.75:
+            suspicion += 0.2  # Medium suspicion
+        elif cv_score < 0.55:
+            suspicion -= 0.2  # Low suspicion (normal performance)
+    
+    # Signal 2: Generalization gap (small gap with perfect train = suspicious)
+    if cv_score is not None:
+        gap = train_score - cv_score
+        if gap < 0.05 and train_score >= 0.99:
+            suspicion += 0.3  # Very suspicious: perfect train but CV also high
+        elif gap > 0.20:
+            suspicion -= 0.2  # Large gap = classic overfit (less suspicious)
+    
+    # Signal 3: Feature dominance
+    if feature_importances:
+        importances = list(feature_importances.values())
+        if importances:
+            total_importance = sum(importances)
+            if total_importance > 0:
+                top1_importance = max(importances)
+                dominance_ratio = top1_importance / total_importance
+                if dominance_ratio >= 0.50:
+                    suspicion += 0.3  # Single feature dominates
+                elif dominance_ratio >= 0.40:
+                    suspicion += 0.2  # High dominance
+                elif dominance_ratio < 0.20:
+                    suspicion -= 0.1  # Low dominance (less suspicious)
+    
+    # Clamp to [0, 1]
+    return max(0.0, min(1.0, suspicion))
+
+
+def _log_canonical_summary(
+    target_name: str,
+    target_column: str,
+    symbols: List[str],
+    time_vals: Optional[np.ndarray],
+    interval: Optional[Union[int, str]],
+    horizon: Optional[int],
+    rows: int,
+    features_safe: int,
+    features_pruned: int,
+    leak_scan_verdict: str,
+    auto_fix_verdict: str,
+    auto_fix_reason: Optional[str],
+    cv_metric: str,
+    composite: float,
+    leakage_flag: str,
+    cohort_path: Optional[str]
+):
+    """
+    Log canonical run summary block (one block that can be screenshot for PR comments).
+    
+    This provides a stable anchor for reviewers to quickly understand:
+    - What was evaluated
+    - Data characteristics
+    - Feature pipeline
+    - Leakage status
+    - Performance metrics
+    - Reproducibility path
+    """
+    # Extract date range from time_vals if available
+    date_range = "N/A"
+    if time_vals is not None and len(time_vals) > 0:
+        try:
+            import pandas as pd
+            if isinstance(time_vals[0], (int, float)):
+                time_series = pd.to_datetime(time_vals, unit='ns')
+            else:
+                time_series = pd.Series(time_vals)
+            if len(time_series) > 0:
+                date_range = f"{time_series.min().strftime('%Y-%m-%d')} → {time_series.max().strftime('%Y-%m-%d')}"
+        except Exception:
+            pass
+    
+    # Format symbols (show first 5, then count)
+    if len(symbols) <= 5:
+        symbols_str = ', '.join(symbols)
+    else:
+        symbols_str = f"{', '.join(symbols[:5])}, ... ({len(symbols)} total)"
+    
+    # Format interval/horizon
+    interval_str = f"{interval}" if interval else "auto"
+    horizon_str = f"{horizon}m" if horizon else "N/A"
+    
+    # Format auto-fix info
+    auto_fix_str = auto_fix_verdict
+    if auto_fix_reason:
+        auto_fix_str += f" (reason={auto_fix_reason})"
+    
+    logger.info("=" * 60)
+    logger.info("TARGET_RANKING SUMMARY")
+    logger.info("=" * 60)
+    logger.info(f"target: {target_column:<40} horizon: {horizon_str:<8} interval: {interval_str}")
+    logger.info(f"symbols: {len(symbols)} ({symbols_str})")
+    logger.info(f"date: {date_range}")
+    logger.info(f"rows: {rows:<10} features: safe={features_safe} → pruned={features_pruned}")
+    logger.info(f"leak_scan: {leak_scan_verdict:<6} auto_fix: {auto_fix_str}")
+    logger.info(f"cv: {cv_metric:<25} composite: {composite:.3f}")
+    if cohort_path:
+        logger.info(f"repro: {cohort_path}")
+    logger.info("=" * 60)
+
 def train_and_evaluate_models(
     X: np.ndarray,
     y: np.ndarray,
@@ -446,7 +577,10 @@ def train_and_evaluate_models(
         # Use parameter value (default: 5)
         logger.info(f"  Using data interval from parameter: {data_interval_minutes}m")
     
-    # Convert horizon from minutes to number of bars
+    # ARCHITECTURAL FIX: Use centralized purge/embargo derivation
+    # This ensures consistency across all modules
+    from TRAINING.utils.resolved_config import derive_purge_embargo
+    
     # Load purge settings from config
     if _CONFIG_AVAILABLE:
         try:
@@ -456,24 +590,22 @@ def train_and_evaluate_models(
     else:
         purge_buffer_bars = 5  # Safety buffer (5 bars = 25 minutes)
     
-    # ARCHITECTURAL FIX: Use time-based purging instead of row-count based
-    # This prevents leakage when data interval doesn't match assumptions
-    if target_horizon_minutes is not None:
-        # Create Timedelta for purge window (target horizon + safety buffer)
-        purge_buffer_minutes = purge_buffer_bars * data_interval_minutes
-        purge_time = pd.Timedelta(minutes=target_horizon_minutes + purge_buffer_minutes)
-        logger.info(f"  Target horizon: {target_horizon_minutes}m, purge_time: {purge_time}")
-    else:
-        # Fallback: use config value or conservative default (60m + 25m buffer = 85m)
-        if _CONFIG_AVAILABLE:
-            try:
-                purge_time_minutes = int(get_cfg("pipeline.leakage.purge_time_minutes", default=85, config_name="pipeline_config"))
-                purge_time = pd.Timedelta(minutes=purge_time_minutes)
-            except Exception:
-                purge_time = pd.Timedelta(minutes=85)
-        else:
-            purge_time = pd.Timedelta(minutes=85)
-        logger.warning(f"  Could not extract target horizon from '{target_column}', using default purge_time={purge_time}")
+    # Estimate feature lookback (conservative: 1 day = 288 bars for 5m data)
+    feature_lookback_max_minutes = None
+    if data_interval_minutes is not None and data_interval_minutes > 0:
+        max_lookback_bars = 288  # 1 day of 5m bars
+        feature_lookback_max_minutes = max_lookback_bars * data_interval_minutes
+    
+    # Use centralized derivation function
+    purge_minutes_val, embargo_minutes_val = derive_purge_embargo(
+        horizon_minutes=target_horizon_minutes,
+        interval_minutes=data_interval_minutes,
+        feature_lookback_max_minutes=feature_lookback_max_minutes,
+        purge_buffer_bars=purge_buffer_bars,
+        default_purge_minutes=85.0
+    )
+    
+    purge_time = pd.Timedelta(minutes=purge_minutes_val)
     
     # Create purged time series split with time-based purging
     # CRITICAL: Validate time_vals alignment and sorting before using time-based purging
@@ -2078,7 +2210,9 @@ def evaluate_target_predictability(
     max_cs_samples: Optional[int] = None,
     max_rows_per_symbol: int = None,
     explicit_interval: Optional[Union[int, str]] = None,  # Explicit interval from config (e.g., "5m")
-    experiment_config: Optional[Any] = None  # Optional ExperimentConfig (for data.bar_interval)
+    experiment_config: Optional[Any] = None,  # Optional ExperimentConfig (for data.bar_interval)
+    view: str = "CROSS_SECTIONAL",  # "CROSS_SECTIONAL", "SYMBOL_SPECIFIC", or "LOSO"
+    symbol: Optional[str] = None  # Required for SYMBOL_SPECIFIC and LOSO views
 ) -> TargetPredictabilityScore:
     """Evaluate predictability of a single target across symbols"""
     
@@ -2110,16 +2244,39 @@ def evaluate_target_predictability(
         target_config_obj = target_config
         target_column = target_config_obj.target_column
         display_name = target_config_obj.display_name or target_name
+    # Validate view and symbol parameters
+    if view == "SYMBOL_SPECIFIC" and symbol is None:
+        raise ValueError(f"symbol parameter required for SYMBOL_SPECIFIC view")
+    if view == "LOSO" and symbol is None:
+        raise ValueError(f"symbol parameter required for LOSO view")
+    if view == "CROSS_SECTIONAL" and symbol is not None:
+        logger.warning(f"symbol={symbol} provided but view=CROSS_SECTIONAL, ignoring symbol")
+        symbol = None
+    
+    view_display = f"{view}" + (f" (symbol={symbol})" if symbol else "")
     logger.info(f"\n{'='*60}")
-    logger.info(f"Evaluating: {display_name} ({target_column})")
+    logger.info(f"Evaluating: {display_name} ({target_column}) - {view_display}")
     logger.info(f"{'='*60}")
     
-    # Load all symbols at once (cross-sectional data loading)
+    # Load data based on view
     from TRAINING.utils.cross_sectional_data import load_mtf_data_for_ranking, prepare_cross_sectional_data_for_ranking
     from TRAINING.utils.leakage_filtering import filter_features_for_target
     
-    logger.info(f"Loading data for {len(symbols)} symbols (max {max_rows_per_symbol} rows per symbol)...")
-    mtf_data = load_mtf_data_for_ranking(data_dir, symbols, max_rows_per_symbol=max_rows_per_symbol)
+    # For SYMBOL_SPECIFIC and LOSO, filter symbols
+    symbols_to_load = symbols
+    if view == "SYMBOL_SPECIFIC":
+        symbols_to_load = [symbol]
+    elif view == "LOSO":
+        # LOSO: train on all symbols except symbol, validate on symbol
+        symbols_to_load = [s for s in symbols if s != symbol]
+        validation_symbol = symbol
+    else:
+        validation_symbol = None
+    
+    logger.info(f"Loading data for {len(symbols_to_load)} symbol(s) (max {max_rows_per_symbol} rows per symbol)...")
+    if view == "LOSO":
+        logger.info(f"  LOSO: Training on {len(symbols_to_load)} symbols, validating on {validation_symbol}")
+    mtf_data = load_mtf_data_for_ranking(data_dir, symbols_to_load, max_rows_per_symbol=max_rows_per_symbol)
     
     if not mtf_data:
         logger.error(f"No data loaded for any symbols")
@@ -2169,7 +2326,8 @@ def evaluate_target_predictability(
     )
     
     excluded_count = len(all_columns) - len(safe_columns) - 1  # -1 for target itself
-    logger.info(f"Filtered out {excluded_count} potentially leaking features (kept {len(safe_columns)} safe features)")
+    features_safe = len(safe_columns)
+    logger.debug(f"Filtered out {excluded_count} potentially leaking features (kept {features_safe} safe features)")
     
     # CRITICAL: Check if we have enough features to train
     # Load from config
@@ -2213,10 +2371,50 @@ def evaluate_target_predictability(
             leakage_flag="INSUFFICIENT_FEATURES"
         )
     
-    # Prepare cross-sectional data (matches training pipeline)
-    X, y, feature_names, symbols_array, time_vals = prepare_cross_sectional_data_for_ranking(
-        mtf_data, target_column, min_cs=min_cs, max_cs_samples=max_cs_samples, feature_names=safe_columns
-    )
+    # Track feature counts (will be updated after data preparation)
+    features_dropped_nan = 0
+    features_final = features_safe
+    
+    # Prepare data based on view
+    if view == "SYMBOL_SPECIFIC":
+        # For symbol-specific, prepare single-symbol time series data
+        # Use same function but with single symbol (min_cs=1 effectively)
+        X, y, feature_names, symbols_array, time_vals = prepare_cross_sectional_data_for_ranking(
+            mtf_data, target_column, min_cs=1, max_cs_samples=max_cs_samples, feature_names=safe_columns
+        )
+        # Verify we only have one symbol
+        unique_symbols = set(symbols_array) if symbols_array is not None else set()
+        if len(unique_symbols) > 1:
+            logger.warning(f"SYMBOL_SPECIFIC view expected 1 symbol, got {len(unique_symbols)}: {unique_symbols}")
+    elif view == "LOSO":
+        # LOSO: prepare training data (all symbols except validation symbol)
+        X_train, y_train, feature_names_train, symbols_array_train, time_vals_train = prepare_cross_sectional_data_for_ranking(
+            mtf_data, target_column, min_cs=min_cs, max_cs_samples=max_cs_samples, feature_names=safe_columns
+        )
+        # Load validation symbol data separately
+        validation_mtf_data = load_mtf_data_for_ranking(data_dir, [validation_symbol], max_rows_per_symbol=max_rows_per_symbol)
+        X_val, y_val, feature_names_val, symbols_array_val, time_vals_val = prepare_cross_sectional_data_for_ranking(
+            validation_mtf_data, target_column, min_cs=1, max_cs_samples=None, feature_names=safe_columns
+        )
+        # For LOSO, we'll use a special CV that trains on X_train and validates on X_val
+        # For now, combine them and use a custom splitter (will be implemented in train_and_evaluate_models)
+        # TODO: Implement LOSO-specific CV splitter
+        logger.warning("LOSO view: Using combined data for now (LOSO-specific CV splitter not yet implemented)")
+        X = X_train  # Will be handled by LOSO-specific logic
+        y = y_train
+        feature_names = feature_names_train
+        symbols_array = symbols_array_train
+        time_vals = time_vals_train
+    else:
+        # CROSS_SECTIONAL: standard pooled data
+        X, y, feature_names, symbols_array, time_vals = prepare_cross_sectional_data_for_ranking(
+            mtf_data, target_column, min_cs=min_cs, max_cs_samples=max_cs_samples, feature_names=safe_columns
+        )
+    
+    # Update feature counts after data preparation
+    if feature_names is not None:
+        features_final = len(feature_names)
+        features_dropped_nan = features_safe - features_final
     
     # Store cohort metadata context for later use in reproducibility tracking
     # These will be used to extract cohort metadata at the end of the function
@@ -2244,6 +2442,38 @@ def evaluate_target_predictability(
             n_models=0,
             model_scores={}
         )
+    
+    # Create ResolvedConfig with all resolved values
+    from TRAINING.utils.resolved_config import create_resolved_config
+    
+    # Get n_symbols_available from mtf_data
+    n_symbols_available = len(mtf_data)
+    
+    # Estimate feature lookback (conservative: 1 day = 288 bars for 5m data)
+    feature_lookback_max_minutes = None
+    if detected_interval > 0:
+        max_lookback_bars = 288  # 1 day of 5m bars
+        feature_lookback_max_minutes = max_lookback_bars * detected_interval
+    
+    # Create resolved config
+    resolved_config = create_resolved_config(
+        requested_min_cs=min_cs if view != "SYMBOL_SPECIFIC" else 1,
+        n_symbols_available=n_symbols_available,
+        max_cs_samples=max_cs_samples,
+        interval_minutes=detected_interval,
+        horizon_minutes=target_horizon_minutes,
+        feature_lookback_max_minutes=feature_lookback_max_minutes,
+        purge_buffer_bars=5,  # Default from config
+        default_purge_minutes=85.0,
+        features_safe=features_safe,
+        features_dropped_nan=features_dropped_nan,
+        features_final=features_final,
+        view=view,
+        symbol=symbol
+    )
+    
+    # Log single authoritative summary
+    resolved_config.log_summary(logger)
     
     logger.info(f"Cross-sectional data: {len(X)} samples, {X.shape[1]} features")
     logger.info(f"Symbols: {len(set(symbols_array))} unique symbols")
@@ -2451,6 +2681,20 @@ def evaluate_target_predictability(
         
         model_metrics, primary_scores, importance, suspicious_features, feature_importances, fold_timestamps, _perfect_correlation_models = result
         
+        # CRITICAL: Extract actual pruned feature count from feature_importances
+        # feature_importances contains the features that were actually used (after pruning)
+        actual_pruned_feature_count = 0
+        if feature_importances:
+            # Get feature count from first model's importances (all models use same features after pruning)
+            first_model_importances = next(iter(feature_importances.values()))
+            if isinstance(first_model_importances, dict):
+                actual_pruned_feature_count = len(first_model_importances)
+            elif isinstance(first_model_importances, (list, np.ndarray)):
+                actual_pruned_feature_count = len(first_model_importances)
+        # Fallback to len(feature_names) if we can't extract from importances
+        if actual_pruned_feature_count == 0:
+            actual_pruned_feature_count = len(feature_names) if feature_names else 0
+        
         # NOTE: _perfect_correlation_models is now only for tracking/debugging.
         # High training accuracy alone is NOT a reliable leakage signal (especially for tree models),
         # so we no longer mark targets as LEAKAGE_DETECTED based on this.
@@ -2516,48 +2760,108 @@ def evaluate_target_predictability(
             should_auto_fix = False
             
             # Check 1: Perfect CV scores (cross-validation)
-            if any(score >= cv_threshold for score in primary_scores.values() if not np.isnan(score)):
-                should_auto_fix = True
-                logger.warning(f"🚨 Perfect CV scores detected (>= {cv_threshold:.1%}) - enabling auto-fix mode")
+            # CRITICAL: Use actual CV scores from model_metrics, not primary_scores which may be aggregated
+            max_cv_score = None
+            if model_metrics:
+                for model_name, metrics in model_metrics.items():
+                    if isinstance(metrics, dict):
+                        # Get CV score (not training score)
+                        cv_score_val = metrics.get('accuracy') or metrics.get('roc_auc') or metrics.get('r2')
+                        if cv_score_val is not None and not np.isnan(cv_score_val):
+                            if max_cv_score is None or cv_score_val > max_cv_score:
+                                max_cv_score = cv_score_val
             
-            # Check 2: Perfect in-sample training accuracy (indicates leakage even if CV is lower)
+            # Fallback to primary_scores if model_metrics doesn't have CV scores
+            if max_cv_score is None:
+                max_cv_score = max(primary_scores.values()) if primary_scores else None
+            
+            if max_cv_score is not None and max_cv_score >= cv_threshold:
+                should_auto_fix = True
+                logger.warning(f"🚨 Perfect CV scores detected (max_cv={max_cv_score:.4f} >= {cv_threshold:.1%}) - enabling auto-fix mode")
+            
+            # Check 2: Perfect in-sample training accuracy with suspicion score gating
+            # Use suspicion score to distinguish overfit noise from real leakage
             if not should_auto_fix and model_metrics:
                 logger.debug(f"Checking model_metrics for perfect scores: {list(model_metrics.keys())}")
+                
+                # Compute suspicion score for each model with perfect train accuracy
                 for model_name, metrics in model_metrics.items():
                     if isinstance(metrics, dict):
                         logger.debug(f"  {model_name} metrics: {list(metrics.keys())}")
-                        # Check for perfect training accuracy in classification tasks
-                        # Check training_accuracy first (in-sample), then fall back to CV accuracy
-                        if 'training_accuracy' in metrics:
-                            acc = metrics['training_accuracy']
-                            logger.debug(f"    {model_name} training_accuracy: {acc:.4f}")
-                            if acc >= accuracy_threshold:
+                        
+                        # Get train and CV scores
+                        train_acc = metrics.get('training_accuracy')
+                        cv_acc = metrics.get('accuracy')  # CV accuracy
+                        train_r2 = metrics.get('training_r2')
+                        cv_r2 = metrics.get('r2')  # CV R²
+                        
+                        # Check classification
+                        if train_acc is not None and train_acc >= accuracy_threshold:
+                            logger.debug(f"    {model_name} training_accuracy: {train_acc:.4f}")
+                            
+                            # Compute suspicion score
+                            suspicion = _compute_suspicion_score(
+                                train_score=train_acc,
+                                cv_score=cv_acc,
+                                feature_importances=feature_importances.get(model_name, {}) if feature_importances else {},
+                                task_type='classification'
+                            )
+                            
+                            # Only auto-fix if suspicion score crosses threshold
+                            suspicion_threshold = 0.5  # Load from config if available
+                            if suspicion >= suspicion_threshold:
                                 should_auto_fix = True
-                                logger.warning(f"🚨 Perfect training accuracy detected in {model_name} ({acc:.1%} >= {accuracy_threshold:.1%}) - enabling auto-fix mode")
+                                cv_acc_str = f"{cv_acc:.3f}" if cv_acc is not None else "N/A"
+                                logger.warning(f"🚨 Suspicious perfect training accuracy in {model_name} "
+                                            f"(train={train_acc:.1%}, cv={cv_acc_str}, "
+                                            f"suspicion={suspicion:.2f}) - enabling auto-fix mode")
                                 break
-                        elif 'accuracy' in metrics:
-                            acc = metrics['accuracy']
-                            logger.debug(f"    {model_name} accuracy (CV): {acc:.4f}")
-                            if acc >= accuracy_threshold:
+                            else:
+                                # Overfit noise - log once at INFO level
+                                cv_acc_str = f"{cv_acc:.3f}" if cv_acc is not None else "N/A"
+                                logger.info(f"⚠️  {model_name} memorized training data (train={train_acc:.1%}, "
+                                         f"cv={cv_acc_str}, suspicion={suspicion:.2f}). "
+                                         f"Ignoring; check CV metrics.")
+                        
+                        elif cv_acc is not None and cv_acc >= accuracy_threshold:
+                            # CV accuracy alone is suspicious
+                            should_auto_fix = True
+                            logger.warning(f"🚨 Perfect CV accuracy detected in {model_name} "
+                                        f"({cv_acc:.1%} >= {accuracy_threshold:.1%}) - enabling auto-fix mode")
+                            break
+                        
+                        # Check regression
+                        if train_r2 is not None and train_r2 >= r2_threshold:
+                            logger.debug(f"    {model_name} training_r2 (correlation): {train_r2:.4f}")
+                            
+                            # Compute suspicion score
+                            suspicion = _compute_suspicion_score(
+                                train_score=train_r2,
+                                cv_score=cv_r2,
+                                feature_importances=feature_importances.get(model_name, {}) if feature_importances else {},
+                                task_type='regression'
+                            )
+                            
+                            suspicion_threshold = 0.5
+                            if suspicion >= suspicion_threshold:
                                 should_auto_fix = True
-                                logger.warning(f"🚨 Perfect CV accuracy detected in {model_name} ({acc:.1%} >= {accuracy_threshold:.1%}) - enabling auto-fix mode")
+                                cv_r2_str = f"{cv_r2:.4f}" if cv_r2 is not None else "N/A"
+                                logger.warning(f"🚨 Suspicious perfect training correlation in {model_name} "
+                                            f"(train={train_r2:.4f}, cv={cv_r2_str}, "
+                                            f"suspicion={suspicion:.2f}) - enabling auto-fix mode")
                                 break
-                        # Check for perfect correlation in regression tasks
-                        # Check training_r2 first (in-sample correlation), then fall back to CV R²
-                        if 'training_r2' in metrics:
-                            r2 = metrics['training_r2']
-                            logger.debug(f"    {model_name} training_r2 (correlation): {r2:.4f}")
-                            if r2 >= r2_threshold:
-                                should_auto_fix = True
-                                logger.warning(f"🚨 Perfect training correlation detected in {model_name} ({r2:.4f} >= {r2_threshold:.4f}) - enabling auto-fix mode")
-                                break
-                        elif 'r2' in metrics:
-                            r2 = metrics['r2']
-                            logger.debug(f"    {model_name} R² (CV): {r2:.4f}")
-                            if r2 >= r2_threshold:
-                                should_auto_fix = True
-                                logger.warning(f"🚨 Perfect CV R² detected in {model_name} ({r2:.4f} >= {r2_threshold:.4f}) - enabling auto-fix mode")
-                                break
+                            else:
+                                cv_r2_str = f"{cv_r2:.4f}" if cv_r2 is not None else "N/A"
+                                logger.info(f"⚠️  {model_name} memorized training data (train={train_r2:.4f}, "
+                                         f"cv={cv_r2_str}, suspicion={suspicion:.2f}). "
+                                         f"Ignoring; check CV metrics.")
+                        
+                        elif cv_r2 is not None and cv_r2 >= r2_threshold:
+                            # CV R² alone is suspicious
+                            should_auto_fix = True
+                            logger.warning(f"🚨 Perfect CV R² detected in {model_name} "
+                                        f"({cv_r2:.4f} >= {r2_threshold:.4f}) - enabling auto-fix mode")
+                            break
             
             # Check 3: Models that triggered perfect correlation warnings (fallback check)
             # Note: _perfect_correlation_models is populated inside train_and_evaluate_models,
@@ -2628,16 +2932,27 @@ def evaluate_target_predictability(
                                 break
                 
                 # Fallback to CV score if no perfect training score found
+                # CRITICAL: Use the same max_cv_score we computed above for consistency
                 if actual_train_score is None:
-                    actual_train_score = max(primary_scores.values()) if primary_scores else None
-                    logger.debug(f"Using CV score {actual_train_score:.4f} as fallback for auto-fixer")
+                    if max_cv_score is not None:
+                        actual_train_score = max_cv_score
+                        logger.debug(f"Using CV score {actual_train_score:.4f} as fallback for auto-fixer (from model_metrics)")
+                    else:
+                        actual_train_score = max(primary_scores.values()) if primary_scores else None
+                        logger.debug(f"Using CV score {actual_train_score:.4f} as fallback for auto-fixer (from primary_scores)")
                 
                 # Log what we're passing to auto-fixer (enhanced visibility)
+                # CRITICAL: Clarify which feature set is being used for scanning vs training
+                train_feature_set_size = len(feature_names)  # Features used for training (after pruning)
+                scan_feature_set_size = len(safe_columns) if 'safe_columns' in locals() else len(feature_names)  # Features available for scanning
+                scan_scope = "full_safe" if scan_feature_set_size > train_feature_set_size else "trained_only"
+                
                 train_score_str = f"{actual_train_score:.4f}" if actual_train_score is not None else "None"
                 logger.info(f"🔧 Auto-fixer inputs: train_score={train_score_str}, "
-                           f"model_importance keys={len(avg_importance)}, "
-                           f"feature_names={len(feature_names)}, "
-                           f"feature_importances provided={feature_importances is not None and len(feature_importances) > 0}")
+                           f"train_feature_set_size={train_feature_set_size}, "
+                           f"scan_feature_set_size={scan_feature_set_size}, "
+                           f"scan_scope={scan_scope}, "
+                           f"model_importance keys={len(avg_importance)}")
                 if avg_importance:
                     top_5 = sorted(avg_importance.items(), key=lambda x: x[1], reverse=True)[:5]
                     logger.debug(f"   Top 5 features by importance: {', '.join([f'{f}={imp:.4f}' for f, imp in top_5])}")
@@ -2682,15 +2997,18 @@ def evaluate_target_predictability(
                     logger.info("🔍 Auto-fix detected no leaks (may need manual review)")
                     # Still create backup even when no leaks detected (to preserve state history)
                     # This ensures we have a backup whenever auto-fix mode is triggered
-                    try:
-                        backup_files = fixer._backup_configs(
-                            target_name=target_name,
-                            max_backups_per_target=None  # Use instance config
-                        )
-                        if backup_files:
-                            logger.info(f"📦 Backup created (no leaks detected): {len(backup_files)} backup file(s)")
-                    except Exception as backup_error:
-                        logger.warning(f"Failed to create backup when no leaks detected: {backup_error}")
+                    # But only if backup_configs is enabled
+                    backup_files = []
+                    if fixer.backup_configs:
+                        try:
+                            backup_files = fixer._backup_configs(
+                                target_name=target_name,
+                                max_backups_per_target=None  # Use instance config
+                            )
+                            if backup_files:
+                                logger.info(f"📦 Backup created (no leaks detected): {len(backup_files)} backup file(s)")
+                        except Exception as backup_error:
+                            logger.warning(f"Failed to create backup when no leaks detected: {backup_error}")
             except Exception as e:
                 logger.warning(f"Auto-fix failed: {e}", exc_info=True)
         
@@ -2856,9 +3174,35 @@ def evaluate_target_predictability(
         attempts=1
     )
     
-    # Log with leakage warning if needed
+    # Log canonical summary block (one block that can be screenshot for PR comments)
+    # Use detected_interval from evaluate_target_predictability scope (defined at line ~2276)
+    summary_interval = detected_interval if 'detected_interval' in locals() else None
+    summary_horizon = target_horizon_minutes if 'target_horizon_minutes' in locals() else None
+    summary_safe_features = len(safe_columns) if 'safe_columns' in locals() else 0
+    summary_leaky_features = leaky_features if 'leaky_features' in locals() else []
+    
+    _log_canonical_summary(
+        target_name=target_name,
+        target_column=target_column,
+        symbols=symbols,
+        time_vals=time_vals,
+        interval=summary_interval,
+        horizon=summary_horizon,
+        rows=len(X) if X is not None else 0,
+        features_safe=summary_safe_features,
+        features_pruned=actual_pruned_feature_count if 'actual_pruned_feature_count' in locals() else (len(feature_names) if feature_names else 0),
+        leak_scan_verdict="PASS" if not summary_leaky_features else "FAIL",
+        auto_fix_verdict="SKIPPED" if not should_auto_fix else ("RAN" if autofix_info and autofix_info.modified_configs else "NO_CHANGES"),
+        auto_fix_reason=None if should_auto_fix else "overfit_likely; cv_not_suspicious",
+        cv_metric=f"{metric_name}={mean_score:.3f}±{std_score:.3f}",
+        composite=composite,
+        leakage_flag=leakage_flag,
+        cohort_path=None  # Will be set by reproducibility tracker
+    )
+    
+    # Legacy summary line (backward compatibility)
     leakage_indicator = f" [{leakage_flag}]" if leakage_flag != "OK" else ""
-    logger.info(f"Summary: {metric_name}={mean_score:.3f}±{std_score:.3f}, "
+    logger.debug(f"Legacy summary: {metric_name}={mean_score:.3f}±{std_score:.3f}, "
                f"importance={mean_importance:.2f}, composite={composite:.3f}{leakage_indicator}")
     
     # Store suspicious features in result for summary report
@@ -2904,20 +3248,32 @@ def evaluate_target_predictability(
                 elif 'symbols' in locals():
                     symbols_for_ctx = symbols
                 
-                # Get purge_minutes from purge_time if available
-                purge_minutes_val = None
-                if 'purge_time' in locals() and purge_time is not None:
-                    try:
-                        if hasattr(purge_time, 'total_seconds'):
-                            purge_minutes_val = purge_time.total_seconds() / 60.0
-                    except Exception:
-                        pass
+                # Use resolved_config values if available (single source of truth)
+                if 'resolved_config' in locals() and resolved_config:
+                    purge_minutes_val = resolved_config.purge_minutes
+                    embargo_minutes_val = resolved_config.embargo_minutes
+                    # Estimate feature lookback from resolved_config
+                    if resolved_config.interval_minutes is not None:
+                        max_lookback_bars = 288  # 1 day of 5m bars
+                        feature_lookback_max = max_lookback_bars * resolved_config.interval_minutes
+                    else:
+                        feature_lookback_max = None
+                elif 'purge_minutes_val' not in locals() or purge_minutes_val is None:
+                    # Fallback: compute from purge_time if available
+                    if 'purge_time' in locals() and purge_time is not None:
+                        try:
+                            if hasattr(purge_time, 'total_seconds'):
+                                purge_minutes_val = purge_time.total_seconds() / 60.0
+                                embargo_minutes_val = purge_minutes_val  # Assume same
+                        except Exception:
+                            pass
                 
                 # Estimate feature lookback (conservative: 1 day = 288 bars for 5m data)
-                feature_lookback_max = None
-                if 'data_interval_minutes' in locals() and data_interval_minutes is not None:
-                    max_lookback_bars = 288  # 1 day of 5m bars
-                    feature_lookback_max = max_lookback_bars * data_interval_minutes
+                if 'feature_lookback_max' not in locals() or feature_lookback_max is None:
+                    feature_lookback_max = None
+                    if 'data_interval_minutes' in locals() and data_interval_minutes is not None:
+                        max_lookback_bars = 288  # 1 day of 5m bars
+                        feature_lookback_max = max_lookback_bars * data_interval_minutes
                 
                 # Build RunContext
                 ctx = RunContext(
@@ -2941,6 +3297,11 @@ def evaluate_target_predictability(
                     stage="target_ranking",
                     output_dir=output_dir
                 )
+                # Add view and symbol to RunContext if available
+                if 'view' in locals():
+                    ctx.view = view
+                if 'symbol' in locals() and symbol:
+                    ctx.symbol = symbol
                 
                 # Build metrics dict
                 metrics_dict = {
@@ -3023,7 +3384,14 @@ def evaluate_target_predictability(
                 if 'purge_time' in locals() and purge_time is not None:
                     try:
                         if hasattr(purge_time, 'total_seconds'):
-                            additional_data_with_cohort['purge_minutes'] = purge_time.total_seconds() / 60.0
+                            # Use purge_minutes_val if available (single source of truth)
+                            if 'purge_minutes_val' in locals() and purge_minutes_val is not None:
+                                additional_data_with_cohort['purge_minutes'] = purge_minutes_val
+                                additional_data_with_cohort['embargo_minutes'] = purge_minutes_val
+                            else:
+                                purge_minutes_val = purge_time.total_seconds() / 60.0
+                                additional_data_with_cohort['purge_minutes'] = purge_minutes_val
+                                additional_data_with_cohort['embargo_minutes'] = purge_minutes_val
                     except Exception:
                         pass
                 if 'cv_folds' in locals() and cv_folds is not None:

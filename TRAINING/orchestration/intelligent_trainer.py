@@ -863,7 +863,9 @@ class IntelligentTrainer:
         multi_model_config: Optional[Dict[str, Any]] = None,
         force_refresh: bool = False,
         use_cache: bool = True,
-        feature_selection_config: Optional['FeatureSelectionConfig'] = None  # New typed config (optional)
+        feature_selection_config: Optional['FeatureSelectionConfig'] = None,  # New typed config (optional)
+        view: str = "CROSS_SECTIONAL",  # Must match target ranking view
+        symbol: Optional[str] = None  # Required for SYMBOL_SPECIFIC view
     ) -> List[str]:
         """
         Automatically select top M features for a target.
@@ -923,9 +925,17 @@ class IntelligentTrainer:
             elif hasattr(self.experiment_config, 'interval'):
                 explicit_interval = self.experiment_config.interval
         
+        # Filter symbols based on view
+        symbols_to_use = self.symbols
+        if view == "SYMBOL_SPECIFIC" and symbol:
+            symbols_to_use = [symbol]
+        elif view == "LOSO" and symbol:
+            # LOSO: train on all symbols except symbol
+            symbols_to_use = [s for s in self.symbols if s != symbol]
+        
         selected_features, _ = select_features_for_target(
             target_column=target,
-            symbols=self.symbols,
+            symbols=symbols_to_use,
             data_dir=self.data_dir,
             model_families_config=model_families_config,
             multi_model_config=multi_model_config,
@@ -933,7 +943,9 @@ class IntelligentTrainer:
             output_dir=feature_output_dir,
             feature_selection_config=feature_selection_config,  # Pass typed config if available
             explicit_interval=explicit_interval,  # Pass explicit interval to avoid auto-detection warnings
-            experiment_config=self.experiment_config  # Pass experiment config for data.bar_interval
+            experiment_config=self.experiment_config,  # Pass experiment config for data.bar_interval
+            view=view,  # Pass view to ensure consistency
+            symbol=symbol  # Pass symbol for SYMBOL_SPECIFIC view
         )
         
         # Load confidence and apply routing
@@ -1053,17 +1065,68 @@ class IntelligentTrainer:
         logger.info(f"📋 Selected {len(targets)} targets: {', '.join(targets[:5])}{'...' if len(targets) > 5 else ''}")
         
         # Step 2: Feature selection (per target if auto_features)
+        # CRITICAL: Use same view as target ranking for consistency
         target_features = {}
         if auto_features and features is None:
             logger.info("="*80)
             logger.info("STEP 2: Automatic Feature Selection")
             logger.info("="*80)
+            
+            # Load routing decisions to determine view per target
+            routing_decisions = {}
+            try:
+                from TRAINING.ranking.target_routing import load_routing_decisions
+                routing_file = self.output_dir / "target_rankings" / "REPRODUCIBILITY" / "TARGET_RANKING" / "routing_decisions.json"
+                if not routing_file.exists():
+                    # Try alternative location
+                    routing_file = self.output_dir / "REPRODUCIBILITY" / "TARGET_RANKING" / "routing_decisions.json"
+                if routing_file.exists():
+                    routing_decisions = load_routing_decisions(routing_file)
+                    logger.info(f"Loaded routing decisions for {len(routing_decisions)} targets")
+            except Exception as e:
+                logger.debug(f"Could not load routing decisions: {e}, using CROSS_SECTIONAL for all targets")
+            
             for target in targets:
-                target_features[target] = self.select_features_auto(
-                    target=target,
-                    top_m=top_m_features,
-                    use_cache=use_cache
-                )
+                # Determine view from routing decision
+                route_info = routing_decisions.get(target, {})
+                route = route_info.get('route', 'CROSS_SECTIONAL')
+                
+                # Default to CROSS_SECTIONAL if no routing decision exists
+                if not routing_decisions or target not in routing_decisions:
+                    route = 'CROSS_SECTIONAL'
+                
+                if route == 'CROSS_SECTIONAL' or route == 'BOTH':
+                    # Cross-sectional feature selection
+                    target_features[target] = self.select_features_auto(
+                        target=target,
+                        top_m=top_m_features,
+                        use_cache=use_cache,
+                        view="CROSS_SECTIONAL",
+                        symbol=None
+                    )
+                
+                if route == 'SYMBOL_SPECIFIC' or route == 'BOTH':
+                    # Symbol-specific feature selection (for winner symbols or all symbols)
+                    winner_symbols = route_info.get('winner_symbols', self.symbols)
+                    if not winner_symbols:
+                        # Fallback: use all symbols if no winners specified
+                        winner_symbols = self.symbols
+                    if target not in target_features:
+                        target_features[target] = {}
+                    for symbol in winner_symbols:
+                        target_features[target][symbol] = self.select_features_auto(
+                            target=target,
+                            top_m=top_m_features,
+                            use_cache=use_cache,
+                            view="SYMBOL_SPECIFIC",
+                            symbol=symbol
+                        )
+                
+                if route == 'BLOCKED':
+                    logger.warning(f"Skipping feature selection for {target} (BLOCKED: {route_info.get('reason', 'suspicious score')})")
+                    # Don't select features for blocked targets - skip this target
+                    if target not in target_features:
+                        target_features[target] = []  # Empty list to avoid KeyError downstream
         elif features:
             # Use same features for all targets
             for target in targets:
@@ -1480,15 +1543,19 @@ Examples:
         """
     )
     
-    # Core arguments
+    # Core arguments (now optional - can come from config)
     parser.add_argument('--data-dir', type=Path, required=False,
-                       help='Data directory containing symbol data (required unless --experiment-config provided)')
+                       help='Data directory (overrides config, required if not in config)')
     parser.add_argument('--symbols', nargs='+', required=False,
-                       help='Symbols to train on (required unless --experiment-config provided)')
-    parser.add_argument('--output-dir', type=Path, default=Path('intelligent_output'),
-                       help='Output directory for results')
+                       help='Symbols to train on (overrides config, required if not in config)')
+    parser.add_argument('--output-dir', type=Path, required=False,
+                       help='Output directory (overrides config, default: intelligent_output)')
     parser.add_argument('--cache-dir', type=Path,
-                       help='Cache directory for rankings/selections (default: output_dir/cache)')
+                       help='Cache directory (overrides config, default: output_dir/cache)')
+    
+    # Simple config-based mode
+    parser.add_argument('--config', type=str,
+                       help='Config profile name (loads from CONFIG/training_config/intelligent_training_config.yaml)')
     
     # Target/feature selection (moved to config - CLI only for manual overrides)
     parser.add_argument('--targets', nargs='+',
@@ -1499,6 +1566,12 @@ Examples:
     # Training arguments (moved to config - CLI only for manual overrides)
     parser.add_argument('--families', nargs='+',
                        help='Model families to train (overrides config)')
+    
+    # Quick presets
+    parser.add_argument('--quick', action='store_true',
+                       help='Quick test mode: 3 targets, 50 features, limited evaluation')
+    parser.add_argument('--full', action='store_true',
+                       help='Full production mode: all defaults from config')
     
     # Testing/debugging overrides (use sparingly - prefer config)
     parser.add_argument('--override-max-samples', type=int,
@@ -1540,13 +1613,47 @@ Examples:
             logger.error(f"Failed to load experiment config '{args.experiment_config}': {e}")
             raise
     
-    # Validate required args (either from CLI or experiment config)
-    if not args.data_dir:
-        parser.error("--data-dir is required (or provide --experiment-config)")
-    if not args.symbols:
-        parser.error("--symbols is required (or provide --experiment-config)")
+    # Load intelligent training config (NEW - allows simple command-line usage)
+    intel_config_file = Path("CONFIG/training_config/intelligent_training_config.yaml")
+    intel_config_data = {}
+    if intel_config_file.exists():
+        try:
+            import yaml
+            with open(intel_config_file, 'r') as f:
+                intel_config_data = yaml.safe_load(f) or {}
+            logger.info(f"✅ Loaded intelligent training config from {intel_config_file}")
+        except Exception as e:
+            logger.warning(f"Could not load intelligent training config: {e}")
     
-    # Load intelligent training settings from config (SST)
+    # Apply config values if CLI args not provided
+    if not args.data_dir and intel_config_data.get('data', {}).get('data_dir'):
+        args.data_dir = Path(intel_config_data['data']['data_dir'])
+    if not args.symbols and intel_config_data.get('data', {}).get('symbols'):
+        args.symbols = intel_config_data['data']['symbols']
+    if not args.output_dir and intel_config_data.get('output', {}).get('output_dir'):
+        args.output_dir = Path(intel_config_data['output']['output_dir'])
+    if not args.cache_dir and intel_config_data.get('output', {}).get('cache_dir'):
+        args.cache_dir = Path(intel_config_data['output']['cache_dir']) if intel_config_data['output']['cache_dir'] else None
+    
+    # Apply quick/full presets
+    if args.quick:
+        logger.info("🚀 Quick test mode enabled")
+        intel_config_data.setdefault('targets', {})['max_targets_to_evaluate'] = 3
+        intel_config_data.setdefault('targets', {})['top_n_targets'] = 3
+        intel_config_data.setdefault('features', {})['top_m_features'] = 50
+    elif args.full:
+        logger.info("🏭 Full production mode enabled")
+        # Use all config defaults
+    
+    # Validate required args (either from CLI, config, or experiment config)
+    if not args.data_dir:
+        parser.error("--data-dir is required (or set in CONFIG/training_config/intelligent_training_config.yaml)")
+    if not args.symbols:
+        parser.error("--symbols is required (or set in CONFIG/training_config/intelligent_training_config.yaml)")
+    if not args.output_dir:
+        args.output_dir = Path('intelligent_output')
+    
+    # Load intelligent training settings (prioritize new config file, fallback to old system)
     try:
         from CONFIG.config_loader import get_cfg
         _CONFIG_AVAILABLE = True
@@ -1554,12 +1661,53 @@ Examples:
         _CONFIG_AVAILABLE = False
         logger.warning("Config loader not available, using hardcoded defaults")
     
-    if _CONFIG_AVAILABLE:
+    # Use new intelligent_training_config.yaml if available, otherwise fallback to pipeline_config.yaml
+    if intel_config_data:
+        # Use new config file
+        targets_cfg = intel_config_data.get('targets', {})
+        features_cfg = intel_config_data.get('features', {})
+        data_cfg = intel_config_data.get('data', {})
+        advanced_cfg = intel_config_data.get('advanced', {})
+        cache_cfg = intel_config_data.get('cache', {})
+        
+        auto_targets = targets_cfg.get('auto_targets', True)
+        top_n_targets = targets_cfg.get('top_n_targets', 10)
+        max_targets_to_evaluate = targets_cfg.get('max_targets_to_evaluate', None)
+        manual_targets = targets_cfg.get('manual_targets', [])
+        
+        auto_features = features_cfg.get('auto_features', True)
+        top_m_features = features_cfg.get('top_m_features', 100)
+        manual_features = features_cfg.get('manual_features', [])
+        
+        # Model families from config (can be overridden by CLI)
+        config_families = intel_config_data.get('model_families', [])
+        
+        strategy = intel_config_data.get('strategy', 'single_task')
+        min_cs = data_cfg.get('min_cs', 10)
+        max_rows_per_symbol = data_cfg.get('max_rows_per_symbol', None)
+        max_rows_train = data_cfg.get('max_rows_train', None)
+        max_cs_samples = data_cfg.get('max_cs_samples', 1000)
+        run_leakage_diagnostics = advanced_cfg.get('run_leakage_diagnostics', False)
+        
+        use_cache = cache_cfg.get('use_cache', True)
+        force_refresh_config = cache_cfg.get('force_refresh', False)
+        
         # Check for test mode override (for E2E testing)
+        use_test_config = args.output_dir and 'test' in str(args.output_dir).lower()
+        if use_test_config and intel_config_data.get('test'):
+            test_cfg = intel_config_data['test']
+            logger.info("📋 Using test configuration (detected 'test' in output-dir)")
+            if 'max_targets_to_evaluate' in test_cfg:
+                max_targets_to_evaluate = test_cfg.get('max_targets_to_evaluate')
+            if 'top_n_targets' in test_cfg:
+                top_n_targets = test_cfg.get('top_n_targets')
+            if 'top_m_features' in test_cfg:
+                top_m_features = test_cfg.get('top_m_features')
+    elif _CONFIG_AVAILABLE:
+        # Fallback to old config system
         use_test_config = args.output_dir and 'test' in str(args.output_dir).lower()
         
         if use_test_config:
-            # Load test config if available (for E2E testing)
             test_cfg = get_cfg("test.intelligent_training", default={}, config_name="pipeline_config")
             if test_cfg:
                 logger.info("📋 Using test configuration (detected 'test' in output-dir)")
@@ -1567,7 +1715,6 @@ Examples:
             else:
                 intel_cfg = get_cfg("intelligent_training", default={}, config_name="pipeline_config")
         else:
-            # Load from config (SST)
             intel_cfg = get_cfg("intelligent_training", default={}, config_name="pipeline_config")
         
         auto_targets = intel_cfg.get('auto_targets', True)
@@ -1581,12 +1728,16 @@ Examples:
         max_rows_train = intel_cfg.get('max_rows_train', None)
         max_cs_samples = intel_cfg.get('max_cs_samples', None)
         run_leakage_diagnostics = intel_cfg.get('run_leakage_diagnostics', False)
+        use_cache = True
+        force_refresh_config = False
+        manual_targets = []
+        manual_features = []
+        config_families = []
         
-        # If max_cs_samples not in intelligent_training, try pipeline.data_limits
         if max_cs_samples is None:
             max_cs_samples = get_cfg("pipeline.data_limits.max_cs_samples", default=None, config_name="pipeline_config")
     else:
-        # Fallback defaults (FALLBACK_DEFAULT_OK)
+        # Fallback defaults
         auto_targets = True
         top_n_targets = 5
         max_targets_to_evaluate = None
@@ -1598,6 +1749,11 @@ Examples:
         max_rows_train = None
         max_cs_samples = None
         run_leakage_diagnostics = False
+        use_cache = True
+        force_refresh_config = False
+        manual_targets = []
+        manual_features = []
+        config_families = []
     
     # CLI overrides (for testing/debugging only - warn user)
     if args.override_max_samples:
@@ -1607,10 +1763,14 @@ Examples:
         logger.warning("⚠️  Using CLI override for max_rows (testing only - not SST compliant)")
         max_rows_per_symbol = args.override_max_rows
     
-    # Manual overrides (targets/features/families) - these are allowed as they're explicit choices
-    targets = args.targets  # Manual target list (overrides auto_targets)
-    features = args.features  # Manual feature list (overrides auto_features)
-    families = args.families  # Manual family list (overrides config)
+    # Manual overrides (targets/features/families) - CLI > config > defaults
+    targets = args.targets if args.targets else (manual_targets if manual_targets else None)
+    features = args.features if args.features else (manual_features if manual_features else None)
+    families = args.families if args.families else (config_families if config_families else None)
+    
+    # If families still not set, use defaults
+    if not families:
+        families = ['lightgbm', 'xgboost', 'random_forest']
     
     # Create orchestrator
     trainer = IntelligentTrainer(
@@ -1633,8 +1793,16 @@ Examples:
         # Only load default if no experiment config
         multi_model_config = load_multi_model_config()
     
-    # Determine cache usage (operational flag - allowed in CLI)
-    use_cache = not args.no_cache
+    # Determine cache usage (CLI overrides config)
+    if args.no_cache:
+        use_cache = False
+    elif args.force_refresh:
+        use_cache = True  # Still use cache, but force refresh
+    else:
+        use_cache = use_cache  # From config
+    
+    # Force refresh from config or CLI
+    force_refresh = args.force_refresh or force_refresh_config
     
     # Run training with config-driven settings
     try:
@@ -1648,7 +1816,7 @@ Examples:
             features=features,  # Manual override if provided
             families=families,  # Manual override if provided
             strategy=strategy,
-            force_refresh=args.force_refresh,
+            force_refresh=force_refresh,
             use_cache=use_cache,
             run_leakage_diagnostics=run_leakage_diagnostics,
             min_cs=min_cs,

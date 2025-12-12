@@ -149,7 +149,7 @@ class TrendAnalyzer:
         if index_path.exists():
             try:
                 df = pd.read_parquet(index_path)
-                logger.info(f"Loaded existing artifact index: {len(df)} runs")
+                logger.debug(f"Loaded existing artifact index: {len(df)} runs")
                 return df
             except Exception as e:
                 logger.warning(f"Failed to load existing index: {e}, rebuilding...")

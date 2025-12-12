@@ -127,7 +127,19 @@ def prepare_cross_sectional_data_for_ranking(
         logger.info(f"Using default max_cs_samples={max_cs_samples}")
     
     logger.info(f"🎯 Building cross-sectional data for target: {target_column}")
-    logger.info(f"📊 Cross-sectional sampling: min_cs={min_cs}, max_cs_samples={max_cs_samples}")
+    
+    # Compute effective_min_cs upfront for consistent logging
+    n_symbols_available = len(mtf_data)
+    effective_min_cs = min(min_cs, n_symbols_available)
+    min_cs_reason = f"only_{n_symbols_available}_symbols_loaded" if effective_min_cs < min_cs else "requested"
+    
+    # Log requested vs effective (single authoritative line)
+    logger.info(
+        f"📊 Cross-sectional sampling: "
+        f"requested_min_cs={min_cs} → effective_min_cs={effective_min_cs} "
+        f"(reason={min_cs_reason}, n_symbols={n_symbols_available}), "
+        f"max_cs_samples={max_cs_samples}"
+    )
     
     # Combine all symbol data
     all_data = []
@@ -163,10 +175,8 @@ def prepare_cross_sectional_data_for_ranking(
     # But be lenient: if we have fewer symbols than min_cs, use what we have
     if time_col is not None:
         cs = combined_df.groupby(time_col)["symbol"].transform("size")
-        # Adjust min_cs to be at most the number of symbols we have
-        effective_min_cs = min(min_cs, len(mtf_data))
         combined_df = combined_df[cs >= effective_min_cs]
-        logger.info(f"After min_cs={effective_min_cs} filter (requested {min_cs}, have {len(mtf_data)} symbols): {combined_df.shape}")
+        logger.debug(f"After effective_min_cs={effective_min_cs} filter: {combined_df.shape}")
         
         if len(combined_df) == 0:
             logger.warning(f"No data after min_cs filter - all timestamps have < {effective_min_cs} symbols")
@@ -194,12 +204,28 @@ def prepare_cross_sectional_data_for_ranking(
                 return np.random.RandomState(seed).permutation(len(group))
             
             combined_df["_shuffle_key"] = combined_df.groupby(time_col)["symbol"].transform(_get_deterministic_shuffle)
+            # Count timestamps that hit the cap before filtering
+            timestamp_counts = combined_df.groupby(time_col).size()
+            cap_hit_count = (timestamp_counts > max_cs_samples).sum()
+            total_timestamps = len(timestamp_counts)
+            
             combined_df = (combined_df
                            .sort_values([time_col, "_shuffle_key"])
                            .groupby(time_col, group_keys=False)
                            .head(max_cs_samples)
                            .drop(columns=["_shuffle_key"]))
-            logger.info(f"After max_cs_samples={max_cs_samples} filter (shuffled per timestamp): {combined_df.shape}")
+            
+            # INFO: Show shape + cap hit info (readable)
+            if cap_hit_count > 0:
+                logger.info(f"After max_cs_samples={max_cs_samples} filter: {combined_df.shape} "
+                          f"(cap_hit: {cap_hit_count}/{total_timestamps} timestamps)")
+            else:
+                logger.info(f"After max_cs_samples={max_cs_samples} filter: {combined_df.shape} "
+                          f"(cap_hit: 0/{total_timestamps} timestamps)")
+            # DEBUG: Full timestamp-level detail
+            if cap_hit_count > 0:
+                logger.debug(f"max_cs_samples cap details: {cap_hit_count} timestamps exceeded limit "
+                           f"(sample: {list(timestamp_counts[timestamp_counts > max_cs_samples].head(5).index)})")
             # Data is already sorted by [time_col, _shuffle_key], so it's sorted by time_col
     else:
         # CRITICAL: Panel data REQUIRES timestamps for time-based purging
@@ -234,14 +260,19 @@ def prepare_cross_sectional_data_for_ranking(
         feature_df.loc[:, col] = pd.to_numeric(feature_df[col], errors='coerce')
     feature_df.replace([np.inf, -np.inf], np.nan, inplace=True)
     
+    # Track feature counts for resolved_config
+    features_safe = len(feature_names)  # Features before dropping NaN
+    
     # Drop columns that are entirely NaN
     before_cols = feature_df.shape[1]
     feature_df = feature_df.dropna(axis=1, how='all')
-    dropped = before_cols - feature_df.shape[1]
-    if dropped:
-        logger.info(f"🔧 Dropped {dropped} all-NaN feature columns")
+    features_dropped_nan = before_cols - feature_df.shape[1]
+    if features_dropped_nan:
+        logger.debug(f"Dropped {features_dropped_nan} all-NaN feature columns")
         # Update feature_names to match
         feature_names = [f for f in feature_names if f in feature_df.columns]
+    
+    features_final = len(feature_names)  # Features after all filtering
     
     # Ensure only numeric dtypes
     numeric_cols = [c for c in feature_df.columns if pd.api.types.is_numeric_dtype(feature_df[c])]
