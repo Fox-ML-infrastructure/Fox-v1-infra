@@ -85,4 +85,13 @@ threading:
     reserve_threads: 1  # Reserve threads for system (used in calculations)
     min_threads: 1  # Minimum threads to allocate
     max_threads: null  # null = no limit, or set maximum
+  
+  # Parallel Execution (Task-Level Parallelization)
+  parallel:
+    # Max workers for ProcessPoolExecutor (CPU-bound tasks like target evaluation)
+    max_workers_process: null  # null = auto (cpu_count - 1), or set value
+    # Max workers for ThreadPoolExecutor (I/O-bound tasks like symbol-specific evaluation)
+    max_workers_thread: null  # null = auto (cpu_count - 1), or set value
+    # Enable parallel execution by default (can be overridden per-task)
+    enabled: true  # Set to false to disable all parallel execution
 

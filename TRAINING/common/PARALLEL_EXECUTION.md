@@ -1,0 +1,73 @@
+# Parallel Execution for Target Ranking and Feature Selection
+
+## Overview
+
+This document describes the parallel execution infrastructure added to speed up target ranking and feature selection operations.
+
+## Architecture
+
+### Components
+
+1. **`TRAINING/common/parallel_exec.py`**: Core parallel execution utilities
+   - `execute_parallel()`: Generic parallel execution using ProcessPoolExecutor or ThreadPoolExecutor
+   - `execute_parallel_with_context()`: Parallel execution with shared context
+   - `get_max_workers()`: Config-aware worker count calculation
+
+2. **Integration Points**:
+   - `TRAINING/ranking/target_ranker.py`: Parallel target evaluation
+   - `TRAINING/ranking/feature_selector.py`: Parallel symbol processing
+
+### Configuration
+
+Settings in `CONFIG/training_config/threading_config.yaml`:
+
+```yaml
+threading:
+  parallel:
+    max_workers_process: null  # Auto-detect for CPU-bound tasks
+    max_workers_thread: null   # Auto-detect for I/O-bound tasks
+    enabled: true               # Master switch
+```
+
+Task-specific flags:
+- `CONFIG/target_configs.yaml`: `multi_target.parallel_targets: false` (default: sequential)
+- `CONFIG/feature_selection/multi_model.yaml`: `parallel_symbols: false` (default: sequential)
+
+## Usage
+
+### Target Ranking
+
+When `parallel_targets: true` is set in config:
+- Targets are evaluated in parallel using ProcessPoolExecutor
+- Each target evaluation is CPU-bound and independent
+- Results are collected in completion order
+
+### Feature Selection
+
+When `parallel_symbols: true` is set in config:
+- Symbols are processed in parallel using ProcessPoolExecutor
+- Each symbol's feature selection is CPU-bound and independent
+- Results are aggregated after all symbols complete
+
+### Symbol-Specific Evaluation
+
+For I/O-bound symbol-specific evaluations:
+- Uses ThreadPoolExecutor (lighter weight, shared memory)
+- Suitable for parallel symbol evaluation within a target
+
+## Safety
+
+- Respects existing config flags (`parallel_targets`, `parallel_symbols`)
+- Falls back to sequential execution if:
+  - Config flag is false
+  - Only 1 item to process
+  - max_workers=1
+  - Parallel execution disabled globally
+- Error handling: Failed items are logged but don't stop other tasks
+
+## Performance Notes
+
+- **CPU-bound tasks** (target evaluation, symbol processing): Use ProcessPoolExecutor
+- **I/O-bound tasks** (symbol-specific evaluation): Use ThreadPoolExecutor
+- Worker count is auto-calculated from available CPUs and config
+- Threading infrastructure ensures no oversubscription with model training threads
