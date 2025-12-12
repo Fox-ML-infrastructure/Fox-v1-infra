@@ -105,7 +105,8 @@ The system automatically detects leakage during training and can auto-fix it:
 **Auto-Fixer:**
 
 **Backup System:**
-- Config backups are automatically created in `CONFIG/backups/{target}/{timestamp}/` whenever auto-fix mode runs
+- Config backups are automatically created in `RESULTS/{cohort_id}/{run_name}/backups/{target}/{timestamp}/` (NEW: integrated into run directory) or `CONFIG/backups/{target}/{timestamp}/` (legacy, backward compatible) whenever auto-fix mode runs
+- **NEW**: When `output_dir` is provided to `LeakageAutoFixer`, backups are stored in the run directory and automatically organized by cohort
 - Backups are created even when no leaks are detected (to preserve state history)
 - Each backup includes a manifest with git commit, timestamp, and file paths
 - Automatic retention policy keeps the last N backups per target (configurable, default: 20)

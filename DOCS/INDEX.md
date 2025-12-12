@@ -2,8 +2,8 @@
 
 Complete navigation guide for FoxML Core documentation.
 
-**Last Updated**: 2025-12-11  
-**Recent Updates**: Config Parameter Validation System - New `config_cleaner.py` utility prevents parameter passing errors using `inspect.signature()`. Reproducibility Tracking Module - Enhanced with visibility fixes ensuring logs appear in main script output. Silent Error Visibility - Comprehensive logging added to all previously silent failure paths. Feature Importance Stability Tracking System - Automated snapshot capture and stability analysis. Complete Single Source of Truth (SST) config centralization - ALL model trainers now use config-driven hyperparameters for full reproducibility.
+**Last Updated**: 2025-12-12  
+**Recent Updates**: Cohort-Aware Reproducibility System - Runs organized by data cohort with sample-adjusted drift detection. RESULTS Directory Organization - All runs automatically organized in `RESULTS/{cohort_id}/{run_name}/` structure. Integrated Config Backups - Backups stored in run directory, organized by cohort. Enhanced Metadata - `metadata.json` includes full symbols list for debugging. Unified Metadata Extractor - Centralized utility for consistent cohort identification across all modules.
 
 ## Quick Navigation
 
@@ -157,7 +157,14 @@ Research notes, design rationale, advanced topics.
 ### Implementation
 - [Feature Selection Implementation](03_technical/implementation/FEATURE_SELECTION_GUIDE.md) - Feature selection implementation details (see also [Ranking and Selection Consistency](01_tutorials/training/RANKING_SELECTION_CONSISTENCY.md) for unified pipeline behavior)
 - [Training Optimization](03_technical/implementation/TRAINING_OPTIMIZATION_GUIDE.md) - Training optimization guide
-- [Reproducibility Tracking](03_technical/implementation/REPRODUCIBILITY_TRACKING.md) - **NEW**: Automatic reproducibility verification across pipeline stages
+- [Reproducibility Tracking](03_technical/implementation/REPRODUCIBILITY_TRACKING.md) - Automatic reproducibility verification across pipeline stages
+- [Cohort-Aware Reproducibility](03_technical/implementation/COHORT_AWARE_REPRODUCIBILITY.md) - **NEW**: Cohort-aware reproducibility system with sample-adjusted drift detection
+- [Reproducibility Structure](03_technical/implementation/REPRODUCIBILITY_STRUCTURE.md) - **NEW**: Complete directory structure guide with RESULTS organization
+- [Reproducibility API](03_technical/implementation/REPRODUCIBILITY_API.md) - **NEW**: API reference for reproducibility tracking
+- [Reproducibility Error Handling](03_technical/implementation/REPRODUCIBILITY_ERROR_HANDLING.md) - **NEW**: Error classification and handling guide
+- [Reproducibility Improvements](03_technical/implementation/REPRODUCIBILITY_IMPROVEMENTS.md) - **NEW**: Summary of reproducibility improvements
+- [Reproducibility Self-Test](03_technical/implementation/REPRODUCIBILITY_SELF_TEST.md) - **NEW**: Self-test checklist for validation
+- [Cohort-Aware Implementation](03_technical/implementation/COHORT_AWARE_REPRODUCIBILITY_IMPLEMENTATION.md) - **NEW**: Detailed implementation notes
 - [Safe Target Pattern](03_technical/implementation/SAFE_TARGET_PATTERN_IMPLEMENTATION.md) - Safe target pattern implementation
 - [First Batch Specs](03_technical/implementation/FIRST_BATCH_SPECS_IMPLEMENTATION.md) - First batch specifications
 - [Strategy Updates](03_technical/implementation/STRATEGY_UPDATES.md) - Training strategy updates

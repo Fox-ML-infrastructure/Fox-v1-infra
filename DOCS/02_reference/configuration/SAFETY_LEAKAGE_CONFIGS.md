@@ -353,7 +353,7 @@ numerical_stability:
 
 1. **Start conservative** - Use default thresholds, then adjust based on results
 2. **Monitor auto-fixer** - Review logs to see what features were auto-excluded
-3. **Review backups** - Check `CONFIG/backups/` to understand what changed
+3. **Review backups** - Check `RESULTS/{cohort_id}/{run_name}/backups/` (NEW: integrated) or `CONFIG/backups/` (legacy) to understand what changed
 4. **Test threshold changes** - Verify new thresholds work as expected
 5. **Balance sensitivity** - Too sensitive = false positives, too lenient = missed leaks
 6. **Use pre-scan** - Pre-training scan catches obvious leaks early

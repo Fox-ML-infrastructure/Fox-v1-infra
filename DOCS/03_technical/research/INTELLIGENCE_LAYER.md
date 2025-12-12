@@ -186,12 +186,18 @@ After auto-rerun, targets are marked with status codes:
 ### Backup System
 
 Config backups are automatically created in:
+
+**NEW (Integrated)**: `RESULTS/{cohort_id}/{run_name}/backups/{target_name}/{timestamp}/`  
+**Legacy (Backward Compatible)**: `CONFIG/backups/{target_name}/{timestamp}/`
+
 ```
-CONFIG/backups/{target_name}/{timestamp}/
+RESULTS/{cohort_id}/{run_name}/backups/{target_name}/{timestamp}/
 ├── excluded_features.yaml
 ├── feature_registry.yaml
 └── manifest.json
 ```
+
+When `LeakageAutoFixer` is initialized with `output_dir`, backups are stored in the run directory and automatically organized by cohort.
 
 **Manifest includes:**
 - Backup version
@@ -365,11 +371,13 @@ system:
 
 ### Backup Directory Growing Too Large
 
-**Symptoms:** `CONFIG/backups/` consuming too much disk space
+**Symptoms:** Backup directories consuming too much disk space
 
 **Solutions:**
 1. Reduce `max_backups_per_target` in `system_config.yaml`
-2. Manually prune old backups: `CONFIG/backups/{target}/`
+2. Manually prune old backups:
+   - **NEW**: `RESULTS/{cohort_id}/{run_name}/backups/{target}/`
+   - **Legacy**: `CONFIG/backups/{target}/`
 3. Set `enable_retention: true` (already default)
 
 ## Related Documentation

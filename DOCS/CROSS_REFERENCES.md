@@ -73,6 +73,44 @@ All API docs should reference:
 - Removed reference to non-existent `COMPREHENSIVE_FEATURE_RANKING.md` in `FEATURE_IMPORTANCE_METHODOLOGY.md`
 - Updated all references to point to newer unified pipeline docs
 
+## New Files (2025-12-12)
+
+### Cohort-Aware Reproducibility System
+- **Files**:
+  - `DOCS/03_technical/implementation/COHORT_AWARE_REPRODUCIBILITY.md` - Complete guide
+  - `DOCS/03_technical/implementation/COHORT_AWARE_REPRODUCIBILITY_IMPLEMENTATION.md` - Implementation details
+  - `DOCS/03_technical/implementation/REPRODUCIBILITY_STRUCTURE.md` - Directory structure guide
+  - `DOCS/03_technical/implementation/REPRODUCIBILITY_API.md` - API reference
+  - `DOCS/03_technical/implementation/REPRODUCIBILITY_ERROR_HANDLING.md` - Error handling guide
+  - `DOCS/03_technical/implementation/REPRODUCIBILITY_IMPROVEMENTS.md` - Improvements summary
+  - `DOCS/03_technical/implementation/REPRODUCIBILITY_SELF_TEST.md` - Self-test checklist
+- **References**:
+  - `INDEX.md` - Added to implementation section
+  - `INTELLIGENT_TRAINING_TUTORIAL.md` - Updated output structure section
+  - `CHANGELOG.md` - Added highlights section
+  - `changelog/2025-12-12.md` - Complete detailed changelog
+- **Code**:
+  - `TRAINING/utils/cohort_metadata_extractor.py` - **NEW** - Unified metadata extraction utility
+  - `TRAINING/utils/reproducibility_tracker.py` - Major refactor for cohort-aware mode
+  - All pipeline modules use unified extractor
+
+### RESULTS Directory Organization
+- **Structure**: All runs organized in `RESULTS/{cohort_id}/{run_name}/`
+- **Documented in**:
+  - `INTELLIGENT_TRAINING_TUTORIAL.md` - Output structure section
+  - `REPRODUCIBILITY_STRUCTURE.md` - Complete structure guide
+  - `COHORT_AWARE_REPRODUCIBILITY.md` - Storage structure section
+
+### Integrated Config Backups
+- **New Location**: `RESULTS/{cohort_id}/{run_name}/backups/` (when `output_dir` provided)
+- **Legacy Location**: `CONFIG/backups/` (backward compatible)
+- **Documented in**:
+  - `INTELLIGENT_TRAINING_TUTORIAL.md` - Output structure section
+  - `changelog/2025-12-12.md` - Detailed backup integration notes
+- **Updated References**:
+  - `configuration/README.md` - Should mention both locations
+  - `SAFETY_LEAKAGE_CONFIGS.md` - Should mention new location
+
 ## Preferred Documentation Order
 
 When multiple docs cover similar topics, prefer:
@@ -80,3 +118,4 @@ When multiple docs cover similar topics, prefer:
 2. **Modular config system** docs over legacy config references
 3. **Intelligent training tutorial** over manual workflow docs
 4. **Usage examples** with practical code over abstract descriptions
+5. **Cohort-aware reproducibility** docs over legacy reproducibility tracking

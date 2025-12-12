@@ -163,7 +163,7 @@ Trains and validates ML models.
 - Feature Selections: Saved to `{output_dir}_YYYYMMDD_HHMMSS/feature_selections/`
 - Routing Plans: Saved to `{output_dir}/METRICS/routing_plan/`
 - Training Plans: Saved to `{output_dir}/METRICS/training_plan/` (master_training_plan.json)
-- Config Backups: Saved to `CONFIG/backups/{target}/{timestamp}/` (when auto-fix runs)
+- Config Backups: Saved to `RESULTS/{cohort_id}/{run_name}/backups/{target}/{timestamp}/` (NEW: integrated into run directory) or `CONFIG/backups/{target}/{timestamp}/` (legacy, backward compatible)
 - Configs: Versioned in `CONFIG/model_config/` (see [Configuration Reference](../02_reference/configuration/README.md))
 
 ### Stage 5: Evaluation

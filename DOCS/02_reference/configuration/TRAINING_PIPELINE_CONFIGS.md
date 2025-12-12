@@ -224,7 +224,7 @@ system:
   paths:
     data_dir: "data/data_labeled/interval=5m"
     output_dir: null  # null = auto-generated
-    config_backup_dir: null  # null = CONFIG/backups/
+    config_backup_dir: null  # null = CONFIG/backups/ (legacy) or RESULTS/{cohort_id}/{run_name}/backups/ (when output_dir provided)
 ```
 
 **Backup System:**

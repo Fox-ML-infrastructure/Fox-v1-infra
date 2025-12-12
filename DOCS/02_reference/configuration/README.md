@@ -266,15 +266,27 @@ Each model has its own YAML file with hyperparameters.
 
 **Purpose:** Automatic backups of config files before auto-fixer modifications.
 
-**Structure:**
+**Structure (NEW - Integrated into RESULTS):**
 ```
-CONFIG/backups/
-└── {target_name}/              # Per-target organization
-    └── {timestamp}/            # Timestamped snapshots (YYYYMMDD_HHMMSS_microseconds)
+RESULTS/{cohort_id}/{run_name}/backups/    # NEW: Integrated into run directory
+└── {target_name}/                         # Per-target organization
+    └── {timestamp}/                       # Timestamped snapshots (YYYYMMDD_HHMMSS_microseconds)
         ├── excluded_features.yaml
         ├── feature_registry.yaml
-        └── manifest.json       # Backup metadata
+        └── manifest.json                  # Backup metadata
 ```
+
+**Legacy Structure (Backward Compatible):**
+```
+CONFIG/backups/                            # Legacy: Used if output_dir not provided
+└── {target_name}/                         # Per-target organization
+    └── {timestamp}/                       # Timestamped snapshots
+        ├── excluded_features.yaml
+        ├── feature_registry.yaml
+        └── manifest.json
+```
+
+**Note**: When `LeakageAutoFixer` is initialized with `output_dir` parameter, backups are stored in the run directory (`RESULTS/{cohort_id}/{run_name}/backups/`). This keeps everything together and organized by cohort. If `output_dir` is not provided, backups use the legacy `CONFIG/backups/` location for backward compatibility.
 
 **Manifest Contents:**
 - `backup_version` - Schema version
@@ -843,7 +855,7 @@ Re-evaluate target (if auto-rerun enabled)
 5. **Test variants** - Verify all config variants work correctly
 6. **Backup before manual edits** - The auto-fixer creates backups automatically, but manual edits should be backed up too
 7. **Use feature registry** - Always specify `lag_bars` and `allowed_horizons` for new features
-8. **Review backups** - Check `CONFIG/backups/` to understand what auto-fixer changed
+8. **Review backups** - Check `RESULTS/{cohort_id}/{run_name}/backups/` (NEW: integrated) or `CONFIG/backups/` (legacy) to understand what auto-fixer changed
 
 ## Migration Status
 
