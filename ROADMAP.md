@@ -25,9 +25,12 @@ FoxML Core is maintained with an **enterprise reliability mindset**:
 
 **You can use these capabilities right now:**
 
-* ✅ **Full TRAINING Pipeline** — Run complete ranking + feature selection + leakage detection workflows
-* ✅ **GPU-Accelerated Model Training** — Train LGBM/XGBoost + sequential models (CNN1D, LSTM, Transformer) with GPU acceleration
-* ✅ **Centralized YAML Configuration** — Use structured configs for experiments, model families, and system parameters
+* ✅ **Full TRAINING Pipeline** — Complete one-command workflow: target ranking → feature selection → training plan generation → model training
+* ✅ **Training Routing & Planning System** — Config-driven routing decisions, automatic training plan generation, 2-stage training pipeline (CPU → GPU), plan-aware filtering
+* ✅ **GPU-Accelerated Model Training** — Train all 20 model families (LightGBM, XGBoost, MLP, LSTM, Transformer, CNN1D, etc.) with GPU acceleration where available
+* ✅ **Centralized YAML Configuration** — Complete Single Source of Truth (SST) system with structured configs for experiments, model families, and system parameters
+* ✅ **Reproducibility Tracking** — End-to-end reproducibility tracking with STABLE/DRIFTING/DIVERGED classification across ranking, feature selection, and training
+* ✅ **Leakage Detection & Auto-Fix** — Pre-training leak detection with automatic feature exclusion and comprehensive diagnostics
 * ✅ **Complete Documentation & Legal** — Full 4-tier docs hierarchy + enterprise legal package for commercial evaluation
 
 **This is production-grade ML infrastructure, not a prototype.**
@@ -36,25 +39,47 @@ FoxML Core is maintained with an **enterprise reliability mindset**:
 
 ## Core System Status
 
-* **TRAINING Pipeline — Phase 1** ✅ — Functioning properly. The intelligent training framework (target ranking, feature selection, automated leakage detection) is operational. **End-to-end testing currently underway** to validate full pipeline from target ranking → feature selection → model training.
-* **Training Routing & Planning System** 🔄 (2025-12-11) — **NEW - Currently being tested**: Config-driven routing decisions, automatic training plan generation, 2-stage training pipeline (CPU → GPU), one-command end-to-end flow. See [Training Routing Guide](DOCS/02_reference/training_routing/README.md).
+* **TRAINING Pipeline — Phase 1** ✅ — Fully operational. Intelligent training framework (target ranking, feature selection, automated leakage detection) integrated and working. **End-to-end testing currently underway** to validate full pipeline from target ranking → feature selection → training plan → model training.
+
+* **Training Routing & Planning System** 🔄 (2025-12-11) — **NEW - Currently being tested**: 
+  - Config-driven routing decisions (cross-sectional vs symbol-specific vs both vs experimental vs blocked)
+  - Automatic routing plan and training plan generation
+  - 2-stage training pipeline (CPU models first, then GPU models) for all 20 model families
+  - One-command end-to-end flow: `intelligent_trainer` orchestrates complete pipeline
+  - Training plan auto-detection and filtering
+  - See [Training Routing Guide](DOCS/02_reference/training_routing/README.md)
+
+* **Single Source of Truth (SST) & Determinism** ✅ (2025-12-10) — Complete config centralization for TRAINING; SST enforcement test; all hyperparameters and seeds load from YAML; centralized determinism system. 30+ hardcoded `random_state` and defaults removed.
+
+* **Reproducibility Tracking** ✅ (2025-12-11) — End-to-end reproducibility tracking across ranking, feature selection, and training with per-model metrics and three-tier classification (STABLE/DRIFTING/DIVERGED). Module-specific logs and cross-run comparison.
+
+* **Model Parameter Sanitization** ✅ (2025-12-11) — Shared `config_cleaner.py` utility using `inspect.signature()` to prevent parameter passing errors. Eliminates entire class of "got multiple values" / "unexpected keyword" failures.
+
 * **Code Refactoring** ✅ (2025-12-09) — Large monolithic files split into modular components (4.5k → 82 lines, 3.4k → 56 lines, 2.5k → 66 lines) while maintaining 100% backward compatibility. Largest file now: 2,542 lines (cohesive subsystem, not monolithic).
-* **Model Family Status Tracking** ✅ — Comprehensive debugging system added to identify which families succeed/fail in multi-model feature selection. Status persisted to JSON for analysis.
-* **GPU Families** ✅ — Confirmed working. All GPU model families operational and producing artifacts. Expect some noise and warnings during training (harmless, do not affect functionality).
-* **Sequential Models** ✅ — All sequential models (CNN1D, LSTM, Transformer, and LSTM-based variants) working and producing outputs. 3D preprocessing issues resolved.
+
+* **Model Family Status Tracking** ✅ — Comprehensive debugging system to identify which families succeed/fail in multi-model feature selection. Status persisted to JSON for analysis.
+
+* **GPU Families** ✅ — All GPU model families operational and producing artifacts. Expect some noise and warnings during training (harmless, do not affect functionality).
+
+* **Sequential Models** ✅ — All sequential models (CNN1D, LSTM, Transformer, TabCNN, TabLSTM, TabTransformer) working and producing outputs. 3D preprocessing issues resolved.
+
 * **Target Ranking & Selection** ✅ — Integrated and operational as part of Phase 1 pipeline.
-* **Documentation Overhaul** ✅ — 55+ new files created, 50+ rewritten, standardized across all tiers.
+
+* **Documentation Overhaul** ✅ — 55+ new files created, 50+ rewritten, standardized across all tiers. Internal docs organized into `INTERNAL_DOCS/` for planning/architecture, public docs in `DOCS/` for operational use.
+
 * **Legal Compliance** ✅ — Enhanced with IP assignment agreement, regulatory disclaimers, and compliance documentation. Compliance assessment: 95% complete (after IP assignment signing).
 
 ---
 
 # Phase 0 — Stability & Documentation ✅
 
+**Status**: Complete
+
 **Deliverables:**
 * ✅ Full 4-tier documentation hierarchy
 * ✅ Enterprise-grade legal docs
 * ✅ Navigation and cross-linking
-* ✅ Internal docs organized
+* ✅ Internal docs organized (moved to `INTERNAL_DOCS/`)
 * ✅ Consistent formatting, naming, and structure
 * ✅ Stable release for evaluators and enterprise inquiries
 
@@ -68,7 +93,7 @@ FoxML Core is maintained with an **enterprise reliability mindset**:
 
 **Completed:**
 * ✅ TRAINING pipeline restored and validated
-* ✅ GPU acceleration functional across major model families
+* ✅ GPU acceleration functional across all 20 model families
 * ✅ XGBoost source-build stability fixes
 * ✅ Readline and child-process dependency issues resolved
 * ✅ Sequential models 3D preprocessing fix
@@ -79,22 +104,32 @@ FoxML Core is maintained with an **enterprise reliability mindset**:
 * ✅ Structured logging configuration system implemented
 * ✅ **Large file refactoring** (2025-12-09) — Split monolithic files into modular components
 * ✅ **Model family status tracking** — Added debugging for multi-model feature selection
-* ✅ **Interval detection robustness** — Fixed timestamp gap filtering
+* ✅ **Interval detection robustness** — Fixed timestamp gap filtering, added fixed interval mode
 * ✅ **Import fixes** — Resolved all missing imports in refactored modules (polars, type hints, etc.)
-* ✅ **STEP 2 → STEP 3 transition robustness** (2025-12-10) — Fixed missing polars imports and added feature list validation to prevent errors at the feature selection → model training transition
-* ✅ **Complete F821 undefined name error elimination** (2025-12-10) — Fixed all 194 undefined name errors across TRAINING and CONFIG directories. All missing imports added, logger initialization fixed, circular imports resolved, `__future__` import placement corrected. 100% of F821 errors resolved (194 → 0).
+* ✅ **STEP 2 → STEP 3 transition robustness** (2025-12-10) — Fixed missing polars imports and added feature list validation
+* ✅ **Complete F821 undefined name error elimination** (2025-12-10) — Fixed all 194 undefined name errors across TRAINING and CONFIG directories
+* ✅ **Single Source of Truth (SST) enforcement** (2025-12-10) — Complete config centralization, SST enforcement test, centralized determinism system
+* ✅ **Reproducibility tracking** (2025-12-11) — End-to-end tracking with three-tier classification (STABLE/DRIFTING/DIVERGED)
+* ✅ **Model parameter sanitization** (2025-12-11) — Systematic parameter validation to prevent errors
+* ✅ **Leakage detection improvements** (2025-12-11) — Critical confidence calculation fix, on-the-fly importance computation, enhanced diagnostics
+* ✅ **Training routing & planning system** (2025-12-11) — Config-driven routing, automatic plan generation, 2-stage training pipeline
 
 **Current Testing:**
-* 🔄 **End-to-end testing underway** (2025-12-10) — Full pipeline validation from target ranking → feature selection → model training. Testing initiated after SST (Single Source of Truth) enforcement, Determinism system fixes, and complete F821 error elimination. All import errors, config loading issues, syntax errors, and transition validation problems have been resolved.
+* 🔄 **End-to-end testing underway** (2025-12-10) — Full pipeline validation from target ranking → feature selection → model training. Testing initiated after SST enforcement, Determinism system fixes, and complete F821 error elimination.
 * 🔄 **Training Routing System** (2025-12-11) — **NEW - Currently being tested**: One-command pipeline (target ranking → feature selection → training plan → training), 2-stage training (CPU → GPU), automatic plan detection and filtering. See [Training Routing Guide](DOCS/02_reference/training_routing/README.md).
 * Testing with multiple symbols and model families
-* Validating data flow through Phase 3 (model training)
+* Validating data flow through complete pipeline
 * Verifying model family status tracking output
+* Validating 2-stage training order and resource usage
 
 **Planned Investigation:**
 * Feature engineering review and validation (temporal alignment, lag structure, leakage validation)
+* Symbol-specific training execution integration (plan generated, execution pending)
 
 **Planned Enhancements:**
+* Symbol-specific training execution filtering (plan generated, needs pipeline integration)
+* Model-family-level filtering per job (plan includes families, needs execution integration)
+* Advanced routing logic enhancements (stability states, experimental lane, feature safety)
 * Intelligent training orchestration improvements
 * Smarter model/ensemble selection
 * **Feature Engineering Revamp** — Thorough review and validation of:
@@ -107,20 +142,23 @@ FoxML Core is maintained with an **enterprise reliability mindset**:
 * Robust cross-sectional + time-series workflows
 * Refactor trainers to use scaffolded base classes for centralized dimension-specific logic
 
-**Outcome:** TRAINING pipeline operational with intelligent framework. Phase 2 work now underway.
+**Outcome:** TRAINING pipeline operational with intelligent framework and training routing system. Phase 2 work substantially complete.
 
 ---
 
-# Phase 2 — Centralized Configuration & UX Modernization 🔄
+# Phase 2 — Centralized Configuration & UX Modernization ✅
 
-**Status:** Underway and mostly complete
+**Status:** Substantially complete
 
 **Completed:**
-* ✅ YAML-based config schema (single source of truth) — 9 training config files created
+* ✅ YAML-based config schema (single source of truth) — 9+ training config files created
 * ✅ Config loader with nested access and family-specific overrides
 * ✅ Integration into all model trainers (preprocessing, callbacks, optimizers, safety guards)
 * ✅ Pipeline, threading, memory, GPU, and system configs integrated
 * ✅ Backward compatibility maintained with hardcoded defaults
+* ✅ SST enforcement test — Automated test prevents accidental reintroduction of hardcoded hyperparameters
+* ✅ Config parameter sanitization — Systematic validation to prevent parameter passing errors
+* ✅ Config cleaner utility — Shared `config_cleaner.py` using `inspect.signature()` for validation
 
 **In Progress:**
 * Validation layer + example templates
@@ -128,11 +166,13 @@ FoxML Core is maintained with an **enterprise reliability mindset**:
 * Optional LLM-friendly structured logs
 * Naming and terminology cleanup across modules
 
-**Outcome:** Faster onboarding, easier enterprise deployment, more predictable behavior.
+**Outcome:** Faster onboarding, easier enterprise deployment, more predictable behavior. Configuration system is production-ready.
 
 ---
 
 # Phase 3 — Memory & Data Efficiency
+
+**Status:** Planned
 
 **Automated Memory Batching:**
 * Fix current unstable behavior
@@ -149,6 +189,8 @@ FoxML Core is maintained with an **enterprise reliability mindset**:
 ---
 
 # Phase 4 — Multi-GPU & NVLink Exploration (Future)
+
+**Status:** Research phase
 
 **NVLink Compatibility Research:**
 * Explore NVLink support for multi-GPU training workflows
@@ -177,6 +219,8 @@ FoxML Core is maintained with an **enterprise reliability mindset**:
 
 # Phase 6 — Web Presence & Payments
 
+**Status:** Planned
+
 **Website + Stripe Checkout:**
 * Public Fox ML Infrastructure homepage
 * Pricing tiers + purchase flow
@@ -189,18 +233,29 @@ FoxML Core is maintained with an **enterprise reliability mindset**:
 
 # Phase 7 — Production Hardening
 
+**Status:** Ongoing
+
 **Tasks:**
-* Full test coverage
+* Full test coverage (expanding following SST + determinism changes)
 * Monitoring & observability
 * Deployment guides
 * Disaster recovery patterns
 * Performance tuning
+* Comprehensive error handling and defensive programming
+
+**Recent Progress:**
+* ✅ Comprehensive error handling added to training routing system
+* ✅ Defensive programming practices implemented
+* ✅ Graceful degradation for missing/corrupted training plans
+* ✅ Extensive input validation across all entry points
 
 **Outcome:** Ready for institutional deployment.
 
 ---
 
 # Phase 8 — High-Performance Rewrite Track (Long-Term)
+
+**Status:** Research phase
 
 **Low-Level Rewrites (C/C++/Rust):**
 * Rewrite performance-critical paths
@@ -228,10 +283,13 @@ FoxML Core is maintained with an **enterprise reliability mindset**:
 
 **Active development priorities — commercially leverageable work:**
 
-1. **Configuration system validation & logging revamp** — Complete validation layer, unified logging, naming cleanup (mostly complete, validation in progress)
-2. **Memory batching + Polars optimizations** — Fix unstable batching behavior, enable large-scale training without OOM
-3. **Model integration interfaces** — Standard interfaces for integrating trained models with external systems
-5. **Website + Stripe checkout** — Public homepage, pricing tiers, purchase flow, hosted docs
+1. **Training Routing System Testing & Validation** 🔄 — Complete end-to-end testing of routing system, validate 2-stage training pipeline, verify plan filtering behavior
+2. **Symbol-Specific Training Execution** — Integrate symbol-specific job execution filtering (plan generated, needs pipeline integration)
+3. **Model-Family-Level Filtering** — Use per-job model families from training plan in execution phase
+4. **Configuration system validation & logging revamp** — Complete validation layer, unified logging, naming cleanup (mostly complete, validation in progress)
+5. **Memory batching + Polars optimizations** — Fix unstable batching behavior, enable large-scale training without OOM
+6. **Model integration interfaces** — Standard interfaces for integrating trained models with external systems
+7. **Website + Stripe checkout** — Public homepage, pricing tiers, purchase flow, hosted docs
 
 **Guideline:** These priorities build on the completed Phase 0–2 foundation and represent the next commercially-leverageable deltas. Focus remains on validation, polish, and strategic sequencing rather than new major subsystems.
 
@@ -239,11 +297,11 @@ FoxML Core is maintained with an **enterprise reliability mindset**:
 
 **Research and future-track work — not blocking near-term goals:**
 
-6. **GPU + ranking regression testing** — Ongoing validation and edge-case coverage
-7. **Production readiness** — Full test coverage, monitoring, deployment guides, disaster recovery
-8. **Exploratory modules** — Experimental features and research tracks
-9. **NVLink & multi-GPU exploration** — Research phase, performance benchmarking, architecture design
-10. **High-performance rewrite track** — Low-level rewrites (C/C++/Rust), HPC alignment (planned/WIP), ROCm support (planned)
+8. **GPU + ranking regression testing** — Ongoing validation and edge-case coverage
+9. **Production readiness** — Full test coverage, monitoring, deployment guides, disaster recovery
+10. **Exploratory modules** — Experimental features and research tracks
+11. **NVLink & multi-GPU exploration** — Research phase, performance benchmarking, architecture design
+12. **High-performance rewrite track** — Low-level rewrites (C/C++/Rust), HPC alignment (planned/WIP), ROCm support (planned)
 
 **Guideline:** These items represent longer-horizon research and infrastructure work. They are valuable but not prerequisites for near-term commercial readiness.
 
@@ -261,6 +319,13 @@ This roadmap reflects the maturation of FoxML Core from a high-powered solo proj
 
 **Development Approach:** Phases 0–2 (documentation, intelligent training, configuration) are complete or substantially complete. Development is ahead of schedule on infrastructure and documentation. Current focus is validation, polish, and strategic sequencing of next-phase work. Priorities emphasize commercially-leverageable improvements over exploratory research.
 
+**Recent Milestones:**
+* **2025-12-11**: Training Routing & Planning System added (currently being tested)
+* **2025-12-11**: Reproducibility tracking with three-tier classification
+* **2025-12-11**: Model parameter sanitization system
+* **2025-12-10**: Complete SST enforcement and determinism system
+* **2025-12-09**: Large file refactoring and modular architecture
+
 ---
 
 # Known Issues & Environment Notes
@@ -274,4 +339,13 @@ Some TensorFlow warnings (version compatibility, plugin registration) may appear
 
 ## Module Status
 
-* **Focus:** Training and ranking are stable and under ongoing validation; current active work centers on configuration, memory/polars, and model integration interfaces.
+* **Focus:** Training and ranking are stable and under ongoing validation; current active work centers on training routing system testing, configuration validation, memory/polars optimization, and model integration interfaces.
+
+## Training Routing System
+
+* **Status:** Currently being tested (2025-12-11)
+* **Features:** Config-driven routing, automatic plan generation, 2-stage training, one-command flow
+* **Known Limitations:**
+  - Symbol-specific training execution filtering: Plan generated, execution integration pending
+  - Model-family-level filtering: Plan includes families, execution integration pending
+  - Advanced routing logic: Basic routing implemented, advanced features (stability states, experimental lane limits) may need enhancement
