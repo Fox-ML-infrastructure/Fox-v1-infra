@@ -406,8 +406,9 @@ class IntelligentTrainer:
                 return
             
             import shutil
+            bin_name = self._get_sample_size_bin(self._n_effective)
             new_output_dir.parent.mkdir(parents=True, exist_ok=True)
-            logger.info(f"📁 Moving run from {self.output_dir} to {new_output_dir} (N={self._n_effective} determined early)")
+            logger.info(f"📁 Moving run from {self.output_dir} to {new_output_dir} (N={self._n_effective} determined early, bin={bin_name})")
             try:
                 shutil.move(str(self.output_dir), str(new_output_dir))
                 self.output_dir = new_output_dir
