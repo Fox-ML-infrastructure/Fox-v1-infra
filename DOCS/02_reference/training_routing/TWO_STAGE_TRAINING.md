@@ -39,7 +39,7 @@ These models run second, using GPU when available:
 - **GAN** - Generative adversarial network (GPU)
 - **MultiTask** - Multi-task learning (GPU)
 
-### PyTorch Models (6 models)
+### PyTorch Models (6 models in Stage 2)
 - **CNN1D** - 1D convolutional neural network (GPU)
 - **LSTM** - Long short-term memory (GPU)
 - **Transformer** - Transformer architecture (GPU)
@@ -109,7 +109,7 @@ Both stages respect the **training plan**:
 ## Comparison
 
 ### Old Behavior (Sequential Only)
-- Only trained 6 sequential models
+- Only trained 6 sequential models (old behavior - now trains all 20 models)
 - No cross-sectional models
 - No 2-stage ordering
 

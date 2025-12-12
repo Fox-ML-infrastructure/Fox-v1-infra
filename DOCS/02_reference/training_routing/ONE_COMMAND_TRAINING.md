@@ -107,7 +107,7 @@ python -m TRAINING.training_strategies.main \
 
 **Trains:**
 - 14 cross-sectional models
-- 6 sequential models
+- All 20 models (6 sequential + 14 cross-sectional) in 2-stage approach
 - Total: 20 models
 
 ### Cross-Sectional Only (14 Models)
@@ -121,7 +121,7 @@ python -m TRAINING.training_strategies.main \
 
 ## Model Families Reference
 
-### Sequential Models (6)
+### Sequential Mode (All 20 Models - 2-Stage)
 - CNN1D
 - LSTM
 - Transformer
@@ -180,7 +180,7 @@ python -m TRAINING.training_strategies.main \
 
 ## Tips
 
-1. **Use `--model-types sequential`** - Automatically trains all 6 sequential models
+1. **Use `--model-types sequential`** - Automatically trains all 20 models in 2-stage approach (CPU → GPU)
 2. **Auto-detection is smart** - Finds plan in common locations
 3. **Plan is optional** - System works without it (trains all targets)
 4. **Output is timestamped** - Each run gets unique directory

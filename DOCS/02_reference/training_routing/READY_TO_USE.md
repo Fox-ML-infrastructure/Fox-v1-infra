@@ -15,10 +15,10 @@
 - ✅ Auto-detection from common locations
 - ✅ Backward compatible (works without plan)
 
-### 3. Sequential Models (Phase 3)
+### 3. Sequential Mode (2-Stage Pipeline)
 - ✅ Fully integrated with training plan
 - ✅ Auto-detects plan automatically
-- ✅ Trains all 6 sequential models by default
+- ✅ Trains all 20 models (6 sequential + 14 cross-sectional) in 2-stage approach
 - ✅ One-command usage
 
 ### 4. Error Handling
@@ -41,30 +41,32 @@ python -m TRAINING.training_strategies.main \
 
 **That's it!** The system will:
 1. Auto-detect training plan (if available)
-2. Train all 6 sequential models
+2. Train all 20 models in 2-stage approach (CPU → GPU)
 3. Filter targets based on plan
 4. Use model families from plan
 
-### Or Use Convenience Script
+### Or Use Convenience Module
 
 ```bash
-./TRAINING/training_strategies/train_sequential.sh data AAPL MSFT GOOGL
+python -m TRAINING.training_strategies.train_sequential \
+    data AAPL MSFT GOOGL
 ```
 
 ## 📋 What Gets Trained
 
-### Sequential Models (6 models)
-When you use `--model-types sequential`:
-- CNN1D
-- LSTM
-- Transformer
-- TabCNN
-- TabLSTM
-- TabTransformer
+### Sequential Mode (2-Stage Pipeline)
+When you use `--model-types sequential`, it trains **all 20 models** in a 2-stage approach:
 
-### All Models (20 models)
-When you use `--model-types both`:
-- 14 cross-sectional + 6 sequential = 20 total
+**Stage 1 (CPU - 10 models):**
+- LightGBM, QuantileLightGBM, XGBoost
+- RewardBased, NGBoost, GMMRegime, ChangePoint
+- FTRLProximal, Ensemble, MetaLearning
+
+**Stage 2 (GPU - 10 models):**
+- TensorFlow (4): MLP, VAE, GAN, MultiTask
+- PyTorch (6): CNN1D, LSTM, Transformer, TabCNN, TabLSTM, TabTransformer
+
+> **Note**: `--model-types sequential` is a **pipeline mode** (2-stage CPU→GPU schedule), not "LSTM-only models." It trains both sequential and cross-sectional models in an optimized order.
 
 ## 🔍 Auto-Detection
 
@@ -86,10 +88,11 @@ Training plan is automatically detected from:
 
 - ✅ **One-command usage** - Just specify `--model-types sequential`
 - ✅ **Auto-detection** - Finds training plan automatically
-- ✅ **All models** - Trains all 6 sequential models by default
+- ✅ **All models** - Trains all 20 models (sequential + cross-sectional) in 2-stage approach
 - ✅ **Plan integration** - Filters targets and families automatically
 - ✅ **Error handling** - Comprehensive validation and fallbacks
 - ✅ **Backward compatible** - Works without training plan
+- ✅ **2-stage optimization** - CPU models first, then GPU models (prevents thread pollution)
 
 ## 🎯 Example Workflow
 
@@ -100,7 +103,7 @@ python -m TRAINING.orchestration.intelligent_trainer \
     --symbols AAPL MSFT GOOGL \
     --auto-targets --auto-features
 
-# Step 2: Train sequential models (auto-detects plan)
+# Step 2: Train all models with 2-stage approach (auto-detects plan)
 python -m TRAINING.training_strategies.main \
     --data-dir data \
     --symbols AAPL MSFT GOOGL \

@@ -2,7 +2,7 @@
 
 **One-command training with automatic training plan integration.**
 
-## Sequential Models (Phase 3) - 2-Stage Training
+## Sequential Mode (2-Stage Pipeline) - All 20 Models
 
 ### Simplest Command
 
@@ -94,10 +94,18 @@ python -m TRAINING.training_strategies.main \
 
 ## Model Families
 
-**Sequential Models (6):**
-- CNN1D
-- LSTM
-- Transformer
+**Sequential Mode trains all 20 models in 2-stage approach:**
+
+**Stage 1 (CPU - 10 models):**
+- LightGBM, QuantileLightGBM, XGBoost
+- RewardBased, NGBoost, GMMRegime, ChangePoint
+- FTRLProximal, Ensemble, MetaLearning
+
+**Stage 2 (GPU - 10 models):**
+- TensorFlow (4): MLP, VAE, GAN, MultiTask
+- PyTorch (6): CNN1D, LSTM, Transformer, TabCNN, TabLSTM, TabTransformer
+
+> **Note**: `--model-types sequential` is a **pipeline mode** (2-stage CPU→GPU schedule), not "LSTM-only models."
 - TabCNN
 - TabLSTM
 - TabTransformer
@@ -195,7 +203,7 @@ python -m TRAINING.training_strategies.main \
 ## Tips
 
 1. **Run IntelligentTrainer first** to generate training plan, then sequential models will auto-detect it
-2. **Use `--model-types sequential`** to train all 6 sequential models (no need to list them)
+2. **Use `--model-types sequential`** to train all 20 models in 2-stage approach (CPU → GPU)
 3. **Training plan is optional** - system works without it (trains all targets)
 4. **Auto-detection is smart** - checks common locations automatically
 
