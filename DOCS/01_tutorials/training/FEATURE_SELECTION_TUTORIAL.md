@@ -12,6 +12,10 @@ Feature selection reduces dimensionality and improves model performance by:
 3. Selecting top N features
 4. Retraining with selected features
 
+![Feature selection and stability analysis](../../images/feature_selection_stability.png)
+
+*Feature selection and stability analysis in action - showing multi-model consensus, feature importance, and stability metrics*
+
 **For automated feature selection**, the intelligent training pipeline uses:
 - Multi-model consensus (LightGBM, XGBoost, Random Forest, CatBoost, Neural Network, Lasso, Mutual Information, Univariate Selection, Boruta, Stability Selection)
 - Consistent preprocessing (shared `make_sklearn_dense_X()` helper for sklearn models)

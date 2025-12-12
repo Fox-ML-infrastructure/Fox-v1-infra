@@ -96,7 +96,10 @@ Trains and validates ML models.
 **Intelligent Training Pipeline:**
 - Automatic target ranking (multi-model consensus)
 - Automatic feature selection (per target)
-- Unified workflow: ranking → selection → training
+- **Training routing & planning** (NEW - 2025-12-11): Config-driven routing decisions, automatic training plan generation
+- **2-stage training pipeline** (NEW): CPU models first, then GPU models (all 20 model families)
+- **One-command end-to-end flow** (NEW): Complete pipeline from ranking → feature selection → training plan → training execution
+- Unified workflow: ranking → selection → routing → training
 - Caching for faster iterative development
 - **Leakage detection & auto-fix**: Automatic detection and remediation of data leakage
 - **Config backup system**: Automatic backups of config files before auto-fix modifications
@@ -149,12 +152,17 @@ Trains and validates ML models.
 
 ### Stage 4: Model Training
 - Input: Labeled datasets
-- Process: Intelligent training pipeline (ranking → selection → training)
+- Process: Intelligent training pipeline (ranking → selection → routing plan → training plan → training)
+- **Training Routing** (NEW): Config-driven decisions about where to train (cross-sectional vs symbol-specific)
+- **Training Plan** (NEW): Automatic generation of actionable training jobs with priorities and model families
+- **2-Stage Training** (NEW): CPU models first (10 models), then GPU models (10 models: 4 TF + 6 Torch)
 - **Leakage Detection**: Pre-training leak scan + auto-fixer with config backups
-- Output: Trained models + rankings + feature selections
+- Output: Trained models + rankings + feature selections + routing plans + training plans
 - Models: Saved to `{output_dir}_YYYYMMDD_HHMMSS/training_results/`
 - Rankings: Saved to `{output_dir}_YYYYMMDD_HHMMSS/target_rankings/`
 - Feature Selections: Saved to `{output_dir}_YYYYMMDD_HHMMSS/feature_selections/`
+- Routing Plans: Saved to `{output_dir}/METRICS/routing_plan/`
+- Training Plans: Saved to `{output_dir}/METRICS/training_plan/` (master_training_plan.json)
 - Config Backups: Saved to `CONFIG/backups/{target}/{timestamp}/` (when auto-fix runs)
 - Configs: Versioned in `CONFIG/model_config/` (see [Configuration Reference](../02_reference/configuration/README.md))
 

@@ -46,6 +46,7 @@ always_exclude:
   - adx_14
   - atr_14
   - atr_x_vol
+  - awesome_oscillator
   - bb_width_20
   - beta_60d
   - cmf
@@ -72,6 +73,7 @@ always_exclude:
   - price_impact
   - price_volume_trend
   - realized_vol_20
+  - ret2_60m
   - ret_ord_5m
   - ret_zscore_10m
   - ret_zscore_15m
@@ -80,6 +82,7 @@ always_exclude:
   - ret_zscore_60m
   - roc_50
   - rs_vol_20
+  - rsi_10
   - rsi_14
   - rsi_21
   - rsi_30

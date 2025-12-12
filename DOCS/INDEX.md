@@ -55,7 +55,9 @@ Step-by-step guides for common tasks.
 - [Feature Engineering Tutorial](01_tutorials/pipelines/FEATURE_ENGINEERING_TUTORIAL.md) - Feature creation
 
 ### Training
-- [Intelligent Training Tutorial](01_tutorials/training/INTELLIGENT_TRAINING_TUTORIAL.md) - Automated target ranking, feature selection, and training (includes timestamped outputs and backup system)
+- [Intelligent Training Tutorial](01_tutorials/training/INTELLIGENT_TRAINING_TUTORIAL.md) - Automated target ranking, feature selection, training plan generation, and training (includes timestamped outputs and backup system)
+- [Training Routing Quick Start](02_reference/training_routing/QUICK_START.md) - **NEW**: Quick start for training routing system and 2-stage training
+- [Training Routing End-to-End Flow](02_reference/training_routing/END_TO_END_FLOW.md) - **NEW**: Complete end-to-end pipeline documentation
 - [Ranking and Selection Consistency](01_tutorials/training/RANKING_SELECTION_CONSISTENCY.md) - **NEW**: Unified pipeline behavior (interval handling, sklearn preprocessing, CatBoost configuration, Boruta gatekeeper)
 - [Model Training Guide](01_tutorials/training/MODEL_TRAINING_GUIDE.md) - Manual training workflow (how to run it)
 - [Walk-Forward Validation](01_tutorials/training/WALKFORWARD_VALIDATION.md) - Validation workflow

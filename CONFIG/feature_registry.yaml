@@ -64,15 +64,9 @@ features:
   rsi_10:
     source: derived
     lag_bars: 10
-    allowed_horizons:
-    - 1
-    - 2
-    - 3
-    - 5
-    - 12
-    - 24
-    - 60
+    allowed_horizons: []
     description: RSI with 10-bar lookback
+    rejected: true
   rsi_14:
     source: derived
     lag_bars: 14
@@ -671,6 +665,18 @@ features:
     rejected: true
     description: 'AUTO-REJECTED: Detected as leaky feature'
   macd_signal:
+    lag_bars: 0
+    allowed_horizons: []
+    source: unknown
+    rejected: true
+    description: 'AUTO-REJECTED: Detected as leaky feature'
+  ret2_60m:
+    lag_bars: 0
+    allowed_horizons: []
+    source: unknown
+    rejected: true
+    description: 'AUTO-REJECTED: Detected as leaky feature'
+  awesome_oscillator:
     lag_bars: 0
     allowed_horizons: []
     source: unknown

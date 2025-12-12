@@ -50,27 +50,40 @@ python DATA_PROCESSING/pipeline/barrier_pipeline.py \
 
 ### Intelligent Training Pipeline (Recommended)
 
-The intelligent training pipeline automates target ranking, feature selection, and model training:
+The intelligent training pipeline automates the complete workflow: target ranking → feature selection → training plan generation → model training:
 
 ```bash
-# Simple usage - all settings from config
+# One-command end-to-end pipeline
 python -m TRAINING.orchestration.intelligent_trainer \
     --data-dir "data/data_labeled/interval=5m" \
     --symbols AAPL MSFT GOOGL \
+    --auto-targets \
+    --auto-features \
     --output-dir "my_training_run"
+```
 
-# For testing - auto-detects test config when output-dir contains "test"
+**What it does:**
+1. Ranks all targets → selects top N
+2. Selects features per target
+3. Generates routing plan → training plan
+4. Trains models using plan (2-stage: CPU → GPU)
+
+**For testing - auto-detects test config when output-dir contains "test":**
+```bash
 python -m TRAINING.orchestration.intelligent_trainer \
     --data-dir "data/data_labeled/interval=5m" \
     --symbols AAPL MSFT GOOGL TSLA NVDA \
     --output-dir "test_e2e_run" \
-    --families lightgbm xgboost random_forest
+    --auto-targets \
+    --auto-features
 ```
 
 **Configuration:**
 - All settings come from `CONFIG/training_config/pipeline_config.yaml`
 - Test config auto-detected when output-dir contains "test"
+- Training plan automatically generated and used for filtering
 - See [Intelligent Training Tutorial](../01_tutorials/training/INTELLIGENT_TRAINING_TUTORIAL.md) for details
+- See [Training Routing Guide](../02_reference/training_routing/README.md) for routing system details
 
 ### Manual Training (Programmatic)
 

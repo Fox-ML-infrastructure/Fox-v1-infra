@@ -13,7 +13,9 @@ Data
   ↓
 [2] Automatic Feature Selection → Select top M features per target
   ↓
-[3] Model Training → Train all models with selected targets/features
+[3] Training Plan Generation → Routing decisions → Training jobs (NEW)
+  ↓
+[4] Model Training → Train models using plan (2-stage: CPU → GPU) (NEW)
   ↓
 Trained Models
 ```
@@ -21,6 +23,9 @@ Trained Models
 **Benefits:**
 - **No manual steps**: Everything automated in one command
 - **Intelligent selection**: Multi-model consensus for ranking/selection
+- **Training routing**: Config-driven decisions about where to train (cross-sectional vs symbol-specific)
+- **2-stage training**: Efficient CPU → GPU resource usage (all 20 models)
+- **Plan-aware filtering**: Only approved targets and model families are trained
 - **Cached results**: Rankings/selections cached for faster reruns
 - **Leakage-free**: All existing safeguards preserved
 - **Unified behavior**: Ranking and selection use consistent preprocessing and configuration
@@ -249,6 +254,10 @@ python TRAINING/train.py \
 ```
 
 ### Step 2: Feature Selection
+
+![Feature selection and stability analysis](../../images/feature_selection_stability.png)
+
+*Feature selection showing multi-model consensus, importance analysis, and stability tracking*
 
 For each selected target, the pipeline automatically selects the best features using multi-model consensus:
 
