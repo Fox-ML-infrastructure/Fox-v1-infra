@@ -32,6 +32,8 @@ purge = embargo = base + buffer
 
 **Note**: Feature lookback is historical data that doesn't need purging. Only the target's future window needs purging to prevent leakage.
 
+**UPDATE (2025-12-12)**: The system now includes **Active Sanitization (Ghost Buster)** which proactively quarantines features with excessive lookback before training starts. This prevents "ghost feature" discrepancies where audit and auto-fix see different lookback values. See [Active Sanitization Guide](ACTIVE_SANITIZATION.md) for details.
+
 **All modules now use this function** instead of local derivations.
 
 ### 3. Updated Logging

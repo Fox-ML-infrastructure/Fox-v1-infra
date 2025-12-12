@@ -97,7 +97,8 @@ Complete technical reference for daily use.
 
 ### Systems Reference
 - [Pipeline Reference](02_reference/systems/PIPELINE_REFERENCE.md) - Data pipelines
-- [Feature Importance Stability](../TRAINING/stability/FEATURE_IMPORTANCE_STABILITY.md) - **NEW**: Feature importance stability tracking and analysis system
+- [Feature Importance Stability](03_technical/implementation/FEATURE_IMPORTANCE_STABILITY.md) - Feature importance stability tracking and analysis system
+- [Parallel Execution](03_technical/implementation/PARALLEL_EXECUTION.md) - Parallel execution infrastructure for target ranking and feature selection
 - [Active Sanitization (Ghost Buster)](03_technical/implementation/ACTIVE_SANITIZATION.md) - **NEW**: Proactive feature quarantine system that prevents "ghost feature" discrepancies
 
 ### Decision-Making System ⚠️ EXPERIMENTAL (2025-12-12)
@@ -135,7 +136,7 @@ Research notes, design rationale, advanced topics.
 - [Intelligence Layer Overview](03_technical/research/INTELLIGENCE_LAYER.md) - Complete overview of intelligent training pipeline decision-making and automation
 - [Leakage Analysis](03_technical/research/LEAKAGE_ANALYSIS.md) - Leakage research
 - [Feature Importance Methodology](03_technical/research/FEATURE_IMPORTANCE_METHODOLOGY.md) - Feature importance research
-- [Feature Importance Stability](../TRAINING/stability/FEATURE_IMPORTANCE_STABILITY.md) - Feature importance stability tracking and analysis (see also Systems Reference)
+- [Feature Importance Stability](03_technical/implementation/FEATURE_IMPORTANCE_STABILITY.md) - Feature importance stability tracking and analysis (see also Systems Reference)
 - [Target Discovery](03_technical/research/TARGET_DISCOVERY.md) - Target research
 - [Validation Methodology](03_technical/research/VALIDATION_METHODOLOGY.md) - Validation research
 
@@ -164,6 +165,7 @@ Research notes, design rationale, advanced topics.
 ### Implementation
 - [Feature Selection Implementation](03_technical/implementation/FEATURE_SELECTION_GUIDE.md) - Feature selection implementation details (see also [Ranking and Selection Consistency](01_tutorials/training/RANKING_SELECTION_CONSISTENCY.md) for unified pipeline behavior)
 - [Training Optimization](03_technical/implementation/TRAINING_OPTIMIZATION_GUIDE.md) - Training optimization guide
+- [Parallel Execution](03_technical/implementation/PARALLEL_EXECUTION.md) - Parallel execution infrastructure for target ranking and feature selection
 - [Reproducibility Tracking](03_technical/implementation/REPRODUCIBILITY_TRACKING.md) - Automatic reproducibility verification across pipeline stages
 - [Cohort-Aware Reproducibility](03_technical/implementation/COHORT_AWARE_REPRODUCIBILITY.md) - **NEW**: Cohort-aware reproducibility system with sample-adjusted drift detection
 - [Trend Analyzer Verification](03_technical/implementation/TREND_ANALYZER_VERIFICATION.md) - **NEW**: Trend analysis system verification guide (target ranking, feature selection, cross-sectional ranking)
