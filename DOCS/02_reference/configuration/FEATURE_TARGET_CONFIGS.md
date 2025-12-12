@@ -298,6 +298,18 @@ Features are automatically tagged based on per-symbol vs cross-sectional importa
 The feature selection output includes:
 - `cs_importance_score`: Cross-sectional importance score (0-1, normalized)
 - `feature_category`: Feature category (CORE/SYMBOL_SPECIFIC/CS_SPECIFIC/WEAK)
+- `cross_sectional_stability_metadata.json`: Stability metrics (top-K overlap, Kendall tau, status) for factor robustness analysis
+
+**Stability Tracking:**
+Cross-sectional feature selection automatically tracks factor robustness across runs:
+- **Snapshots**: Each run saves CS importance snapshot to `artifacts/feature_importance/{target}/cross_sectional_panel/`
+- **Metrics**: Computes top-K overlap (Jaccard similarity) and Kendall tau (rank correlation) between runs
+- **Classification**: STABLE (overlap ≥0.75, tau ≥0.65), DRIFTING (moderate), or DIVERGED (low stability)
+- **Logging**: Compact one-line logs showing stability status, metrics, and snapshot count
+- **Metadata**: Results stored in `cross_sectional_stability_metadata.json` for audit trails
+- **Thresholds**: Stricter than per-symbol (0.75/0.65 vs 0.7/0.6) since global factors should be more persistent
+
+This provides institutional-grade factor robustness analysis, identifying which features have persistent explanatory power across the universe vs. symbol-specific noise.
 
 **When to Use:**
 - **2-4 symbols**: CS ranking adds little value; keep `enabled: false` or `min_symbols: 5`

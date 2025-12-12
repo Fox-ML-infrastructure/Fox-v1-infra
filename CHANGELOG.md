@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Reproducibility Tracking System**
   - Reusable `ReproducibilityTracker` with tolerance-based comparisons and STABLE/DRIFTING/DIVERGED classification.
   - Per-model reproducibility metrics in feature selection (delta_score, Jaccard@K, importance_corr) stored in `model_metadata.json`.
+  - **Cross-sectional stability tracking**: Factor robustness analysis for cross-sectional feature selection. Tracks top-K overlap and Kendall tau across runs with STABLE/DRIFTING/DIVERGED classification. Stricter thresholds (overlap ≥0.75, tau ≥0.65) than per-symbol since global factors should be more persistent. Stores snapshots and metadata for institutional-grade factor analysis.
 
 - **Config & Safety Utilities**
   - `TRAINING/utils/config_cleaner.py` – shared parameter sanitization / validation for all model constructors.

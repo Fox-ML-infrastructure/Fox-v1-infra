@@ -378,6 +378,149 @@ def compute_cross_sectional_importance(
     return cs_importance
 
 
+def compute_cross_sectional_stability(
+    target_column: str,
+    cs_importance: pd.Series,
+    output_dir: Optional[Path] = None,
+    top_k: int = 20,
+    universe_id: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Compute stability metrics for cross-sectional feature importance.
+    
+    This tracks stability across runs using the feature importance stability system,
+    providing factor robustness analysis for cross-sectional features.
+    
+    Args:
+        target_column: Target column name
+        cs_importance: Current cross-sectional importance Series
+        output_dir: Optional output directory for snapshots
+        top_k: Number of top features for overlap calculation
+        universe_id: Optional universe identifier (e.g., "ALL", "TOP100")
+    
+    Returns:
+        Dict with stability metrics:
+        - mean_overlap: Mean top-K overlap between runs
+        - std_overlap: Std dev of overlaps
+        - mean_tau: Mean Kendall tau correlation
+        - std_tau: Std dev of tau
+        - n_snapshots: Number of snapshots analyzed
+        - n_comparisons: Number of pairwise comparisons
+        - status: "stable", "drifting", or "diverged"
+    """
+    try:
+        from TRAINING.stability.feature_importance.hooks import (
+            save_snapshot_from_series_hook
+        )
+        from TRAINING.stability.feature_importance.analysis import (
+            load_snapshots,
+            compute_stability_metrics
+        )
+        from TRAINING.stability.feature_importance.io import get_snapshot_base_dir
+    except ImportError:
+        logger.debug("Stability tracking system not available, skipping CS stability analysis")
+        return {
+            "mean_overlap": None,
+            "std_overlap": None,
+            "mean_tau": None,
+            "std_tau": None,
+            "n_snapshots": 0,
+            "n_comparisons": 0,
+            "status": "system_unavailable"
+        }
+    
+    try:
+        # Save current snapshot
+        method_name = "cross_sectional_panel"
+        if universe_id is None:
+            universe_id = "ALL"  # Default universe ID for cross-sectional
+        
+        base_dir = get_snapshot_base_dir(output_dir)
+        snapshot_path = save_snapshot_from_series_hook(
+            target_name=target_column,
+            method=method_name,
+            importance_series=cs_importance,
+            universe_id=universe_id,
+            output_dir=output_dir,
+            auto_analyze=False  # We'll analyze manually to get metrics
+        )
+        
+        if snapshot_path is None:
+            logger.debug("Failed to save CS importance snapshot")
+            return {
+                "mean_overlap": None,
+                "std_overlap": None,
+                "mean_tau": None,
+                "std_tau": None,
+                "n_snapshots": 0,
+                "n_comparisons": 0,
+                "status": "snapshot_failed"
+            }
+        
+        # Load all snapshots (including the one we just saved)
+        snapshots = load_snapshots(base_dir, target_column, method_name)
+        
+        if len(snapshots) < 2:
+            # First or second run - no comparison yet
+            return {
+                "mean_overlap": None,
+                "std_overlap": None,
+                "mean_tau": None,
+                "std_tau": None,
+                "n_snapshots": len(snapshots),
+                "n_comparisons": 0,
+                "status": "insufficient_snapshots"
+            }
+        
+        # Compute stability metrics
+        metrics = compute_stability_metrics(snapshots, top_k=top_k)
+        
+        # Determine status based on thresholds
+        # Cross-sectional features should be more stable (global factors)
+        min_overlap = 0.75  # Stricter than per-symbol (0.7)
+        min_tau = 0.65  # Stricter than per-symbol (0.6)
+        
+        status = "stable"
+        mean_overlap = metrics.get('mean_overlap')
+        mean_tau = metrics.get('mean_tau')
+        
+        # Check overlap (primary metric)
+        if mean_overlap is not None and not (isinstance(mean_overlap, float) and np.isnan(mean_overlap)):
+            if mean_overlap < min_overlap * 0.8:  # Diverged threshold
+                status = "diverged"
+            elif mean_overlap < min_overlap:  # Drifting threshold
+                status = "drifting"
+        
+        # Check tau (secondary metric, only if overlap is OK)
+        if status == "stable" and mean_tau is not None and not (isinstance(mean_tau, float) and np.isnan(mean_tau)):
+            if mean_tau < min_tau * 0.8:
+                status = "diverged"
+            elif mean_tau < min_tau:
+                status = "drifting"
+        
+        return {
+            "mean_overlap": metrics['mean_overlap'],
+            "std_overlap": metrics['std_overlap'],
+            "mean_tau": metrics['mean_tau'],
+            "std_tau": metrics['std_tau'],
+            "n_snapshots": metrics['n_snapshots'],
+            "n_comparisons": metrics['n_comparisons'],
+            "status": status
+        }
+        
+    except Exception as e:
+        logger.debug(f"CS stability analysis failed (non-critical): {e}")
+        return {
+            "mean_overlap": None,
+            "std_overlap": None,
+            "mean_tau": None,
+            "std_tau": None,
+            "n_snapshots": 0,
+            "n_comparisons": 0,
+            "status": "analysis_failed"
+        }
+
+
 def tag_features_by_importance(
     symbol_importance: pd.Series,
     cs_importance: pd.Series,

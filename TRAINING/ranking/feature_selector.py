@@ -230,6 +230,7 @@ def select_features_for_target(
     
     # Optional: Cross-sectional ranking (if enabled and enough symbols)
     cs_importance = None
+    cs_stability_results = None  # Will store CS stability metrics
     # Load cross-sectional ranking config from preprocessing_config.yaml
     try:
         from CONFIG.config_loader import get_cfg
@@ -283,14 +284,64 @@ def select_features_for_target(
             category_counts = summary_df['feature_category'].value_counts()
             for cat, count in category_counts.items():
                 logger.info(f"      {cat}: {count} features")
+            
+            # Cross-sectional stability tracking
+            try:
+                from TRAINING.ranking.cross_sectional_feature_ranker import (
+                    compute_cross_sectional_stability
+                )
+                
+                cs_stability = compute_cross_sectional_stability(
+                    target_column=target_column,
+                    cs_importance=cs_importance,
+                    output_dir=output_dir,
+                    top_k=20,
+                    universe_id="ALL"  # Cross-sectional uses all symbols
+                )
+                
+                # Compact logging (similar to per-model reproducibility)
+                if cs_stability['status'] == 'stable':
+                    logger.info(
+                        f"   [CS-STABILITY] ✅ STABLE: "
+                        f"overlap={cs_stability['mean_overlap']:.3f}±{cs_stability['std_overlap']:.3f}, "
+                        f"tau={cs_stability['mean_tau']:.3f if cs_stability['mean_tau'] is not None else 'N/A'}, "
+                        f"snapshots={cs_stability['n_snapshots']}"
+                    )
+                elif cs_stability['status'] == 'drifting':
+                    logger.warning(
+                        f"   [CS-STABILITY] ⚠️  DRIFTING: "
+                        f"overlap={cs_stability['mean_overlap']:.3f}±{cs_stability['std_overlap']:.3f}, "
+                        f"tau={cs_stability['mean_tau']:.3f if cs_stability['mean_tau'] is not None else 'N/A'}, "
+                        f"snapshots={cs_stability['n_snapshots']}"
+                    )
+                elif cs_stability['status'] == 'diverged':
+                    logger.warning(
+                        f"   [CS-STABILITY] ⚠️  DIVERGED: "
+                        f"overlap={cs_stability['mean_overlap']:.3f}±{cs_stability['std_overlap']:.3f}, "
+                        f"tau={cs_stability['mean_tau']:.3f if cs_stability['mean_tau'] is not None else 'N/A'}, "
+                        f"snapshots={cs_stability['n_snapshots']}"
+                    )
+                elif cs_stability['n_snapshots'] < 2:
+                    logger.debug(
+                        f"   [CS-STABILITY] First run (snapshots={cs_stability['n_snapshots']})"
+                    )
+                
+                # Store stability results for metadata
+                cs_stability_results = cs_stability
+                
+            except Exception as e:
+                logger.debug(f"CS stability tracking failed (non-critical): {e}")
+                cs_stability_results = None
                 
         except Exception as e:
             logger.warning(f"Cross-sectional ranking failed: {e}", exc_info=True)
             summary_df['cs_importance_score'] = 0.0
             summary_df['feature_category'] = 'UNKNOWN'
+            cs_stability_results = None
     else:
         summary_df['cs_importance_score'] = 0.0
         summary_df['feature_category'] = 'SYMBOL_ONLY'  # CS ranking not run
+        cs_stability_results = None
         if len(symbols) < cs_config.get('min_symbols', 5):
             logger.debug(f"Skipping cross-sectional ranking: only {len(symbols)} symbols (min: {cs_config.get('min_symbols', 5)})")
         elif not cs_config.get('enabled', False):
@@ -330,6 +381,11 @@ def select_features_for_target(
             'model_families_config': model_families_config,  # Include for confidence computation
             'family_statuses': all_family_statuses  # Include family status tracking for debugging
         }
+        
+        # Add cross-sectional stability to metadata if available
+        if cs_stability_results is not None:
+            metadata['cross_sectional_stability'] = cs_stability_results
+        
         _save_multi_model_results(
             summary_df=summary_df,
             selected_features=selected_features,
@@ -337,6 +393,24 @@ def select_features_for_target(
             output_dir=output_dir,
             metadata=metadata
         )
+        
+        # Save CS stability metadata separately (similar to model_metadata.json)
+        if cs_stability_results is not None and output_dir:
+            try:
+                import json
+                cs_metadata_file = output_dir / "cross_sectional_stability_metadata.json"
+                cs_metadata = {
+                    "target_column": target_column,
+                    "universe_id": "ALL",
+                    "method": "cross_sectional_panel",
+                    "stability": cs_stability_results,
+                    "timestamp": pd.Timestamp.now().isoformat()
+                }
+                with open(cs_metadata_file, 'w') as f:
+                    json.dump(cs_metadata, f, indent=2)
+                logger.debug(f"Saved CS stability metadata to {cs_metadata_file}")
+            except Exception as e:
+                logger.debug(f"Failed to save CS stability metadata: {e}")
     
     # Track reproducibility: compare to previous feature selection run
     # This runs regardless of which entry point calls this function
@@ -391,6 +465,28 @@ def select_features_for_target(
             logger.warning(f"Reproducibility tracking failed for {target_column}: {e}")
             import traceback
             logger.debug(f"Reproducibility tracking traceback: {traceback.format_exc()}")
+    
+    # Cross-sectional stability summary (if CS ranking was run)
+    if cs_stability_results is not None:
+        try:
+            status_emoji = {
+                'stable': '✅',
+                'drifting': '⚠️',
+                'diverged': '⚠️',
+                'insufficient_snapshots': '📊',
+                'snapshot_failed': '❌',
+                'analysis_failed': '❌',
+                'system_unavailable': '❌'
+            }.get(cs_stability_results.get('status', 'unknown'), '❓')
+            
+            logger.info(
+                f"📊 Cross-sectional stability summary: {status_emoji} {cs_stability_results.get('status', 'unknown').upper()} "
+                f"(overlap={cs_stability_results.get('mean_overlap', 'N/A')}, "
+                f"tau={cs_stability_results.get('mean_tau', 'N/A')}, "
+                f"snapshots={cs_stability_results.get('n_snapshots', 0)})"
+            )
+        except Exception:
+            pass  # Non-critical summary logging
     
     return selected_features, summary_df
 

@@ -118,6 +118,7 @@ safety:
 
 1. **Target Ranking**: After model training completes
 2. **Feature Selection**: After each method (RFE, Boruta, etc.) and after aggregation
-3. **Quick Pruning**: After pruning completes
+3. **Cross-Sectional Feature Selection**: After panel model importance computation (tracks factor robustness across runs)
+4. **Quick Pruning**: After pruning completes
 
 See `INTERNAL_DOCS/FEATURE_IMPORTANCE_STABILITY_INTEGRATION_PLAN.md` for detailed integration plan.
