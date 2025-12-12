@@ -3,7 +3,7 @@
 Complete navigation guide for FoxML Core documentation.
 
 **Last Updated**: 2025-12-12  
-**Recent Updates**: Sample Size Binning System - RESULTS directory organized by sample size bins (`RESULTS/sample_25k-50k/{run_name}/`) for easy comparison of runs with similar cross-sectional sample sizes. Audit-grade binning with unambiguous boundaries, versioning, and metadata storage. Trend Analysis System - Automated trend analysis across target ranking, feature selection, and cross-sectional ranking with exponential decay weighting and regression detection. Trend metadata stored in `metadata.json` for audit-grade verification. Cohort-Aware Reproducibility System - Runs organized by data cohort with sample-adjusted drift detection. Integrated Config Backups - Backups stored in run directory, organized by sample size bin. Enhanced Metadata - `metadata.json` includes full symbols list, bin info, and data characteristics. Unified Metadata Extractor - Centralized utility for consistent cohort identification across all modules.
+**Recent Updates**: Decision-Making System (EXPERIMENTAL) - Automated decision policies with configurable thresholds for feature instability, route instability, feature explosion decline, and class balance drift. Bayesian Patch Policy - Thompson sampling over discrete patch templates for adaptive config tuning. All decision/stability thresholds now config-driven (SST compliance). Sample Size Binning System - RESULTS directory organized by sample size bins (`RESULTS/sample_25k-50k/{run_name}/`) for easy comparison of runs with similar cross-sectional sample sizes. Audit-grade binning with unambiguous boundaries, versioning, and metadata storage. Trend Analysis System - Automated trend analysis across target ranking, feature selection, and cross-sectional ranking with exponential decay weighting and regression detection. Trend metadata stored in `metadata.json` for audit-grade verification. Cohort-Aware Reproducibility System - Runs organized by data cohort with sample-adjusted drift detection. Integrated Config Backups - Backups stored in run directory, organized by sample size bin. Enhanced Metadata - `metadata.json` includes full symbols list, bin info, and data characteristics. Unified Metadata Extractor - Centralized utility for consistent cohort identification across all modules.
 
 ## Quick Navigation
 
@@ -98,6 +98,12 @@ Complete technical reference for daily use.
 ### Systems Reference
 - [Pipeline Reference](02_reference/systems/PIPELINE_REFERENCE.md) - Data pipelines
 - [Feature Importance Stability](../TRAINING/stability/FEATURE_IMPORTANCE_STABILITY.md) - **NEW**: Feature importance stability tracking and analysis system
+
+### Decision-Making System ⚠️ EXPERIMENTAL (2025-12-12)
+- [Decision Engine Guide](03_technical/implementation/decisioning/DECISION_ENGINE.md) - **NEW**: Complete guide to automated decision-making, policies, and requirements
+- [Bayesian Policy Guide](03_technical/implementation/decisioning/BAYESIAN_POLICY.md) - **NEW**: Thompson sampling over discrete patch templates for adaptive config tuning
+- [Verification Checklist](03_technical/implementation/decisioning/VERIFICATION_CHECKLIST.md) - **NEW**: How to verify decision application works correctly
+- **Status**: Highly experimental, under active testing. See [TESTING_NOTICE.md](../TESTING_NOTICE.md) for details.
 - [Training Routing System](02_reference/training_routing/README.md) - **NEW**: Config-driven routing decisions for cross-sectional vs symbol-specific training with automatic plan generation, 2-stage training (CPU→GPU), and one-command end-to-end pipeline
 
 ### API Reference

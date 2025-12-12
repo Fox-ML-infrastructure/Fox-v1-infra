@@ -1,5 +1,33 @@
 # Testing Notice
 
+## Highly Experimental Features (2025-12-12)
+
+⚠️ **IMPORTANT**: The following features are **highly experimental** and are currently being **heavily tested**. These are new additions to the TRAINING system and should be used with caution until fully validated in your environment.
+
+### Decision-Making System
+- **Decision Policies** (`TRAINING/decisioning/policies.py`): Automated decision policies for feature instability, route instability, feature explosion decline, and class balance drift
+- **Decision Engine** (`TRAINING/decisioning/decision_engine.py`): Evaluates regression/trend signals and produces actionable decisions
+- **Config-driven thresholds** (`CONFIG/training_config/decision_policies.yaml`): All policy thresholds are configurable
+- **Status**: Under active testing. Use with caution in production environments.
+
+### Bayesian Patch Policy
+- **BayesianPatchPolicy** (`TRAINING/decisioning/bayesian_policy.py`): Thompson sampling over discrete patch templates
+- **Adaptive config tuning**: Learns from past run outcomes to recommend config patches
+- **State persistence**: Bayesian state stored in `REPRODUCIBILITY/bayes_state/`
+- **Status**: Under active testing. Requires 5+ runs in same cohort+segment before recommendations. Use `dry_run` mode first.
+
+### Stability Analysis
+- **Stability Config** (`CONFIG/training_config/stability_config.yaml`): Configurable thresholds for importance difference detection
+- **Status**: Under active testing. Thresholds may need adjustment based on your data characteristics.
+
+### Auto-Config Application
+- **Apply-mode** (`--apply-decisions apply`): Automatically applies decision patches to config
+- **Status**: **Use with extreme caution**. Always test with `dry_run` mode first. Verify receipts in `REPRODUCIBILITY/patches/` before enabling apply-mode.
+
+**Recommendation**: For production use, keep `decisions.apply_mode: "off"` or `"dry_run"` until these features are fully validated in your environment.
+
+---
+
 **Status**: End-to-End Testing Underway  
 **Date**: 2025-12-11
 
