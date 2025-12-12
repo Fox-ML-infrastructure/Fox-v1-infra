@@ -109,16 +109,30 @@ decisions:
   # Bayesian patch policy (Thompson sampling over discrete patch templates)
   use_bayesian: false  # Enable Bayesian learning from past outcomes
   bayesian:
-    # Minimum runs before recommending patches (default: 5)
+    # Minimum runs before recommending patches
     min_runs_for_learning: 5
-    # Minimum P(improve) to auto-apply (default: 0.8)
+    # Minimum P(improve) to auto-apply
     p_improve_threshold: 0.8
-    # Minimum expected gain to recommend (default: 0.01)
+    # Minimum expected gain to recommend
     min_expected_gain: 0.01
-    # Reward metric to optimize (default: "cs_auc")
+    # Reward metric to optimize
     reward_metric: "cs_auc"
-    # Recency decay factor (default: 0.95, higher = more weight on recent runs)
+    # Recency decay factor (higher = more weight on recent runs)
     recency_decay: 0.95
+    # Decision level thresholds (all config-driven, no hardcoded values)
+    level_3_threshold: 0.8   # P(improve) for auto-apply (level 3)
+    level_3_gain: 0.01        # Expected gain for auto-apply (level 3)
+    level_2_threshold: 0.6    # P(improve) for recommend (level 2)
+    level_2_gain: 0.005       # Expected gain for recommend (level 2)
+    level_1_threshold: 0.4    # P(improve) for warning (level 1)
+    # Baseline window size (number of recent runs for baseline computation)
+    baseline_window: 10
+    # Patch templates (optional - uses defaults if not specified)
+    # templates:
+    #   - name: "cap_features_10pct"
+    #     action_code: "cap_features"
+    #     reduction_pct: 10
+    #     description: "Reduce max_features by 10%"
 
 # Test mode configuration (auto-detected if 'test' in output_dir name)
 test:

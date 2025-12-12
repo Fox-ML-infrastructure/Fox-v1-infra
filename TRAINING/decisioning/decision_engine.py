@@ -90,13 +90,33 @@ class DecisionEngine:
         
         # Initialize Bayesian policy if enabled
         self.bayesian_policy = None
+        self.bayesian_config = None
         if use_bayesian:
             try:
+                # Load config for Bayesian policy (SST: Single Source of Truth)
+                from TRAINING.utils.resolved_config import get_cfg
+                self.bayesian_config = {
+                    'bayesian': {
+                        'min_runs_for_learning': get_cfg('training.decisions.bayesian.min_runs_for_learning', default=5, config_name='training_config'),
+                        'p_improve_threshold': get_cfg('training.decisions.bayesian.p_improve_threshold', default=0.8, config_name='training_config'),
+                        'min_expected_gain': get_cfg('training.decisions.bayesian.min_expected_gain', default=0.01, config_name='training_config'),
+                        'reward_metric': get_cfg('training.decisions.bayesian.reward_metric', default='cs_auc', config_name='training_config'),
+                        'recency_decay': get_cfg('training.decisions.bayesian.recency_decay', default=0.95, config_name='training_config'),
+                        'level_3_threshold': get_cfg('training.decisions.bayesian.level_3_threshold', default=0.8, config_name='training_config'),
+                        'level_3_gain': get_cfg('training.decisions.bayesian.level_3_gain', default=0.01, config_name='training_config'),
+                        'level_2_threshold': get_cfg('training.decisions.bayesian.level_2_threshold', default=0.6, config_name='training_config'),
+                        'level_2_gain': get_cfg('training.decisions.bayesian.level_2_gain', default=0.005, config_name='training_config'),
+                        'level_1_threshold': get_cfg('training.decisions.bayesian.level_1_threshold', default=0.4, config_name='training_config'),
+                        'baseline_window': get_cfg('training.decisions.bayesian.baseline_window', default=10, config_name='training_config'),
+                        'templates': get_cfg('training.decisions.bayesian.templates', default=None, config_name='training_config')
+                    }
+                }
                 self.bayesian_policy = BayesianPatchPolicy(
                     index_path=index_path,
-                    base_dir=self.base_dir
+                    base_dir=self.base_dir,
+                    config=self.bayesian_config
                 )
-                logger.info("✅ Bayesian patch policy enabled")
+                logger.info("✅ Bayesian patch policy enabled (all config-driven)")
             except Exception as e:
                 logger.warning(f"Failed to initialize Bayesian policy: {e}. Continuing without it.")
                 self.use_bayesian = False

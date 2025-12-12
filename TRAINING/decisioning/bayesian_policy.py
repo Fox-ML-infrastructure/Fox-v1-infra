@@ -187,49 +187,50 @@ class BayesStateStore:
             raise
 
 
-def get_default_patch_templates() -> List[PatchTemplate]:
+def get_default_patch_templates(config: Optional[Dict[str, Any]] = None) -> List[PatchTemplate]:
     """
     Get default patch templates (discrete action space).
     
     These map to existing action codes but with specific parameters.
+    Templates are configurable via config dict.
+    
+    Args:
+        config: Optional config dict with template definitions
     """
     templates = []
     
-    # Feature capping templates (various reduction amounts)
-    templates.append(PatchTemplate(
-        name="cap_features_10pct",
-        action_code="cap_features",
-        patch_params={"reduction_pct": 10},
-        description="Reduce max_features by 10%"
-    ))
-    templates.append(PatchTemplate(
-        name="cap_features_20pct",
-        action_code="cap_features",
-        patch_params={"reduction_pct": 20},
-        description="Reduce max_features by 20% (max clamp)"
-    ))
+    # Get template configs (defaults if not provided)
+    if config is None:
+        config = {}
     
-    # Routing tightening templates
-    templates.append(PatchTemplate(
-        name="tighten_routing_10pct",
-        action_code="tighten_routing",
-        patch_params={"increase_pct": 10},
-        description="Increase routing thresholds by 10%"
-    ))
-    templates.append(PatchTemplate(
-        name="tighten_routing_20pct",
-        action_code="tighten_routing",
-        patch_params={"increase_pct": 20},
-        description="Increase routing thresholds by 20% (max clamp)"
-    ))
+    template_configs = config.get('templates', [
+        {"name": "cap_features_10pct", "action_code": "cap_features", "reduction_pct": 10},
+        {"name": "cap_features_20pct", "action_code": "cap_features", "reduction_pct": 20},
+        {"name": "tighten_routing_10pct", "action_code": "tighten_routing", "increase_pct": 10},
+        {"name": "tighten_routing_20pct", "action_code": "tighten_routing", "increase_pct": 20},
+        {"name": "freeze_features", "action_code": "freeze_features"}
+    ])
     
-    # Feature freezing (no params, just the action)
-    templates.append(PatchTemplate(
-        name="freeze_features",
-        action_code="freeze_features",
-        patch_params={},
-        description="Freeze feature selection to cached"
-    ))
+    for tmpl_cfg in template_configs:
+        name = tmpl_cfg.get('name')
+        action_code = tmpl_cfg.get('action_code')
+        if not name or not action_code:
+            continue
+        
+        patch_params = {}
+        if 'reduction_pct' in tmpl_cfg:
+            patch_params['reduction_pct'] = tmpl_cfg['reduction_pct']
+        if 'increase_pct' in tmpl_cfg:
+            patch_params['increase_pct'] = tmpl_cfg['increase_pct']
+        
+        description = tmpl_cfg.get('description', f"{action_code} with {patch_params}")
+        
+        templates.append(PatchTemplate(
+            name=name,
+            action_code=action_code,
+            patch_params=patch_params,
+            description=description
+        ))
     
     return templates
 
@@ -279,12 +280,7 @@ class BayesianPatchPolicy:
         self,
         index_path: Path,
         base_dir: Path,
-        templates: Optional[List[PatchTemplate]] = None,
-        min_runs_for_learning: int = 5,
-        p_improve_threshold: float = 0.8,
-        min_expected_gain: float = 0.01,
-        reward_metric: str = "cs_auc",
-        recency_decay: float = 0.95
+        config: Optional[Dict[str, Any]] = None
     ):
         """
         Initialize Bayesian policy.
@@ -292,21 +288,35 @@ class BayesianPatchPolicy:
         Args:
             index_path: Path to index.parquet
             base_dir: Base directory for state persistence
-            templates: Patch templates (default: use get_default_patch_templates)
-            min_runs_for_learning: Minimum runs before recommending patches
-            p_improve_threshold: Minimum P(improve) to auto-apply (default: 0.8)
-            min_expected_gain: Minimum expected gain to recommend (default: 0.01)
-            reward_metric: Metric to optimize (default: "cs_auc")
-            recency_decay: Decay factor for recency weighting (default: 0.95)
+            config: Config dict with Bayesian policy settings (all values configurable)
         """
         self.index_path = Path(index_path)
         self.base_dir = Path(base_dir)
-        self.templates = templates or get_default_patch_templates()
-        self.min_runs_for_learning = min_runs_for_learning
-        self.p_improve_threshold = p_improve_threshold
-        self.min_expected_gain = min_expected_gain
-        self.reward_metric = reward_metric
-        self.recency_decay = recency_decay
+        
+        # Load config (defaults if not provided)
+        if config is None:
+            config = {}
+        
+        # All parameters are config-driven (no hardcoded defaults)
+        bayesian_cfg = config.get('bayesian', {})
+        self.min_runs_for_learning = bayesian_cfg.get('min_runs_for_learning', 5)
+        self.p_improve_threshold = bayesian_cfg.get('p_improve_threshold', 0.8)
+        self.min_expected_gain = bayesian_cfg.get('min_expected_gain', 0.01)
+        self.reward_metric = bayesian_cfg.get('reward_metric', 'cs_auc')
+        self.recency_decay = bayesian_cfg.get('recency_decay', 0.95)
+        
+        # Decision level thresholds (configurable)
+        self.level_3_threshold = bayesian_cfg.get('level_3_threshold', 0.8)  # P(improve) for auto-apply
+        self.level_3_gain = bayesian_cfg.get('level_3_gain', 0.01)  # Expected gain for auto-apply
+        self.level_2_threshold = bayesian_cfg.get('level_2_threshold', 0.6)  # P(improve) for recommend
+        self.level_2_gain = bayesian_cfg.get('level_2_gain', 0.005)  # Expected gain for recommend
+        self.level_1_threshold = bayesian_cfg.get('level_1_threshold', 0.4)  # P(improve) for warning
+        
+        # Baseline window size (configurable)
+        self.baseline_window = bayesian_cfg.get('baseline_window', 10)
+        
+        # Load templates (configurable)
+        self.templates = get_default_patch_templates(bayesian_cfg)
         
         self.state_store = BayesStateStore(self.base_dir)
         
@@ -369,7 +379,7 @@ class BayesianPatchPolicy:
             }
         
         # Compute baseline (recent runs without patches, or rolling median)
-        baseline_runs = cohort_data.tail(min(10, len(cohort_data)))
+        baseline_runs = cohort_data.tail(min(self.baseline_window, len(cohort_data)))
         if self.reward_metric in baseline_runs.columns:
             state.baseline_reward = float(baseline_runs[self.reward_metric].median())
         
@@ -410,12 +420,12 @@ class BayesianPatchPolicy:
         confidence = best_arm_stats.p_improve(state.baseline_reward)
         expected_gain = best_arm_stats.expected_gain(state.baseline_reward)
         
-        # Decision level based on confidence and gain
-        if confidence >= self.p_improve_threshold and expected_gain >= self.min_expected_gain:
+        # Decision level based on confidence and gain (all config-driven)
+        if confidence >= self.level_3_threshold and expected_gain >= self.level_3_gain:
             level = 3  # High confidence, auto-apply
-        elif confidence >= 0.6 and expected_gain >= 0.005:
+        elif confidence >= self.level_2_threshold and expected_gain >= self.level_2_gain:
             level = 2  # Moderate confidence, recommend
-        elif confidence >= 0.4:
+        elif confidence >= self.level_1_threshold:
             level = 1  # Low confidence, warning
         else:
             level = 0  # No action
