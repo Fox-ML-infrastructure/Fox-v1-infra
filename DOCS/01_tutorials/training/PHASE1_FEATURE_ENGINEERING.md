@@ -1,5 +1,7 @@
 # Phase 1: Feature Engineering & Selection
 
+> **⚠️ Note**: This is part of the legacy 3-phase EXPERIMENTS workflow. For new projects, consider using the [Intelligent Training Pipeline](INTELLIGENT_TRAINING_TUTORIAL.md) which provides automated target ranking and feature selection with a unified configuration system.
+
 ## Purpose
 
 Reduce feature dimensionality from 421 to ~50-60 features by:

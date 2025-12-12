@@ -1,5 +1,7 @@
 # Operations Guide - 3-Phase Training Workflow
 
+> **⚠️ Note**: This 3-phase EXPERIMENTS workflow is a legacy approach. For new projects, consider using the [Intelligent Training Pipeline](INTELLIGENT_TRAINING_TUTORIAL.md) which provides automated target ranking and feature selection with a unified configuration system.
+
 Step-by-step instructions for running the optimized 3-phase training workflow.
 
 ## Prerequisites
