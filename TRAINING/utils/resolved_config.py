@@ -346,12 +346,16 @@ def create_resolved_config(
         pass
     
     if purge_include_feature_lookback and feature_lookback_max_minutes is not None and purge_minutes < feature_lookback_max_minutes:
+        # Add safety buffer (1% to handle edge cases)
+        safety_buffer_factor = 1.01
+        safe_purge = int(feature_lookback_max_minutes * safety_buffer_factor)
+        
         logger.warning(
             f"⚠️  Audit violation prevention: purge ({purge_minutes:.1f}m) < feature_lookback_max ({feature_lookback_max_minutes:.1f}m). "
-            f"Increasing purge to {feature_lookback_max_minutes:.1f}m to satisfy audit rule. "
+            f"Increasing purge to {safe_purge:.1f}m (feature_lookback_max * {safety_buffer_factor:.0%}) to satisfy audit rule. "
             f"Embargo remains {embargo_minutes:.1f}m (horizon-based, not feature lookback)."
         )
-        purge_minutes = feature_lookback_max_minutes
+        purge_minutes = safe_purge
         # embargo_minutes stays at embargo_base (NOT increased)
     elif not purge_include_feature_lookback and feature_lookback_max_minutes is not None:
         logger.info(

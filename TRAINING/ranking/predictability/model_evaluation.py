@@ -2661,28 +2661,29 @@ def evaluate_target_predictability(
     # Get n_symbols_available from mtf_data
     n_symbols_available = len(mtf_data)
     
-    # Create baseline resolved_config (without feature lookback inflation)
-    # This ensures resolved_config is always available, even if pruning fails
-    # We'll recompute it post-prune with actual feature lookback if pruning succeeds
+    # Create baseline resolved_config (WITH feature lookback computation)
+    # CRITICAL FIX: Compute feature lookback early to ensure purge is large enough
+    # This prevents "ROLLING WINDOW LEAKAGE RISK" violations
     selected_features = feature_names.copy() if feature_names else []
     
-    # Create baseline config (no feature lookback - just horizon+buffer safety)
+    # Create baseline config (WITH feature lookback computation for auto-adjustment)
+    # The auto-fix logic in create_resolved_config will increase purge if feature_lookback > purge
     resolved_config = create_resolved_config(
         requested_min_cs=min_cs if view != "SYMBOL_SPECIFIC" else 1,
         n_symbols_available=n_symbols_available,
         max_cs_samples=max_cs_samples,
         interval_minutes=detected_interval,
         horizon_minutes=target_horizon_minutes,
-        feature_lookback_max_minutes=None,  # Baseline: no feature lookback inflation
+        feature_lookback_max_minutes=None,  # Will be computed from feature_names
         purge_buffer_bars=5,  # Default from config
-        default_purge_minutes=85.0,
+        default_purge_minutes=None,  # Loads from safety_config.yaml (SST)
         features_safe=features_safe,
         features_dropped_nan=features_dropped_nan,
         features_final=len(selected_features),
         view=view,
         symbol=symbol,
-        feature_names=selected_features,
-        recompute_lookback=False  # Baseline: don't compute feature lookback yet
+        feature_names=selected_features,  # Pass feature names for lookback computation
+        recompute_lookback=True  # CRITICAL: Compute feature lookback to auto-adjust purge
     )
     
     if log_cfg.cv_detail:
