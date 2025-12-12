@@ -373,30 +373,66 @@ See [Config Basics](../configuration/CONFIG_BASICS.md) for how to modify these s
 
 ## Output Structure
 
-**Note**: Output directories are automatically timestamped by default (format: `YYYYMMDD_HHMMSS`) to make runs distinguishable. For example, `intelligent_output` becomes `intelligent_output_20251208_143022`.
+**Note**: All runs are automatically organized in the `RESULTS/` directory, sorted by cohort after the first target is processed. Output directories are automatically timestamped by default (format: `YYYYMMDD_HHMMSS`) to make runs distinguishable.
 
+**Initial Structure** (before cohort identified):
 ```
-output_dir_YYYYMMDD_HHMMSS/
-├── target_rankings/
-│   ├── target_predictability_rankings.csv
-│   └── feature_importances/
-│       └── {target}/
-│           └── {model}_importances.csv
-├── feature_selections/
-│   └── {target}/
-│       ├── selected_features.txt
-│       ├── feature_importance_multi_model.csv
-│       ├── target_confidence.json
-│       └── target_routing.json
-├── target_confidence_summary.json  # Run-level summary (all targets)
-├── target_confidence_summary.csv  # Human-readable summary table
-├── training_results/
-│   └── (model artifacts, metrics, predictions)
-└── cache/
-    ├── target_rankings.json
-    └── feature_selections/
-        └── {target}.json
+RESULTS/
+└── _pending/
+    └── {run_name}_YYYYMMDD_HHMMSS/
+        ├── target_rankings/
+        ├── feature_selections/
+        ├── training_results/
+        ├── backups/                    # Config backups (integrated)
+        └── REPRODUCIBILITY/
 ```
+
+**Final Structure** (after cohort identified):
+```
+RESULTS/
+└── {cohort_id}/                        # e.g., cs_2025Q2_min_cs3_max1000_v1_bdbeb515
+    └── {run_name}_YYYYMMDD_HHMMSS/
+        ├── target_rankings/
+        │   ├── target_predictability_rankings.csv
+        │   └── feature_importances/
+        │       └── {target}/
+        │           └── {model}_importances.csv
+        ├── feature_selections/
+        │   └── {target}/
+        │       ├── selected_features.txt
+        │       ├── feature_importance_multi_model.csv
+        │       ├── target_confidence.json
+        │       └── target_routing.json
+        ├── training_results/
+        │   └── (model artifacts, metrics, predictions)
+        ├── backups/                    # Config backups (organized by target)
+        │   └── {target}/
+        │       └── {timestamp}/
+        │           ├── excluded_features.yaml
+        │           ├── feature_registry.yaml
+        │           └── manifest.json
+        ├── REPRODUCIBILITY/            # Cohort-aware reproducibility tracking
+        │   ├── TARGET_RANKING/
+        │   │   └── {target}/
+        │   │       └── cohort={cohort_id}/
+        │   │           ├── metadata.json  # Includes symbols list
+        │   │           ├── metrics.json
+        │   │           └── drift.json
+        │   ├── FEATURE_SELECTION/
+        │   ├── TRAINING/
+        │   ├── index.parquet
+        │   └── stats.json
+        └── cache/
+            ├── target_rankings.json
+            └── feature_selections/
+                └── {target}.json
+```
+
+**Benefits**:
+- **Cohort-organized**: All runs for the same data configuration are grouped together
+- **Easy comparison**: Runs in the same cohort directory are directly comparable
+- **Integrated backups**: Config backups stored with run artifacts
+- **Complete metadata**: Each cohort includes full symbol list and data characteristics
 
 To disable timestamping, use `add_timestamp=False` when initializing `IntelligentTrainer` programmatically.
 

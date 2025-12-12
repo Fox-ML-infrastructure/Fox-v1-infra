@@ -341,3 +341,4 @@ def build_routing_candidates(
         logger.info(f"✅ Saved routing candidates JSON: {json_path}")
     
     return df
+

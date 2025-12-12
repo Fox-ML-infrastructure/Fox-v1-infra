@@ -682,6 +682,18 @@ features:
     source: unknown
     rejected: true
     description: 'AUTO-REJECTED: Detected as leaky feature'
+  high_vol_frac:
+    lag_bars: 0
+    allowed_horizons: []
+    source: unknown
+    rejected: true
+    description: 'AUTO-REJECTED: Detected as leaky feature'
+  price_momentum_60d:
+    lag_bars: 0
+    allowed_horizons: []
+    source: unknown
+    rejected: true
+    description: 'AUTO-REJECTED: Detected as leaky feature'
 feature_families:
   lagged_returns:
     pattern: ^ret_\d+$

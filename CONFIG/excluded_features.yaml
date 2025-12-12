@@ -57,6 +57,7 @@ always_exclude:
   - flipcount_5m
   - flipcount_60m
   - gk_vol_5
+  - high_vol_frac
   - ichimoku_chikou
   - macd_hist
   - macd_signal
@@ -71,6 +72,7 @@ always_exclude:
   - obv_ema
   - parkinson_vol_5
   - price_impact
+  - price_momentum_60d
   - price_volume_trend
   - realized_vol_20
   - ret2_60m

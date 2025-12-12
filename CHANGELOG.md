@@ -14,6 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Highlights
 
+- **Cohort-Aware Reproducibility & RESULTS Organization** (2025-12-11) – **NEW**: Complete overhaul of reproducibility tracking and output organization:
+  - **Cohort-aware reproducibility**: Runs organized by data cohort (sample size, symbols, date range, config) with sample-adjusted drift detection. Only compares runs within the same cohort for statistically meaningful comparisons.
+  - **RESULTS directory structure**: All runs (test and production) organized in `RESULTS/` directory, automatically sorted by cohort after first target is processed: `RESULTS/{cohort_id}/{run_name}/`
+  - **Integrated backups**: Config backups now stored in run directory (`RESULTS/{cohort_id}/{run_name}/backups/`) instead of `CONFIG/backups/`, keeping everything together
+  - **Enhanced metadata**: `metadata.json` now includes full `symbols` list (sorted, deduplicated) for debugging and cohort identification
+  - **Unified metadata extractor**: Centralized `cohort_metadata_extractor.py` utility used across all modules (target ranking, feature selection, training) for consistent cohort identification
+  - **Immediate writes**: All reproducibility files flushed to disk immediately with `fsync()` for real-time visibility
+  - See [Cohort-Aware Reproducibility Guide](DOCS/03_technical/implementation/COHORT_AWARE_REPRODUCIBILITY.md)
 - **Training Routing System** (2025-12-11) – Config-driven routing system that makes reproducible decisions about where to train models (cross-sectional vs symbol-specific vs both vs experimental vs blocked) based on feature selection metrics, stability analysis, and leakage detection. Generates routing plans and training plans with automatic filtering. **NEW**: 2-stage training pipeline (CPU models first, then GPU models) and one-command end-to-end flow (target ranking → feature selection → training plan → training execution). See [Training Routing Guide](DOCS/02_reference/training_routing/README.md). **Status: Currently being tested.**
 - **Reproducibility & Drift Tracking** (2025-12-11) – End-to-end reproducibility tracking across ranking, feature selection, and training with per-model metrics and three-tier classification (**STABLE / DRIFTING / DIVERGED**). Module-specific logs and cross-run comparison. See [Reproducibility Tracking Guide](DOCS/03_technical/implementation/REPRODUCIBILITY_TRACKING.md).
 - **Model Parameter Sanitization** (2025-12-11) – Shared `config_cleaner.py` utility using `inspect.signature()` to strip unknown/duplicate params and normalize tricky cases (MLPRegressor `verbose`, CatBoost iteration synonyms and RNG params, sklearn/univariate quirks). Eliminates an entire class of "got multiple values" / "unexpected keyword" failures.

@@ -181,17 +181,84 @@ class IntelligentTrainer:
             output_dir = Path(output_dir)
             # Only add timestamp if output_dir doesn't already have one (avoid double-timestamping)
             if not any(c.isdigit() for c in output_dir.name[-15:]):
-                self.output_dir = output_dir.parent / f"{output_dir.name}_{timestamp}"
+                output_dir_name = f"{output_dir.name}_{timestamp}"
             else:
-                self.output_dir = output_dir
+                output_dir_name = output_dir.name
         else:
-            self.output_dir = Path(output_dir)
+            output_dir = Path(output_dir)
+            output_dir_name = output_dir.name
+        
+        # Put ALL runs in RESULTS directory, organized by cohort
+        # Structure: RESULTS/{cohort_id}/{run_name}/
+        # We'll start in RESULTS/_pending/ and move to cohort directory after first target is processed
+        repo_root = Path(__file__).parent.parent.parent  # Go up from TRAINING/orchestration/ to repo root
+        results_dir = repo_root / "RESULTS"
+        
+        # Start in _pending/ - will be moved to cohort-specific directory after first cohort is identified
+        self._initial_output_dir = results_dir / "_pending" / output_dir_name
+        self.output_dir = self._initial_output_dir
+        self._cohort_id = None  # Will be set after first target is processed
+        self._run_name = output_dir_name  # Store for move operation
         
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        logger.info(f"📁 Output directory: {self.output_dir}")
+        logger.info(f"📁 Output directory: {self.output_dir} (will be organized by cohort after first target)")
         
         self.cache_dir = Path(cache_dir) if cache_dir else self.output_dir / "cache"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Initialize cache file paths
+        self.target_ranking_cache = self.cache_dir / "target_rankings.json"
+        self.feature_selection_cache = self.cache_dir / "feature_selections"
+        self.feature_selection_cache.mkdir(parents=True, exist_ok=True)
+    
+    def _organize_by_cohort(self):
+        """
+        Organize the run directory by cohort after first target is processed.
+        Moves from RESULTS/_pending/{run_name}/ to RESULTS/{cohort_id}/{run_name}/
+        """
+        if self._cohort_id is not None:
+            return  # Already organized
+        
+        try:
+            # Try to find cohort_id from REPRODUCIBILITY directory
+            repro_dir = self.output_dir.parent / "REPRODUCIBILITY"
+            target_ranking_dir = repro_dir / "TARGET_RANKING"
+            
+            if target_ranking_dir.exists():
+                # Find first target's cohort directory
+                for target_dir in target_ranking_dir.iterdir():
+                    if target_dir.is_dir():
+                        # Look for cohort= directories
+                        for cohort_dir in target_dir.iterdir():
+                            if cohort_dir.is_dir() and cohort_dir.name.startswith("cohort="):
+                                cohort_id = cohort_dir.name.replace("cohort=", "")
+                                self._cohort_id = cohort_id
+                                
+                                # Move the entire run directory to cohort-organized location
+                                repo_root = Path(__file__).parent.parent.parent
+                                results_dir = repo_root / "RESULTS"
+                                new_output_dir = results_dir / cohort_id / self._run_name
+                                
+                                if new_output_dir.exists():
+                                    logger.warning(f"Cohort directory {new_output_dir} already exists, not moving")
+                                    return
+                                
+                                # Move the directory
+                                import shutil
+                                new_output_dir.parent.mkdir(parents=True, exist_ok=True)
+                                shutil.move(str(self._initial_output_dir), str(new_output_dir))
+                                self.output_dir = new_output_dir
+                                
+                                # Update cache_dir path and cache file paths
+                                self.cache_dir = self.output_dir / "cache"
+                                self.target_ranking_cache = self.cache_dir / "target_rankings.json"
+                                self.feature_selection_cache = self.cache_dir / "feature_selections"
+                                
+                                logger.info(f"📁 Organized run by cohort: {self.output_dir}")
+                                return
+        except Exception as e:
+            logger.debug(f"Could not organize by cohort (will stay in _pending/): {e}")
+            # Stay in _pending/ if we can't determine cohort
         
         # Create subdirectories
         (self.output_dir / "target_rankings").mkdir(exist_ok=True)
@@ -394,6 +461,11 @@ class IntelligentTrainer:
             max_cs_samples=max_cs_samples,  # Pass max_cs_samples from config
             max_rows_per_symbol=max_rows_per_symbol  # Pass max_rows_per_symbol from config
         )
+        
+        # After first target ranking, try to organize by cohort
+        # Extract cohort_id from REPRODUCIBILITY directory if available
+        if self._cohort_id is None and rankings:
+            self._organize_by_cohort()
         
         # Save to cache
         if use_cache:

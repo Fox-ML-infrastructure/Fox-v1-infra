@@ -240,6 +240,32 @@ def select_features_for_target(
     except Exception:
         cs_config = aggregation_config.get('cross_sectional_ranking', {})
     
+    # Store cohort metadata context for later use in reproducibility tracking
+    # Extract from available data: symbols, cs_config, and optionally load mtf_data for date ranges
+    cohort_context = {
+        'symbols': symbols,
+        'data_dir': data_dir,
+        'min_cs': cs_config.get('min_cs', 10) if cs_config.get('enabled', False) else None,
+        'max_cs_samples': cs_config.get('max_cs_samples', 1000) if cs_config.get('enabled', False) else None,
+        'mtf_data': None  # Will try to load if needed
+    }
+    
+    # Try to load mtf_data for date range extraction (optional, for better metadata)
+    try:
+        import pandas as pd
+        mtf_data_for_cohort = {}
+        for symbol in symbols[:5]:  # Limit to first 5 symbols to avoid loading too much
+            symbol_dir = data_dir / f"symbol={symbol}"
+            data_path = symbol_dir / f"{symbol}.parquet"
+            if data_path.exists():
+                df = pd.read_parquet(data_path, columns=['timestamp'] if 'timestamp' in pd.read_parquet(data_path, nrows=0).columns else [])
+                if not df.empty:
+                    mtf_data_for_cohort[symbol] = df
+        if mtf_data_for_cohort:
+            cohort_context['mtf_data'] = mtf_data_for_cohort
+    except Exception as e:
+        logger.debug(f"Could not load mtf_data for cohort metadata: {e}")
+    
     if (cs_config.get('enabled', False) and 
         len(symbols) >= cs_config.get('min_symbols', 5)):
         
@@ -443,23 +469,53 @@ def select_features_for_target(
             n_features_selected = len(selected_features)
             n_successful_families = len([s for s in all_family_statuses if s.get('status') == 'success'])
             
+            # Extract cohort metadata using unified extractor
+            from TRAINING.utils.cohort_metadata_extractor import extract_cohort_metadata, format_for_reproducibility_tracker
+            
+            # Extract cohort metadata from stored context (symbols, mtf_data, cs_config)
+            # cohort_context is defined earlier in the function
+            if 'cohort_context' in locals() and cohort_context:
+                cohort_metadata = extract_cohort_metadata(
+                    symbols=cohort_context.get('symbols'),
+                    mtf_data=cohort_context.get('mtf_data'),
+                    min_cs=cohort_context.get('min_cs'),
+                    max_cs_samples=cohort_context.get('max_cs_samples')
+                )
+            else:
+                # Fallback: try to extract from function variables (shouldn't happen if cohort_context is set)
+                cohort_metadata = extract_cohort_metadata(
+                    symbols=symbols,
+                    mtf_data=mtf_data if 'mtf_data' in locals() else None,
+                    min_cs=None,
+                    max_cs_samples=None
+                )
+            
+            # Format for reproducibility tracker
+            cohort_metrics, cohort_additional_data = format_for_reproducibility_tracker(cohort_metadata)
+            
+            # Merge with existing metrics and additional_data
+            metrics_with_cohort = {
+                "metric_name": "Consensus Score",
+                "mean_score": mean_consensus,
+                "std_score": std_consensus,
+                "mean_importance": top_feature_score,  # Use top feature score as importance proxy
+                "composite_score": mean_consensus,  # Use mean consensus as composite
+                "n_features_selected": n_features_selected,
+                "n_successful_families": n_successful_families,
+                **cohort_metrics  # Adds N_effective_cs if available
+            }
+            
+            additional_data_with_cohort = {
+                "top_feature": summary_df.iloc[0]['feature'] if not summary_df.empty else None,
+                "top_n": top_n or len(selected_features),
+                **cohort_additional_data  # Adds n_symbols, date_range, cs_config if available
+            }
+            
             tracker.log_comparison(
                 stage="feature_selection",
                 item_name=target_column,
-                metrics={
-                    "metric_name": "Consensus Score",
-                    "mean_score": mean_consensus,
-                    "std_score": std_consensus,
-                    "mean_importance": top_feature_score,  # Use top feature score as importance proxy
-                    "composite_score": mean_consensus,  # Use mean consensus as composite
-                    "n_features_selected": n_features_selected,
-                    "n_successful_families": n_successful_families
-                },
-                additional_data={
-                    "top_feature": summary_df.iloc[0]['feature'] if not summary_df.empty else None,
-                    "top_n": top_n or len(selected_features),
-                    "n_symbols": len(symbols)
-                }
+                metrics=metrics_with_cohort,
+                additional_data=additional_data_with_cohort
             )
         except Exception as e:
             logger.warning(f"Reproducibility tracking failed for {target_column}: {e}")

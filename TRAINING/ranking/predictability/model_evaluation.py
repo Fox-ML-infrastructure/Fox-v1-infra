@@ -2217,6 +2217,18 @@ def evaluate_target_predictability(
         mtf_data, target_column, min_cs=min_cs, max_cs_samples=max_cs_samples, feature_names=safe_columns
     )
     
+    # Store cohort metadata context for later use in reproducibility tracking
+    # These will be used to extract cohort metadata at the end of the function
+    cohort_context = {
+        'X': X,
+        'time_vals': time_vals,
+        'symbols_array': symbols_array,
+        'mtf_data': mtf_data,
+        'symbols': symbols,
+        'min_cs': min_cs,
+        'max_cs_samples': max_cs_samples
+    }
+    
     if X is None or y is None:
         logger.error(f"Failed to prepare cross-sectional data for {target_column}")
         return TargetPredictabilityScore(
@@ -2558,7 +2570,8 @@ def evaluate_target_predictability(
                 
                 logger.info("🔧 Auto-fixing detected leaks...")
                 logger.info(f"   Initializing LeakageAutoFixer (backup_configs=True)...")
-                fixer = LeakageAutoFixer(backup_configs=True)
+                # Pass output_dir if available so backups are stored in run directory (will be organized by cohort)
+                fixer = LeakageAutoFixer(backup_configs=True, output_dir=output_dir)
                 
                 # Convert X to DataFrame if needed (auto-fixer expects DataFrame)
                 if not isinstance(X, pd.DataFrame):
@@ -2874,21 +2887,59 @@ def evaluate_target_predictability(
             )
             
             # Log comparison with previous run
+            # Extract cohort metadata using unified extractor
+            from TRAINING.utils.cohort_metadata_extractor import extract_cohort_metadata, format_for_reproducibility_tracker
+            
+            # Extract cohort metadata from stored context (X, time_vals, symbols_array from prepare_cross_sectional_data_for_ranking)
+            # cohort_context is defined earlier in the function after prepare_cross_sectional_data_for_ranking
+            if 'cohort_context' in locals() and cohort_context:
+                # Prefer symbols_array (from prepare_cross_sectional_data_for_ranking) over symbols list
+                symbols_for_extraction = cohort_context.get('symbols_array')
+                if symbols_for_extraction is None:
+                    symbols_for_extraction = cohort_context.get('symbols')
+                
+                cohort_metadata = extract_cohort_metadata(
+                    X=cohort_context.get('X'),
+                    symbols=symbols_for_extraction,
+                    time_vals=cohort_context.get('time_vals'),
+                    mtf_data=cohort_context.get('mtf_data'),
+                    min_cs=cohort_context.get('min_cs'),
+                    max_cs_samples=cohort_context.get('max_cs_samples')
+                )
+            else:
+                # Fallback: try to extract from function variables (shouldn't happen if cohort_context is set)
+                cohort_metadata = extract_cohort_metadata(
+                    symbols=symbols,
+                    mtf_data=mtf_data if 'mtf_data' in locals() else None,
+                    min_cs=min_cs if 'min_cs' in locals() else None,
+                    max_cs_samples=max_cs_samples if 'max_cs_samples' in locals() else None
+                )
+            
+            # Format for reproducibility tracker
+            cohort_metrics, cohort_additional_data = format_for_reproducibility_tracker(cohort_metadata)
+            
+            # Merge with existing metrics and additional_data
+            metrics_with_cohort = {
+                "metric_name": metric_name,
+                "mean_score": result.mean_score,
+                "std_score": result.std_score,
+                "mean_importance": result.mean_importance,
+                "composite_score": result.composite_score,
+                **cohort_metrics  # Adds N_effective_cs if available
+            }
+            
+            additional_data_with_cohort = {
+                "n_models": result.n_models,
+                "leakage_flag": result.leakage_flag,
+                "task_type": result.task_type.name if hasattr(result.task_type, 'name') else str(result.task_type),
+                **cohort_additional_data  # Adds n_symbols, date_range, cs_config if available
+            }
+            
             tracker.log_comparison(
                 stage="target_ranking",
                 item_name=target_name,
-                metrics={
-                    "metric_name": metric_name,
-                    "mean_score": result.mean_score,
-                    "std_score": result.std_score,
-                    "mean_importance": result.mean_importance,
-                    "composite_score": result.composite_score
-                },
-                additional_data={
-                    "n_models": result.n_models,
-                    "leakage_flag": result.leakage_flag,
-                    "task_type": result.task_type.name if hasattr(result.task_type, 'name') else str(result.task_type)
-                }
+                metrics=metrics_with_cohort,
+                additional_data=additional_data_with_cohort
             )
         except Exception as e:
             logger.warning(f"Reproducibility tracking failed for {target_name}: {e}")

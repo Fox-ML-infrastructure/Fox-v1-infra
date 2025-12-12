@@ -90,7 +90,8 @@ class LeakageAutoFixer:
         self,
         excluded_features_path: Optional[Path] = None,
         feature_registry_path: Optional[Path] = None,
-        backup_configs: bool = True
+        backup_configs: bool = True,
+        output_dir: Optional[Path] = None  # Optional: if provided, backups go to output_dir/backups/ instead of CONFIG/backups/
     ):
         """
         Initialize auto-fixer.
@@ -145,8 +146,13 @@ class LeakageAutoFixer:
         self.feature_registry_path = Path(feature_registry_path)
         self.backup_configs = backup_configs
         
-        # Get backup directory from config
-        if _CONFIG_AVAILABLE:
+        # Get backup directory - prefer output_dir if provided (for cohort-organized runs)
+        if output_dir is not None:
+            # If output_dir is provided, store backups in run directory
+            # This allows backups to be organized by cohort when run moves to RESULTS/{cohort_id}/
+            self.backup_dir = Path(output_dir) / "backups"
+            self._use_run_backups = True
+        elif _CONFIG_AVAILABLE:
             try:
                 system_cfg = get_system_config()
                 config_path = system_cfg.get('system', {}).get('paths', {})
@@ -159,12 +165,15 @@ class LeakageAutoFixer:
                     # Default: CONFIG/backups/
                     config_dir = config_path.get('config_dir', 'CONFIG')
                     self.backup_dir = _REPO_ROOT / config_dir / "backups"
+                self._use_run_backups = False
             except Exception:
                 # Fallback to default
                 self.backup_dir = self.excluded_features_path.parent / "backups"
+                self._use_run_backups = False
         else:
             # Fallback to default
             self.backup_dir = self.excluded_features_path.parent / "backups"
+            self._use_run_backups = False
         
         # Track detected leaks across iterations
         self.detected_leaks: Dict[str, LeakageDetection] = {}
@@ -873,19 +882,33 @@ class LeakageAutoFixer:
         now = datetime.now()
         timestamp = now.strftime("%Y%m%d_%H%M%S_%f")  # Include microseconds
         
-        # Organize by target if provided
-        if target_name:
-            # Sanitize target name for filesystem (remove invalid chars)
-            safe_target = "".join(c for c in target_name if c.isalnum() or c in ('_', '-', '.'))[:50]
-            target_backup_dir = base_backup_dir / safe_target
-            snapshot_dir = target_backup_dir / timestamp
+        # Organize backups
+        # If using run-based backups (output_dir provided), organize by target within run directory
+        # Otherwise, use CONFIG/backups/ structure
+        if self._use_run_backups:
+            # Backups are in run directory, so organize by target
+            if target_name:
+                # Sanitize target name for filesystem (remove invalid chars)
+                safe_target = "".join(c for c in target_name if c.isalnum() or c in ('_', '-', '.'))[:50]
+                target_backup_dir = base_backup_dir / safe_target
+                snapshot_dir = target_backup_dir / timestamp
+            else:
+                # No target name - use flat structure in run directory
+                snapshot_dir = base_backup_dir / timestamp
         else:
-            # Legacy flat mode (warn about this)
-            logger.warning(
-                "Backup created with no target_name; using legacy flat layout. "
-                "Consider passing target_name for better organization."
-            )
-            snapshot_dir = base_backup_dir / timestamp
+            # Legacy CONFIG/backups/ structure - organize by target if provided
+            if target_name:
+                # Sanitize target name for filesystem (remove invalid chars)
+                safe_target = "".join(c for c in target_name if c.isalnum() or c in ('_', '-', '.'))[:50]
+                target_backup_dir = base_backup_dir / safe_target
+                snapshot_dir = target_backup_dir / timestamp
+            else:
+                # Legacy flat mode (warn about this)
+                logger.warning(
+                    "Backup created with no target_name; using legacy flat layout. "
+                    "Consider passing target_name for better organization."
+                )
+                snapshot_dir = base_backup_dir / timestamp
         
         snapshot_dir.mkdir(parents=True, exist_ok=True)
         

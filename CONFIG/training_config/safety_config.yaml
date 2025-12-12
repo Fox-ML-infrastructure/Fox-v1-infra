@@ -84,6 +84,16 @@ safety:
   # Reproducibility Tracking Thresholds
   reproducibility:
     enabled: true
+    # Cohort-aware reproducibility: organize runs by sample size, symbols, date range, config
+    # DEFAULT: true (cohort-aware mode is the default and recommended)
+    # Set to false only if you need the legacy flat-file structure
+    cohort_aware: true  # Enable cohort-aware tracking (organizes by cohort, only compares within cohorts)
+    n_ratio_threshold: 0.90  # Min ratio (min/max) for comparability (0.90 = 90% overlap required)
+    cohort_config_keys:      # Keys to include in cohort hash (identifies different cohorts)
+      - min_cs
+      - max_cs_samples
+      - leakage_filter_version
+      - universe_id
     # Tolerance bands: STABLE (within noise) / DRIFTING (small changes) / DIVERGED (real issues)
     thresholds:
       # ROC-AUC / R² / primary score thresholds

@@ -292,6 +292,19 @@ def train_models_for_interval_comprehensive(interval: str, targets: List[str],
             if symbols is not None: symbols = symbols[idx]
             logger.info(f"✂️ Downsampled to max_rows_train={max_rows_train}")
         
+        # Store cohort metadata context for later use in reproducibility tracking
+        # Store AFTER downsampling (if any) so we track the actual training cohort
+        # These will be used to extract cohort metadata at the end of training
+        cohort_context = {
+            'X': X,  # This is the actual training data (may be downsampled)
+            'y': y,
+            'time_vals': time_vals,
+            'symbols': symbols,  # This is the actual training symbols (may be downsampled)
+            'mtf_data': mtf_data,  # Keep original mtf_data for date range extraction
+            'min_cs': min_cs,
+            'max_cs_samples': max_cs_samples
+        }
+        
         target_results = {}
         
         # CRITICAL: Order families to prevent cross-lib thread pollution
@@ -405,14 +418,54 @@ def train_models_for_interval_comprehensive(interval: str, targets: List[str],
                             
                             # If we have metrics, log comparison
                             if metrics:
+                                # Extract cohort metadata using unified extractor
+                                from TRAINING.utils.cohort_metadata_extractor import extract_cohort_metadata, format_for_reproducibility_tracker
+                                
+                                # Extract cohort metadata from stored context (X, symbols, time_vals, mtf_data from prepare_training_data_cross_sectional)
+                                # cohort_context is defined earlier in the function after data preparation (and downsampling if any)
+                                if 'cohort_context' in locals() and cohort_context:
+                                    # For cohort identification, use the stored X (represents the training cohort)
+                                    # X_train from CV is a subset, but we want consistent cohort_id across folds
+                                    # So we use the full training X from cohort_context
+                                    cohort_metadata = extract_cohort_metadata(
+                                        X=cohort_context.get('X'),
+                                        symbols=cohort_context.get('symbols'),
+                                        time_vals=cohort_context.get('time_vals'),
+                                        mtf_data=cohort_context.get('mtf_data'),
+                                        min_cs=cohort_context.get('min_cs'),
+                                        max_cs_samples=cohort_context.get('max_cs_samples')
+                                    )
+                                else:
+                                    # Fallback: try to extract from function variables (shouldn't happen if cohort_context is set)
+                                    cohort_metadata = extract_cohort_metadata(
+                                        X=X_train if 'X_train' in locals() else None,
+                                        symbols=symbols if 'symbols' in locals() else (list(mtf_data.keys()) if 'mtf_data' in locals() and mtf_data else None),
+                                        mtf_data=mtf_data if 'mtf_data' in locals() else None,
+                                        min_cs=min_cs if 'min_cs' in locals() else None,
+                                        max_cs_samples=max_cs_samples if 'max_cs_samples' in locals() else None
+                                    )
+                                
+                                # Format for reproducibility tracker
+                                cohort_metrics, cohort_additional_data = format_for_reproducibility_tracker(cohort_metadata)
+                                
+                                # Merge with existing metrics and additional_data
+                                metrics_with_cohort = {
+                                    **metrics,
+                                    **cohort_metrics  # Adds N_effective_cs if available
+                                }
+                                
+                                additional_data_with_cohort = {
+                                    "strategy": strategy,
+                                    "n_features": len(feature_names) if feature_names else 0,
+                                    "model_family": family,  # Add model family for routing
+                                    **cohort_additional_data  # Adds n_symbols, date_range, cs_config if available
+                                }
+                                
                                 tracker.log_comparison(
                                     stage="model_training",
                                     item_name=f"{target}:{family}",
-                                    metrics=metrics,
-                                    additional_data={
-                                        "strategy": strategy,
-                                        "n_features": len(feature_names) if feature_names else 0
-                                    }
+                                    metrics=metrics_with_cohort,
+                                    additional_data=additional_data_with_cohort
                                 )
                         except Exception as e:
                             logger.warning(f"Reproducibility tracking failed for {family}:{target}: {e}")
