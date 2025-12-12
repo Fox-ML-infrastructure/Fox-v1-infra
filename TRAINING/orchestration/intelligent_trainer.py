@@ -190,18 +190,28 @@ class IntelligentTrainer:
         
         # Put ALL runs in RESULTS directory, organized by sample size (N_effective)
         # Structure: RESULTS/{N_effective}/{run_name}/
-        # We'll start in RESULTS/_pending/ and move to N_effective directory after first target is processed
+        # Try to determine N_effective early from data or existing metadata
         repo_root = Path(__file__).parent.parent.parent  # Go up from TRAINING/orchestration/ to repo root
         results_dir = repo_root / "RESULTS"
         
-        # Start in _pending/ - will be moved to N_effective-specific directory after first target is processed
-        self._initial_output_dir = results_dir / "_pending" / output_dir_name
-        self.output_dir = self._initial_output_dir
-        self._n_effective = None  # Will be set after first target is processed (sample size)
+        # Try to estimate N_effective early (before first target is processed)
+        self._n_effective = self._estimate_n_effective_early()
+        
+        if self._n_effective is not None:
+            # Create directory directly in RESULTS/{N_effective}/{run_name}/
+            self.output_dir = results_dir / str(self._n_effective) / output_dir_name
+            self._initial_output_dir = self.output_dir  # Same location, no move needed
+            logger.info(f"📁 Output directory: {self.output_dir} (organized by sample size N={self._n_effective})")
+        else:
+            # Fallback: start in _pending/ - will be moved to N_effective directory after first target is processed
+            self._initial_output_dir = results_dir / "_pending" / output_dir_name
+            self.output_dir = self._initial_output_dir
+            logger.info(f"📁 Output directory: {self.output_dir} (will be organized by sample size after first target)")
+        
         self._run_name = output_dir_name  # Store for move operation
         
+        # Create directory
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        logger.info(f"📁 Output directory: {self.output_dir} (will be organized by sample size after first target)")
         
         self.cache_dir = Path(cache_dir) if cache_dir else self.output_dir / "cache"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
@@ -211,15 +221,127 @@ class IntelligentTrainer:
         self.feature_selection_cache = self.cache_dir / "feature_selections"
         self.feature_selection_cache.mkdir(parents=True, exist_ok=True)
     
+    def _estimate_n_effective_early(self) -> Optional[int]:
+        """
+        Try to estimate N_effective early from data files or existing metadata.
+        
+        Returns:
+            Estimated N_effective or None if cannot be determined
+        """
+        # Method 1: Check if there's existing metadata from a previous run with same symbols/data
+        # (This handles the case where you're re-running with same data)
+        try:
+            repo_root = Path(__file__).parent.parent.parent
+            results_dir = repo_root / "RESULTS"
+            
+            # Look for existing runs with same symbols (quick check)
+            if results_dir.exists():
+                for n_dir in results_dir.iterdir():
+                    if n_dir.is_dir() and n_dir.name.isdigit():
+                        # Check if there's a recent run with similar structure
+                        for run_dir in n_dir.iterdir():
+                            if run_dir.is_dir():
+                                # Check metadata.json in REPRODUCIBILITY
+                                for metadata_file in run_dir.rglob("REPRODUCIBILITY/TARGET_RANKING/*/cohort=*/metadata.json"):
+                                    try:
+                                        import json
+                                        with open(metadata_file, 'r') as f:
+                                            metadata = json.load(f)
+                                        # Check if symbols match (rough check)
+                                        existing_symbols = metadata.get('symbols', [])
+                                        if existing_symbols and set(existing_symbols) == set(self.symbols):
+                                            n_effective = metadata.get('N_effective')
+                                            if n_effective and n_effective > 0:
+                                                logger.info(f"🔍 Found matching N_effective={n_effective} from previous run with same symbols")
+                                                return int(n_effective)
+                                    except Exception:
+                                        continue
+        except Exception as e:
+            logger.debug(f"Could not check existing metadata for N_effective: {e}")
+        
+        # Method 2: Quick sample from data files to estimate sample size
+        try:
+            import pandas as pd
+            total_rows = 0
+            
+            # Sample first few symbols to estimate
+            sample_symbols = self.symbols[:3] if len(self.symbols) > 3 else self.symbols
+            
+            for symbol in sample_symbols:
+                symbol_dir = self.data_dir / f"symbol={symbol}"
+                data_path = symbol_dir / f"{symbol}.parquet"
+                
+                if data_path.exists():
+                    try:
+                        # Quick row count without loading full data
+                        df_sample = pd.read_parquet(data_path, nrows=0)  # Just get schema
+                        # Use parquet metadata if available (faster)
+                        try:
+                            import pyarrow.parquet as pq
+                            parquet_file = pq.ParquetFile(data_path)
+                            symbol_rows = parquet_file.metadata.num_rows
+                            total_rows += symbol_rows
+                        except Exception:
+                            # Fallback: actually count rows (slower but works)
+                            symbol_rows = len(pd.read_parquet(data_path))
+                            total_rows += symbol_rows
+                    except Exception as e:
+                        logger.debug(f"Could not read {data_path} for sample size estimation: {e}")
+                        continue
+            
+            # Extrapolate to all symbols
+            if total_rows > 0 and len(sample_symbols) > 0:
+                avg_per_symbol = total_rows / len(sample_symbols)
+                estimated_total = int(avg_per_symbol * len(self.symbols))
+                logger.info(f"🔍 Estimated N_effective={estimated_total} from data file sampling ({len(sample_symbols)} symbols sampled)")
+                return estimated_total
+        except Exception as e:
+            logger.debug(f"Could not estimate N_effective from data files: {e}")
+        
+        return None
+    
     def _organize_by_cohort(self):
         """
         Organize the run directory by sample size (N_effective) after first target is processed.
         Moves from RESULTS/_pending/{run_name}/ to RESULTS/{N_effective}/{run_name}/
         
         Example: RESULTS/25000/test_run_20251212_010000/
+        
+        Note: If N_effective was already determined in __init__, this is a no-op.
         """
-        if self._n_effective is not None:
+        # If N_effective was already set and we're not in _pending/, we're already organized
+        if self._n_effective is not None and "_pending" not in str(self.output_dir):
             return  # Already organized
+        
+        # If N_effective was set early but we're still in _pending/, move now
+        if self._n_effective is not None and "_pending" in str(self.output_dir):
+            repo_root = Path(__file__).parent.parent.parent
+            results_dir = repo_root / "RESULTS"
+            new_output_dir = results_dir / str(self._n_effective) / self._run_name
+            
+            if new_output_dir.exists():
+                logger.warning(f"Sample size directory {new_output_dir} already exists, not moving")
+                self.output_dir = new_output_dir
+                self.cache_dir = self.output_dir / "cache"
+                self.target_ranking_cache = self.cache_dir / "target_rankings.json"
+                self.feature_selection_cache = self.cache_dir / "feature_selections"
+                return
+            
+            import shutil
+            new_output_dir.parent.mkdir(parents=True, exist_ok=True)
+            logger.info(f"📁 Moving run from {self.output_dir} to {new_output_dir} (N={self._n_effective} determined early)")
+            try:
+                shutil.move(str(self.output_dir), str(new_output_dir))
+                self.output_dir = new_output_dir
+                self.cache_dir = self.output_dir / "cache"
+                self.target_ranking_cache = self.cache_dir / "target_rankings.json"
+                self.feature_selection_cache = self.cache_dir / "feature_selections"
+                logger.info(f"✅ Organized run by sample size (N={self._n_effective}): {self.output_dir}")
+                return
+            except Exception as move_error:
+                logger.error(f"Failed to move directory: {move_error}")
+                # Stay in current location if move fails
+                return
         
         try:
             # Try to find N_effective from REPRODUCIBILITY directory metadata.json
