@@ -20,14 +20,23 @@ always_exclude:
   - ^mdd_\d+m_
   - ^barrier_
   # Daily/24h features that require 1440m lookback (exclude to prevent rolling window leakage)
-  - .*_1d$
-  - .*_24h$
-  - ^daily_.*
-  - .*_daily$
-  - .*1440(?!\d)  # 1440 not followed by digit (catches rolling_max_1440, feature_1440, etc.)
+  # AGGRESSIVE PATTERNS: Catch all variations of daily/24h features that might slip through
+  - .*_1d$          # Ends in _1d (e.g., atr_1d, rolling_max_1d)
+  - .*_1D$          # Case variation
+  - .*_24h$         # Ends in _24h
+  - .*_24H$         # Case variation
+  - ^daily_.*       # Starts with daily_ (e.g., daily_vol, daily_high)
+  - .*_daily$       # Ends with _daily
+  - .*daily.*       # Contains "daily" anywhere (aggressive catch-all)
+  - .*day.*         # Contains "day" anywhere (very aggressive - catches day_of_week, etc.)
+  - .*1440(?!\d)    # 1440 not followed by digit (catches rolling_max_1440, feature_1440, etc.)
+  - .*_1440m        # Explicit _1440m suffix
   - .*volatility.*day
   - .*vol.*day
   - .*volume.*day
+  - .*rolling.*daily  # Rolling daily features
+  - .*daily.*high     # Daily high features
+  - .*daily.*low      # Daily low features
   prefix_patterns:
   - barrier_
   - excursion_

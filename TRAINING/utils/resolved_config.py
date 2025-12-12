@@ -238,9 +238,12 @@ def compute_feature_lookback_max(
             # Daily/24h patterns (1 day = 1440 minutes) - CHECK FIRST to catch "ghost features"
             # These patterns indicate 24-hour/1-day lookback windows
             # CRITICAL: Check for 1440 (exact 24h) anywhere in name - this is the "ghost feature" pattern
+            # AGGRESSIVE PATTERNS: Catch all variations that might slip through
             # Pattern: _1d, _24h, daily_*, _1440m, or 1440 (not followed by digit) anywhere
+            # Also catch "day" anywhere (very aggressive) to catch features like "atr_day", "vol_day", etc.
             if (re.search(r'_1d$|_1D$|_24h$|_24H$|^daily_|_daily$|_1440m|1440(?!\d)|rolling.*daily|daily.*high|daily.*low', feat_name, re.I) or
-                re.search(r'volatility.*day|vol.*day|volume.*day', feat_name, re.I)):
+                re.search(r'volatility.*day|vol.*day|volume.*day', feat_name, re.I) or
+                re.search(r'.*day.*', feat_name, re.I)):  # Very aggressive: catch "day" anywhere
                 # 1 day = 1440 minutes (exact match for the "ghost feature")
                 # Convert to bars based on interval
                 if interval_minutes > 0:
