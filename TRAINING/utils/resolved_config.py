@@ -167,18 +167,25 @@ def derive_purge_embargo(
     # Base purge/embargo = horizon (feature lookback is separate concern)
     # Feature lookback doesn't need to be purged - it's historical data that's safe to use
     # Purge is only needed to prevent leakage from the target's future window
-    if horizon_minutes is not None:
+    
+    # NUCLEAR TEST MODE: Force 24-hour purge to test feature leak vs target leak
+    # If default_purge_minutes >= 1500, use it regardless of horizon (diagnostic test)
+    force_nuclear_test = False
+    if default_purge_minutes is None:
+        try:
+            from CONFIG.config_loader import get_cfg
+            default_purge_minutes = get_cfg('safety.temporal.default_purge_minutes', default=85.0, config_name='safety_config')
+        except Exception:
+            default_purge_minutes = 85.0  # Final fallback
+    
+    if default_purge_minutes >= 1500.0:
+        # Nuclear test mode: Force 24-hour purge to test if leak is in features or target
+        force_nuclear_test = True
+        base_minutes = default_purge_minutes
+    elif horizon_minutes is not None:
         base_minutes = horizon_minutes
     else:
-        # Fallback to default if horizon unknown (load from config if not provided)
-        if default_purge_minutes is None:
-            try:
-                from CONFIG.config_loader import get_cfg
-                base_minutes = get_cfg('safety.temporal.default_purge_minutes', default=85.0, config_name='safety_config')
-            except Exception:
-                base_minutes = 85.0  # Final fallback
-        else:
-            base_minutes = default_purge_minutes
+        base_minutes = default_purge_minutes
     
     # Add buffer
     purge_embargo_minutes = base_minutes + buffer_minutes
