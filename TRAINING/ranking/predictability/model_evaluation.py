@@ -472,10 +472,24 @@ def train_and_evaluate_models(
             if pruning_stats.get('dropped_count', 0) > 0:
                 logger.info(f"  ✅ Pruned: {original_feature_count} → {len(feature_names_pruned)} features "
                           f"(dropped {pruning_stats['dropped_count']} low-importance features)")
+                
+                # Check for duplicates before assignment
+                if len(feature_names_pruned) != len(set(feature_names_pruned)):
+                    duplicates = [name for name in set(feature_names_pruned) if feature_names_pruned.count(name) > 1]
+                    logger.error(f"  🚨 DUPLICATE COLUMN NAMES in pruned features: {duplicates}")
+                    raise ValueError(f"Duplicate feature names after pruning: {duplicates}")
+                
+                feature_names_before_prune = feature_names.copy()
                 X = X_pruned
                 feature_names = feature_names_pruned
+                
+                # Log feature set transition
+                from TRAINING.utils.cross_sectional_data import _log_feature_set
+                _log_feature_set("PRUNER_SELECTED", feature_names, previous_names=feature_names_before_prune, logger_instance=logger)
             else:
                 logger.info(f"  No features pruned (all above threshold)")
+                from TRAINING.utils.cross_sectional_data import _log_feature_set
+                _log_feature_set("PRUNER_SELECTED", feature_names, previous_names=None, logger_instance=logger)
             
             # Save stability snapshot for quick pruning (non-invasive hook)
             # Only save if output_dir is available (optional feature)
@@ -606,6 +620,16 @@ def train_and_evaluate_models(
     )
     
     purge_time = pd.Timedelta(minutes=purge_minutes_val)
+    
+    # Check for duplicate column names before training
+    if len(feature_names) != len(set(feature_names)):
+        duplicates = [name for name in set(feature_names) if feature_names.count(name) > 1]
+        logger.error(f"  🚨 DUPLICATE COLUMN NAMES before training: {duplicates}")
+        raise ValueError(f"Duplicate feature names before training: {duplicates}")
+    
+    # Log feature set before training
+    from TRAINING.utils.cross_sectional_data import _log_feature_set
+    _log_feature_set("MODEL_TRAIN_INPUT", feature_names, previous_names=None, logger_instance=logger)
     
     # Create purged time series split with time-based purging
     # CRITICAL: Validate time_vals alignment and sorting before using time-based purging
@@ -1115,9 +1139,21 @@ def train_and_evaluate_models(
                 all_suspicious_features['lightgbm'] = suspicious_features
             
             # Store all feature importances for detailed export
-            all_feature_importances['lightgbm'] = {
+            importance_dict = {
                 feat: float(imp) for feat, imp in zip(feature_names, importances)
             }
+            all_feature_importances['lightgbm'] = importance_dict
+            
+            # Log importance keys vs train input
+            importance_keys = set(importance_dict.keys())
+            train_input_keys = set(feature_names)
+            if len(importance_keys) < len(train_input_keys):
+                missing = train_input_keys - importance_keys
+                logger.warning(f"  ⚠️  IMPORTANCE_KEYS mismatch: {len(importance_keys)} keys vs {len(train_input_keys)} train features")
+                logger.warning(f"    Missing from importance: {sorted(missing)[:10]}{'...' if len(missing) > 10 else ''}")
+            elif len(importance_keys) == len(train_input_keys) and importance_keys == train_input_keys:
+                from TRAINING.utils.cross_sectional_data import _log_feature_set
+                _log_feature_set("IMPORTANCE_KEYS", list(importance_keys), previous_names=feature_names, logger_instance=logger)
             
             # Compute and store full task-aware metrics
             _compute_and_store_metrics('lightgbm', model, X, y, primary_score, task_type)
@@ -1173,9 +1209,19 @@ def train_and_evaluate_models(
                 all_suspicious_features['random_forest'] = suspicious_features
             
             # Store all feature importances for detailed export
-            all_feature_importances['random_forest'] = {
+            importance_dict = {
                 feat: float(imp) for feat, imp in zip(feature_names, importances)
             }
+            all_feature_importances['random_forest'] = importance_dict
+            
+            # Log importance keys vs train input (only once per model, use random_forest as representative)
+            if 'random_forest' not in all_feature_importances or len(all_feature_importances) == 1:
+                importance_keys = set(importance_dict.keys())
+                train_input_keys = set(feature_names)
+                if len(importance_keys) < len(train_input_keys):
+                    missing = train_input_keys - importance_keys
+                    logger.warning(f"  ⚠️  IMPORTANCE_KEYS mismatch (random_forest): {len(importance_keys)} keys vs {len(train_input_keys)} train features")
+                    logger.warning(f"    Missing from importance: {sorted(missing)[:10]}{'...' if len(missing) > 10 else ''}")
             
             # Compute and store full task-aware metrics
             _compute_and_store_metrics('random_forest', model, X, y, primary_score, task_type)
@@ -1387,9 +1433,10 @@ def train_and_evaluate_models(
                         all_suspicious_features['xgboost'] = suspicious_features
                     
                     # Store all feature importances for detailed export
-                    all_feature_importances['xgboost'] = {
+                    importance_dict = {
                         feat: float(imp) for feat, imp in zip(feature_names, importances)
                     }
+                    all_feature_importances['xgboost'] = importance_dict
             if hasattr(model, 'feature_importances_'):
                 # Use percentage of total importance in top 10% features (0-1 scale, interpretable)
                 importances = model.feature_importances_
@@ -2494,6 +2541,14 @@ def evaluate_target_predictability(
     
     # PRE-TRAINING LEAK SCAN: Detect and remove near-copy features before model training
     logger.info("🔍 Pre-training leak scan: Checking for near-copy features...")
+    feature_names_before_leak_scan = feature_names.copy()
+    
+    # Check for duplicate column names before leak scan
+    if len(feature_names) != len(set(feature_names)):
+        duplicates = [name for name in set(feature_names) if feature_names.count(name) > 1]
+        logger.error(f"  🚨 DUPLICATE COLUMN NAMES DETECTED before leak scan: {duplicates}")
+        raise ValueError(f"Duplicate feature names detected: {duplicates}")
+    
     X_df = pd.DataFrame(X, columns=feature_names)
     y_series = pd.Series(y)
     leaky_features = find_near_copy_features(X_df, y_series, task_type)
@@ -2512,6 +2567,12 @@ def evaluate_target_predictability(
         feature_names = [name for name in feature_names if name not in leaky_features]
         
         logger.info(f"  After leak removal: {X.shape[1]} features remaining")
+        from TRAINING.utils.cross_sectional_data import _log_feature_set
+        _log_feature_set("AFTER_LEAK_REMOVAL", feature_names, previous_names=feature_names_before_leak_scan, logger_instance=logger)
+    else:
+        logger.info("  ✅ No obvious leaky features detected in pre-training scan")
+        from TRAINING.utils.cross_sectional_data import _log_feature_set
+        _log_feature_set("AFTER_LEAK_REMOVAL", feature_names, previous_names=feature_names_before_leak_scan, logger_instance=logger)
         
         # If we removed too many features, mark as insufficient
         # Load from config

@@ -211,6 +211,12 @@ def quick_importance_prune(
         X_pruned = X[:, keep_indices]
         pruned_names = [feature_names[i] for i in keep_indices]
         
+        # Check for duplicates (shouldn't happen, but catch bugs early)
+        if len(pruned_names) != len(set(pruned_names)):
+            duplicates = [name for name in set(pruned_names) if pruned_names.count(name) > 1]
+            logger.error(f"  🚨 DUPLICATE FEATURE NAMES in pruned list: {duplicates}")
+            raise ValueError(f"Duplicate feature names after pruning: {duplicates}")
+        
         dropped_count = original_count - len(pruned_names)
         dropped_features = [feature_names[i] for i in range(len(feature_names)) if i not in keep_indices]
         

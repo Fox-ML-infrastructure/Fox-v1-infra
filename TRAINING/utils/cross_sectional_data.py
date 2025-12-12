@@ -26,11 +26,85 @@ that matches the training pipeline's data structure.
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Set
 import logging
 import warnings
+import hashlib
 
 logger = logging.getLogger(__name__)
+
+
+def _compute_feature_fingerprint(feature_names: List[str]) -> str:
+    """
+    Compute order-sensitive fingerprint for feature list.
+    
+    Args:
+        feature_names: List of feature names (order matters)
+    
+    Returns:
+        8-character hex fingerprint
+    """
+    feature_str = "\n".join(feature_names)
+    return hashlib.sha1(feature_str.encode()).hexdigest()[:8]
+
+
+def _log_feature_set(
+    stage: str,
+    feature_names: List[str],
+    previous_names: Optional[List[str]] = None,
+    logger_instance: Optional[logging.Logger] = None
+) -> None:
+    """
+    Log feature set with fingerprint and delta tracking.
+    
+    Args:
+        stage: Stage name (e.g., "SAFE_CANDIDATES", "AFTER_DROP_ALL_NAN")
+        feature_names: Current feature names
+        previous_names: Previous feature names (for delta computation)
+        logger_instance: Logger to use (defaults to module logger)
+    """
+    if logger_instance is None:
+        logger_instance = logger
+    
+    n_features = len(feature_names)
+    fingerprint = _compute_feature_fingerprint(feature_names)
+    
+    # Check for duplicates
+    unique_names = set(feature_names)
+    has_duplicates = len(unique_names) != n_features
+    if has_duplicates:
+        duplicates = [name for name in unique_names if feature_names.count(name) > 1]
+        logger_instance.error(
+            f"  🚨 FEATURESET [{stage}]: {n_features} features, fingerprint={fingerprint}, "
+            f"DUPLICATES DETECTED: {duplicates}"
+        )
+        return
+    
+    # Compute delta if previous set provided
+    if previous_names is not None:
+        prev_set = set(previous_names)
+        curr_set = set(feature_names)
+        added = sorted(curr_set - prev_set)
+        removed = sorted(prev_set - curr_set)
+        
+        if added or removed:
+            delta_str = f", added={len(added)}, removed={len(removed)}"
+            if added and len(added) <= 5:
+                delta_str += f" (added: {added})"
+            elif added:
+                delta_str += f" (added: {added[:3]}... +{len(added)-3} more)"
+            if removed and len(removed) <= 5:
+                delta_str += f" (removed: {removed})"
+            elif removed:
+                delta_str += f" (removed: {removed[:3]}... +{len(removed)-3} more)"
+        else:
+            delta_str = " (no changes)"
+    else:
+        delta_str = ""
+    
+    logger_instance.info(
+        f"  📊 FEATURESET [{stage}]: n={n_features}, fingerprint={fingerprint}{delta_str}"
+    )
 
 
 def load_mtf_data_for_ranking(
@@ -262,25 +336,34 @@ def prepare_cross_sectional_data_for_ranking(
     
     # Track feature counts for resolved_config
     features_safe = len(feature_names)  # Features before dropping NaN
+    _log_feature_set("SAFE_CANDIDATES", feature_names)
     
     # Drop columns that are entirely NaN
     before_cols = feature_df.shape[1]
+    feature_names_before_nan = feature_names.copy()
     feature_df = feature_df.dropna(axis=1, how='all')
     features_dropped_nan = before_cols - feature_df.shape[1]
     if features_dropped_nan:
         logger.debug(f"Dropped {features_dropped_nan} all-NaN feature columns")
         # Update feature_names to match
+        dropped_nan_names = [f for f in feature_names if f not in feature_df.columns]
         feature_names = [f for f in feature_names if f in feature_df.columns]
+        if dropped_nan_names:
+            logger.debug(f"  Dropped all-NaN columns: {dropped_nan_names[:10]}{'...' if len(dropped_nan_names) > 10 else ''}")
+    _log_feature_set("AFTER_DROP_ALL_NAN", feature_names, previous_names=feature_names_before_nan)
     
     features_final = len(feature_names)  # Features after all filtering
     
     # Ensure only numeric dtypes
+    feature_names_before_numeric = feature_names.copy()
     numeric_cols = [c for c in feature_df.columns if pd.api.types.is_numeric_dtype(feature_df[c])]
     if len(numeric_cols) != feature_df.shape[1]:
         non_numeric_dropped = feature_df.shape[1] - len(numeric_cols)
+        dropped_non_numeric = [c for c in feature_df.columns if c not in numeric_cols]
         feature_df = feature_df[numeric_cols]
         feature_names = [f for f in feature_names if f in numeric_cols]
-        logger.info(f"🔧 Dropped {non_numeric_dropped} non-numeric feature columns")
+        logger.info(f"🔧 Dropped {non_numeric_dropped} non-numeric feature columns: {dropped_non_numeric[:10]}{'...' if len(dropped_non_numeric) > 10 else ''}")
+    _log_feature_set("AFTER_CLEANING", feature_names, previous_names=feature_names_before_numeric)
     
     # Check if we have any features left
     if len(feature_names) == 0:
