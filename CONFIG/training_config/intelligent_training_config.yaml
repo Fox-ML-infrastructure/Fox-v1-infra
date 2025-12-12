@@ -102,9 +102,23 @@ advanced:
 decisions:
   # Application mode: "off" (assist mode only), "dry_run" (show patch), "apply" (auto-apply)
   apply_mode: "off"  # Options: "off", "dry_run", "apply"
-  
+
   # Minimum decision level to apply (0=no action, 1=warning, 2=recommendation, 3=action)
   min_level_to_apply: 2
+  
+  # Bayesian patch policy (Thompson sampling over discrete patch templates)
+  use_bayesian: false  # Enable Bayesian learning from past outcomes
+  bayesian:
+    # Minimum runs before recommending patches (default: 5)
+    min_runs_for_learning: 5
+    # Minimum P(improve) to auto-apply (default: 0.8)
+    p_improve_threshold: 0.8
+    # Minimum expected gain to recommend (default: 0.01)
+    min_expected_gain: 0.01
+    # Reward metric to optimize (default: "cs_auc")
+    reward_metric: "cs_auc"
+    # Recency decay factor (default: 0.95, higher = more weight on recent runs)
+    recency_decay: 0.95
 
 # Test mode configuration (auto-detected if 'test' in output_dir name)
 test:

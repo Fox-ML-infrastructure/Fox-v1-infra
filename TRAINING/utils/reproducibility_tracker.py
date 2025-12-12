@@ -1060,10 +1060,20 @@ class ReproducibilityTracker:
         # Post-run decision hook: Evaluate and persist decisions
         try:
             from TRAINING.decisioning.decision_engine import DecisionEngine
+            from TRAINING.utils.resolved_config import get_cfg
+            
             repro_dir = self.output_dir.parent / "REPRODUCIBILITY"
             index_file = repro_dir / "index.parquet"
             if index_file.exists():
-                engine = DecisionEngine(index_file, apply_mode=False)  # Assist mode by default
+                # Check if Bayesian policy is enabled
+                use_bayesian = get_cfg("training.decisions.use_bayesian", default=False, config_name="training_config")
+                
+                engine = DecisionEngine(
+                    index_file,
+                    apply_mode=False,  # Assist mode by default
+                    use_bayesian=use_bayesian,
+                    base_dir=self.output_dir.parent
+                )
                 # Get segment_id from index if available
                 segment_id_for_decision = None
                 try:
@@ -1076,12 +1086,35 @@ class ReproducibilityTracker:
                     pass
                 decision_result = engine.evaluate(cohort_id, run_id_clean, segment_id=segment_id_for_decision)
                 engine.persist(decision_result, self.output_dir.parent)
+                
+                # Update Bayesian state if enabled
+                if use_bayesian and engine.bayesian_policy:
+                    try:
+                        # Get applied patch template from decision result
+                        applied_patch_template = None
+                        if decision_result.policy_results and 'bayesian_patch' in decision_result.policy_results:
+                            bayesian_result = decision_result.policy_results['bayesian_patch']
+                            applied_patch_template = bayesian_result.get('recommended_patch')
+                        
+                        # Update Bayesian state with observed reward
+                        engine.update_bayesian_state(
+                            decision_result=decision_result,
+                            current_run_metrics=metrics,
+                            applied_patch_template=applied_patch_template
+                        )
+                    except Exception as e:
+                        logger.debug(f"Bayesian state update failed (non-critical): {e}")
+                
                 # Store decision fields in metrics for index update
                 metrics['decision_level'] = decision_result.decision_level
                 metrics['decision_action_mask'] = decision_result.decision_action_mask
                 metrics['decision_reason_codes'] = decision_result.decision_reason_codes
                 if decision_result.decision_level > 0:
                     logger.info(f"📊 Decision: level={decision_result.decision_level}, actions={decision_result.decision_action_mask}, reasons={decision_result.decision_reason_codes}")
+                    # Log Bayesian metadata if available
+                    if decision_result.policy_results and 'bayesian_metadata' in decision_result.policy_results:
+                        bayes_meta = decision_result.policy_results['bayesian_metadata']
+                        logger.info(f"🎲 Bayesian: confidence={bayes_meta.get('confidence', 0):.3f}, expected_gain={bayes_meta.get('expected_gain', 0):.4f}")
         except Exception as e:
             logger.debug(f"Decision evaluation failed (non-critical): {e}")
             # Don't re-raise - decision evaluation is optional

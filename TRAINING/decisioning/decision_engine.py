@@ -15,6 +15,9 @@ import pandas as pd
 import numpy as np
 
 from TRAINING.decisioning.policies import DecisionPolicy, evaluate_policies
+from TRAINING.decisioning.bayesian_policy import (
+    BayesianPatchPolicy, PatchTemplate, compute_reward
+)
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +68,9 @@ class DecisionEngine:
         self,
         index_path: Path,
         policies: Optional[List[DecisionPolicy]] = None,
-        apply_mode: bool = False
+        apply_mode: bool = False,
+        use_bayesian: bool = False,
+        base_dir: Optional[Path] = None
     ):
         """
         Initialize decision engine.
@@ -74,10 +79,27 @@ class DecisionEngine:
             index_path: Path to index.parquet
             policies: List of decision policies (default: use default policies)
             apply_mode: If True, decisions can modify config (default: False = assist mode)
+            use_bayesian: If True, enable Bayesian patch policy (default: False)
+            base_dir: Base directory for Bayesian state (required if use_bayesian=True)
         """
         self.index_path = Path(index_path)
         self.apply_mode = apply_mode
         self.policies = policies or DecisionPolicy.get_default_policies()
+        self.use_bayesian = use_bayesian
+        self.base_dir = Path(base_dir) if base_dir else index_path.parent
+        
+        # Initialize Bayesian policy if enabled
+        self.bayesian_policy = None
+        if use_bayesian:
+            try:
+                self.bayesian_policy = BayesianPatchPolicy(
+                    index_path=index_path,
+                    base_dir=self.base_dir
+                )
+                logger.info("✅ Bayesian patch policy enabled")
+            except Exception as e:
+                logger.warning(f"Failed to initialize Bayesian policy: {e}. Continuing without it.")
+                self.use_bayesian = False
     
     def evaluate(
         self,
@@ -141,22 +163,55 @@ class DecisionEngine:
         # Get latest run metrics
         latest = cohort_data.iloc[-1]
         
-        # Evaluate policies
+        # Evaluate rule-based policies
         policy_results = evaluate_policies(cohort_data, latest, self.policies)
+        
+        # Evaluate Bayesian policy if enabled
+        bayesian_result = None
+        recommended_patch_template = None
+        if self.use_bayesian and self.bayesian_policy:
+            try:
+                bayesian_result = self.bayesian_policy.evaluate(
+                    cohort_id=cohort_id,
+                    segment_id=segment_id,
+                    run_id=run_id,
+                    cohort_data=cohort_data
+                )
+                if bayesian_result.get('triggered', False):
+                    recommended_patch_template = bayesian_result.get('recommended_patch')
+                    policy_results['bayesian_patch'] = bayesian_result
+            except Exception as e:
+                logger.warning(f"Bayesian policy evaluation failed: {e}")
+                bayesian_result = None
         
         # Determine decision level and actions
         decision_level = 0
         action_mask = []
         reason_codes = []
         
+        # Prioritize Bayesian recommendations if they exist and are high-confidence
+        if bayesian_result and bayesian_result.get('triggered', False):
+            bayesian_level = bayesian_result.get('level', 0)
+            if bayesian_level >= 2:  # Only use Bayesian if confidence is high enough
+                decision_level = max(decision_level, bayesian_level)
+                if bayesian_result.get('action'):
+                    action_mask.append(bayesian_result['action'])
+                if bayesian_result.get('reason'):
+                    reason_codes.append(bayesian_result['reason'])
+        
+        # Also check rule-based policies (but Bayesian takes precedence if both trigger)
         for policy_name, result in policy_results.items():
+            if policy_name == 'bayesian_patch':
+                continue  # Already handled
             if result.get('triggered', False):
                 level = result.get('level', 0)
-                decision_level = max(decision_level, level)
-                if result.get('action'):
-                    action_mask.append(result['action'])
-                if result.get('reason'):
-                    reason_codes.append(result['reason'])
+                # Only add rule-based actions if Bayesian didn't already recommend
+                if not action_mask or decision_level < level:
+                    decision_level = max(decision_level, level)
+                    if result.get('action') and result['action'] not in action_mask:
+                        action_mask.append(result['action'])
+                    if result.get('reason') and result['reason'] not in reason_codes:
+                        reason_codes.append(result['reason'])
         
         # Get predictions if available (from regression analysis)
         predicted_cs_auc = latest.get('next_pred') if 'next_pred' in latest else None
@@ -179,6 +234,17 @@ class DecisionEngine:
             trend_direction = None
         
         from datetime import datetime
+        
+        # Store Bayesian metadata if available
+        bayesian_metadata = {}
+        if bayesian_result:
+            bayesian_metadata = {
+                'confidence': bayesian_result.get('confidence', 0.0),
+                'expected_gain': bayesian_result.get('expected_gain', 0.0),
+                'baseline_reward': bayesian_result.get('baseline_reward', 0.0),
+                'bayes_stats': bayesian_result.get('bayes_stats', {})
+            }
+        
         return DecisionResult(
             run_id=run_id,
             cohort_id=cohort_id,
@@ -189,7 +255,7 @@ class DecisionEngine:
             predicted_cs_auc=float(predicted_cs_auc) if predicted_cs_auc is not None and not np.isnan(predicted_cs_auc) else None,
             predicted_sym_auc=float(predicted_sym_auc) if predicted_sym_auc is not None and not np.isnan(predicted_sym_auc) else None,
             trend_direction=trend_direction,
-            policy_results=policy_results,
+            policy_results={**policy_results, 'bayesian_metadata': bayesian_metadata} if bayesian_metadata else policy_results,
             created_at=datetime.now().isoformat()
         )
     
@@ -304,3 +370,57 @@ class DecisionEngine:
             logger.warning(f"⚠️  Patch clamp warning: {warning}")
         
         return new_config, patch, warnings
+    
+    def update_bayesian_state(
+        self,
+        decision_result: DecisionResult,
+        current_run_metrics: Dict[str, Any],
+        applied_patch_template: Optional[Any] = None  # PatchTemplate
+    ):
+        """
+        Update Bayesian state with observed reward after run completes.
+        
+        Args:
+            decision_result: Decision that was used
+            current_run_metrics: Metrics from current run (from index.parquet)
+            applied_patch_template: Template that was applied (None if no patch)
+        """
+        if not self.use_bayesian or not self.bayesian_policy:
+            return
+        
+        if not self.index_path.exists():
+            return
+        
+        try:
+            df = pd.read_parquet(self.index_path)
+        except Exception:
+            return
+        
+        # Get cohort data to compute baseline
+        mask = df['cohort_id'] == decision_result.cohort_id
+        if decision_result.segment_id is not None:
+            mask &= df['segment_id'] == decision_result.segment_id
+        
+        cohort_data = df[mask].sort_values('run_started_at')
+        if len(cohort_data) < 2:  # Need at least 2 runs to compute reward
+            return
+        
+        # Compute reward (current - baseline median)
+        from TRAINING.decisioning.bayesian_policy import compute_reward
+        baseline_runs = cohort_data.tail(min(10, len(cohort_data) - 1))  # Exclude current run
+        reward = compute_reward(
+            current_run=pd.Series(current_run_metrics),
+            baseline_runs=baseline_runs,
+            metric=self.bayesian_policy.reward_metric
+        )
+        
+        # Update Bayesian state
+        self.bayesian_policy.update(
+            cohort_id=decision_result.cohort_id,
+            segment_id=decision_result.segment_id,
+            run_id=decision_result.run_id,
+            applied_patch_template=applied_patch_template,
+            reward=reward
+        )
+        
+        logger.debug(f"Updated Bayesian state: reward={reward:.4f} for {decision_result.cohort_id}/{decision_result.segment_id}")
