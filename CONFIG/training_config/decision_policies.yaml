@@ -1,0 +1,34 @@
+# Decision Policies Configuration
+# Thresholds and heuristics for decision-making policies
+
+# Feature instability policy
+feature_instability:
+  # Jaccard similarity thresholds
+  jaccard_threshold: 0.5  # Trigger if jaccard_topK < 0.5
+  jaccard_collapse_ratio: 0.8  # Trigger if jaccard drops by 20% (current < previous * 0.8)
+  min_runs: 3  # Minimum runs needed to evaluate
+  min_recent_runs: 2  # Minimum recent runs for comparison
+
+# Route instability policy
+route_instability:
+  # Route entropy threshold
+  entropy_threshold: 1.5  # Trigger if route_entropy > 1.5
+  # Route change frequency
+  change_threshold: 3  # Trigger if 3+ route changes in last N runs
+  change_window: 5  # Number of recent runs to check for changes
+  min_runs: 3  # Minimum runs needed to evaluate
+
+# Feature explosion decline policy
+feature_explosion_decline:
+  # AUC decline threshold
+  auc_decline_threshold: -0.01  # Trigger if AUC drops by > 0.01
+  # Feature increase threshold
+  feature_increase_threshold: 10  # Trigger if features increase by > 10
+  min_runs: 3  # Minimum runs needed to evaluate
+
+# Class balance drift policy
+class_balance_drift:
+  # Pos rate drift threshold
+  drift_threshold: 0.1  # Trigger if pos_rate drifts by > 10%
+  min_runs: 3  # Minimum runs needed to evaluate
+  min_recent_runs: 2  # Minimum recent runs for comparison
