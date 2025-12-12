@@ -2716,6 +2716,8 @@ def evaluate_target_predictability(
         
         # Remove leaky features
         leaky_indices = [i for i, name in enumerate(feature_names) if name in leaky_features]
+        # Ensure numpy is available (import at top of file)
+        import numpy as np
         X = np.delete(X, leaky_indices, axis=1)
         feature_names = [name for name in feature_names if name not in leaky_features]
         
@@ -2814,8 +2816,7 @@ def evaluate_target_predictability(
         )
     
     # Check if target is degenerate
-    # Ensure numpy is available (import at top of file)
-    import numpy as np
+    # Note: np is imported at top of file, but ensure it's in scope
     unique_vals = np.unique(y[~np.isnan(y)])
     if len(unique_vals) < 2:
         logger.warning(f"Skipping: Target has only {len(unique_vals)} unique value(s)")
