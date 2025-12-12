@@ -231,6 +231,52 @@ class ReproducibilityTracker:
         except Exception:
             return ['min_cs', 'max_cs_samples', 'leakage_filter_version', 'universe_id']
     
+    @staticmethod
+    def _compute_sample_size_bin(n_effective: int) -> Dict[str, Any]:
+        """
+        Compute sample size bin info (same logic as IntelligentTrainer._get_sample_size_bin).
+        
+        **Boundary Rules (CRITICAL - DO NOT CHANGE WITHOUT VERSIONING):**
+        - Boundaries are EXCLUSIVE upper bounds: `bin_min <= N_effective < bin_max`
+        - Example: `sample_25k-50k` means `25000 <= N_effective < 50000`
+        
+        **Binning Scheme Version:** `sample_bin_v1`
+        
+        Returns:
+            Dict with keys: bin_name, bin_min, bin_max, binning_scheme_version
+        """
+        BINNING_SCHEME_VERSION = "sample_bin_v1"
+        
+        # Define bins with EXCLUSIVE upper bounds (bin_min <= N < bin_max)
+        bins = [
+            (0, 5000, "sample_0-5k"),
+            (5000, 10000, "sample_5k-10k"),
+            (10000, 25000, "sample_10k-25k"),
+            (25000, 50000, "sample_25k-50k"),
+            (50000, 100000, "sample_50k-100k"),
+            (100000, 250000, "sample_100k-250k"),
+            (250000, 500000, "sample_250k-500k"),
+            (500000, 1000000, "sample_500k-1M"),
+            (1000000, float('inf'), "sample_1M+")
+        ]
+        
+        for bin_min, bin_max, bin_name in bins:
+            if bin_min <= n_effective < bin_max:
+                return {
+                    "bin_name": bin_name,
+                    "bin_min": bin_min,
+                    "bin_max": bin_max if bin_max != float('inf') else None,
+                    "binning_scheme_version": BINNING_SCHEME_VERSION
+                }
+        
+        # Fallback (should never reach here)
+        return {
+            "bin_name": "sample_unknown",
+            "bin_min": None,
+            "bin_max": None,
+            "binning_scheme_version": BINNING_SCHEME_VERSION
+        }
+    
     def _find_previous_log_files(self) -> List[Path]:
         """Find all previous reproducibility log files in parent directories (for same module)."""
         if not self.search_previous_runs:
@@ -903,6 +949,21 @@ class ReproducibilityTracker:
                     full_metadata['feature_registry_hash'] = hashlib.sha256(feature_registry_str.encode()).hexdigest()[:16]
             except Exception:
                 pass
+        
+        # Add sample size bin metadata (for directory organization, NOT series identity)
+        # Compute from N_effective if not provided, ensuring consistency
+        # This allows backward compatibility and binning scheme versioning
+        n_effective = full_metadata.get('N_effective')
+        if n_effective and n_effective > 0:
+            # Use provided bin info if available, otherwise compute from N_effective
+            if additional_data and 'sample_size_bin' in additional_data:
+                full_metadata['sample_size_bin'] = additional_data['sample_size_bin']
+            else:
+                # Compute bin info using same logic as IntelligentTrainer
+                # This ensures consistency even if bin info wasn't passed through
+                bin_info = ReproducibilityTracker._compute_sample_size_bin(n_effective)
+                if bin_info:
+                    full_metadata['sample_size_bin'] = bin_info
         
         # Save metadata.json
         metadata_file = cohort_dir / "metadata.json"

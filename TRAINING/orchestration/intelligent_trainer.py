@@ -200,11 +200,14 @@ class IntelligentTrainer:
         
         if self._n_effective is not None:
             # Bin N_effective into readable ranges for grouping similar runs
-            bin_name = self._get_sample_size_bin(self._n_effective)
+            bin_info = self._get_sample_size_bin(self._n_effective)
+            bin_name = bin_info["bin_name"]
             # Create directory directly in RESULTS/{bin_name}/{run_name}/
             self.output_dir = results_dir / bin_name / output_dir_name
             self._initial_output_dir = self.output_dir  # Same location, no move needed
             logger.info(f"📁 Output directory: {self.output_dir} (organized by sample size bin: {bin_name}, N={self._n_effective})")
+            # Store bin info for later use in metadata
+            self._bin_info = bin_info
         else:
             # Fallback: start in _pending/ - will be moved to bin directory after first target is processed
             self._initial_output_dir = results_dir / "_pending" / output_dir_name
@@ -335,47 +338,71 @@ class IntelligentTrainer:
         logger.info("⚠️  Could not determine N_effective early, will use _pending/ and organize after first target")
         return None
     
-    def _get_sample_size_bin(self, n_effective: int) -> str:
+    def _get_sample_size_bin(self, n_effective: int) -> Dict[str, Any]:
         """
         Bin N_effective into readable ranges for grouping similar sample sizes.
         
-        Bins:
-        - 0-5k: sample_0-5k
-        - 5k-10k: sample_5k-10k
-        - 10k-25k: sample_10k-25k
-        - 25k-50k: sample_25k-50k
-        - 50k-100k: sample_50k-100k
-        - 100k-250k: sample_100k-250k
-        - 250k-500k: sample_250k-500k
-        - 500k-1M: sample_500k-1M
-        - 1M+: sample_1M+
+        **Boundary Rules (CRITICAL - DO NOT CHANGE WITHOUT VERSIONING):**
+        - Boundaries are EXCLUSIVE upper bounds: `bin_min <= N_effective < bin_max`
+        - Example: `sample_25k-50k` means `25000 <= N_effective < 50000`
+        - This ensures unambiguous binning (50,000 always goes to `sample_50k-100k`, never `sample_25k-50k`)
+        
+        **Binning Scheme Version:** `sample_bin_v1`
+        - If you change thresholds, increment version and update this docstring
+        - Old runs retain their original bin metadata for backward compatibility
+        
+        **Bins (v1):**
+        - sample_0-5k: 0 <= N < 5,000
+        - sample_5k-10k: 5,000 <= N < 10,000
+        - sample_10k-25k: 10,000 <= N < 25,000
+        - sample_25k-50k: 25,000 <= N < 50,000
+        - sample_50k-100k: 50,000 <= N < 100,000
+        - sample_100k-250k: 100,000 <= N < 250,000
+        - sample_250k-500k: 250,000 <= N < 500,000
+        - sample_500k-1M: 500,000 <= N < 1,000,000
+        - sample_1M+: N >= 1,000,000
         
         This groups runs with similar cross-sectional sample sizes together for easy comparison.
+        **Note:** Bin is for directory organization only. Trend series keys use stable identity (cohort_id, stage, target)
+        and do NOT include bin_name to prevent fragmentation when binning scheme changes.
         
         Args:
             n_effective: Effective sample size
             
         Returns:
-            Bin name string (e.g., "sample_25k-50k")
+            Dict with keys: bin_name, bin_min, bin_max, binning_scheme_version
         """
-        if n_effective < 5000:
-            return "sample_0-5k"
-        elif n_effective < 10000:
-            return "sample_5k-10k"
-        elif n_effective < 25000:
-            return "sample_10k-25k"
-        elif n_effective < 50000:
-            return "sample_25k-50k"
-        elif n_effective < 100000:
-            return "sample_50k-100k"
-        elif n_effective < 250000:
-            return "sample_100k-250k"
-        elif n_effective < 500000:
-            return "sample_250k-500k"
-        elif n_effective < 1000000:
-            return "sample_500k-1M"
-        else:
-            return "sample_1M+"
+        BINNING_SCHEME_VERSION = "sample_bin_v1"
+        
+        # Define bins with EXCLUSIVE upper bounds (bin_min <= N < bin_max)
+        bins = [
+            (0, 5000, "sample_0-5k"),
+            (5000, 10000, "sample_5k-10k"),
+            (10000, 25000, "sample_10k-25k"),
+            (25000, 50000, "sample_25k-50k"),
+            (50000, 100000, "sample_50k-100k"),
+            (100000, 250000, "sample_100k-250k"),
+            (250000, 500000, "sample_250k-500k"),
+            (500000, 1000000, "sample_500k-1M"),
+            (1000000, float('inf'), "sample_1M+")
+        ]
+        
+        for bin_min, bin_max, bin_name in bins:
+            if bin_min <= n_effective < bin_max:
+                return {
+                    "bin_name": bin_name,
+                    "bin_min": bin_min,
+                    "bin_max": bin_max if bin_max != float('inf') else None,
+                    "binning_scheme_version": BINNING_SCHEME_VERSION
+                }
+        
+        # Fallback (should never reach here)
+        return {
+            "bin_name": "sample_unknown",
+            "bin_min": None,
+            "bin_max": None,
+            "binning_scheme_version": BINNING_SCHEME_VERSION
+        }
     
     def _organize_by_cohort(self):
         """
@@ -394,7 +421,10 @@ class IntelligentTrainer:
         if self._n_effective is not None and "_pending" in str(self.output_dir):
             repo_root = Path(__file__).parent.parent.parent
             results_dir = repo_root / "RESULTS"
-            bin_name = self._get_sample_size_bin(self._n_effective)
+            bin_info = self._get_sample_size_bin(self._n_effective)
+            bin_name = bin_info["bin_name"]
+            if not hasattr(self, '_bin_info'):
+                self._bin_info = bin_info
             new_output_dir = results_dir / bin_name / self._run_name
             
             if new_output_dir.exists():
@@ -406,7 +436,10 @@ class IntelligentTrainer:
                 return
             
             import shutil
-            bin_name = self._get_sample_size_bin(self._n_effective)
+            bin_info = self._get_sample_size_bin(self._n_effective)
+            bin_name = bin_info["bin_name"]
+            if not hasattr(self, '_bin_info'):
+                self._bin_info = bin_info
             new_output_dir.parent.mkdir(parents=True, exist_ok=True)
             logger.info(f"📁 Moving run from {self.output_dir} to {new_output_dir} (N={self._n_effective} determined early, bin={bin_name})")
             try:
@@ -492,7 +525,10 @@ class IntelligentTrainer:
                 # Move the entire run directory to sample-size-bin-organized location
                 repo_root = Path(__file__).parent.parent.parent
                 results_dir = repo_root / "RESULTS"
-                bin_name = self._get_sample_size_bin(self._n_effective)
+                bin_info = self._get_sample_size_bin(self._n_effective)
+                bin_name = bin_info["bin_name"]
+                if not hasattr(self, '_bin_info'):
+                    self._bin_info = bin_info
                 new_output_dir = results_dir / bin_name / self._run_name
                 
                 if new_output_dir.exists():
@@ -563,7 +599,10 @@ class IntelligentTrainer:
                                 
                                 import shutil
                                 new_output_dir.parent.mkdir(parents=True, exist_ok=True)
-                                bin_name = self._get_sample_size_bin(self._n_effective)
+                                bin_info = self._get_sample_size_bin(self._n_effective)
+                                bin_name = bin_info["bin_name"]
+                                if not hasattr(self, '_bin_info'):
+                                    self._bin_info = bin_info
                                 logger.info(f"📁 Moving run from {self._initial_output_dir} to {new_output_dir} (found via recursive search, N={self._n_effective}, bin={bin_name})")
                                 shutil.move(str(self._initial_output_dir), str(new_output_dir))
                                 self.output_dir = new_output_dir
@@ -788,7 +827,10 @@ class IntelligentTrainer:
             logger.info(f"   Initial output_dir: {self._initial_output_dir}")
             self._organize_by_cohort()
             if self._n_effective is not None:
-                bin_name = self._get_sample_size_bin(self._n_effective)
+                bin_info = self._get_sample_size_bin(self._n_effective)
+                bin_name = bin_info["bin_name"]
+                if not hasattr(self, '_bin_info'):
+                    self._bin_info = bin_info
                 logger.info(f"✅ Successfully organized run by sample size bin (N={self._n_effective}, bin={bin_name}): {self.output_dir}")
                 logger.info(f"   Moved from: {self._initial_output_dir}")
                 logger.info(f"   Moved to: {self.output_dir}")
