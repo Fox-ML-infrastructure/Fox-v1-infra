@@ -41,19 +41,56 @@ class DecisionPolicy:
     
     @staticmethod
     def get_default_policies() -> List['DecisionPolicy']:
-        """Get default decision policies."""
+        """Get default decision policies (all thresholds config-driven via decision_policies.yaml)."""
+        # Load config (SST: Single Source of Truth)
+        try:
+            from CONFIG.config_loader import get_cfg
+            policy_cfg = {
+                'feature_instability': {
+                    'jaccard_threshold': get_cfg('decision_policies.feature_instability.jaccard_threshold', default=0.5, config_name='decision_policies'),
+                    'jaccard_collapse_ratio': get_cfg('decision_policies.feature_instability.jaccard_collapse_ratio', default=0.8, config_name='decision_policies'),
+                    'min_runs': get_cfg('decision_policies.feature_instability.min_runs', default=3, config_name='decision_policies'),
+                    'min_recent_runs': get_cfg('decision_policies.feature_instability.min_recent_runs', default=2, config_name='decision_policies')
+                },
+                'route_instability': {
+                    'entropy_threshold': get_cfg('decision_policies.route_instability.entropy_threshold', default=1.5, config_name='decision_policies'),
+                    'change_threshold': get_cfg('decision_policies.route_instability.change_threshold', default=3, config_name='decision_policies'),
+                    'change_window': get_cfg('decision_policies.route_instability.change_window', default=5, config_name='decision_policies'),
+                    'min_runs': get_cfg('decision_policies.route_instability.min_runs', default=3, config_name='decision_policies')
+                },
+                'feature_explosion_decline': {
+                    'auc_decline_threshold': get_cfg('decision_policies.feature_explosion_decline.auc_decline_threshold', default=-0.01, config_name='decision_policies'),
+                    'feature_increase_threshold': get_cfg('decision_policies.feature_explosion_decline.feature_increase_threshold', default=10, config_name='decision_policies'),
+                    'min_runs': get_cfg('decision_policies.feature_explosion_decline.min_runs', default=3, config_name='decision_policies')
+                },
+                'class_balance_drift': {
+                    'drift_threshold': get_cfg('decision_policies.class_balance_drift.drift_threshold', default=0.1, config_name='decision_policies'),
+                    'min_runs': get_cfg('decision_policies.class_balance_drift.min_runs', default=3, config_name='decision_policies'),
+                    'min_recent_runs': get_cfg('decision_policies.class_balance_drift.min_recent_runs', default=2, config_name='decision_policies')
+                }
+            }
+        except Exception as e:
+            logger.warning(f"Failed to load decision_policies config, using defaults: {e}")
+            policy_cfg = {
+                'feature_instability': {'jaccard_threshold': 0.5, 'jaccard_collapse_ratio': 0.8, 'min_runs': 3, 'min_recent_runs': 2},
+                'route_instability': {'entropy_threshold': 1.5, 'change_threshold': 3, 'change_window': 5, 'min_runs': 3},
+                'feature_explosion_decline': {'auc_decline_threshold': -0.01, 'feature_increase_threshold': 10, 'min_runs': 3},
+                'class_balance_drift': {'drift_threshold': 0.1, 'min_runs': 3, 'min_recent_runs': 2}
+            }
+        
         policies = []
         
         # Policy 1: Feature instability (jaccard collapse)
+        fi_cfg = policy_cfg['feature_instability']
         def jaccard_collapse(cohort_data: pd.DataFrame, latest: pd.Series) -> bool:
-            if len(cohort_data) < 3:
+            if len(cohort_data) < fi_cfg['min_runs']:
                 return False
             if 'jaccard_topK' not in cohort_data.columns:
                 return False
-            recent = cohort_data['jaccard_topK'].tail(3).dropna()
-            if len(recent) < 2:
+            recent = cohort_data['jaccard_topK'].tail(fi_cfg['min_runs']).dropna()
+            if len(recent) < fi_cfg['min_recent_runs']:
                 return False
-            return recent.iloc[-1] < 0.5 and recent.iloc[-1] < recent.iloc[-2] * 0.8
+            return recent.iloc[-1] < fi_cfg['jaccard_threshold'] and recent.iloc[-1] < recent.iloc[-2] * fi_cfg['jaccard_collapse_ratio']
         
         policies.append(DecisionPolicy(
             name="feature_instability",
@@ -64,16 +101,17 @@ class DecisionPolicy:
         ))
         
         # Policy 2: Route instability (high entropy or frequent changes)
+        ri_cfg = policy_cfg['route_instability']
         def route_instability(cohort_data: pd.DataFrame, latest: pd.Series) -> bool:
-            if len(cohort_data) < 3:
+            if len(cohort_data) < ri_cfg['min_runs']:
                 return False
             if 'route_entropy' in cohort_data.columns:
-                recent_entropy = cohort_data['route_entropy'].tail(3).dropna()
+                recent_entropy = cohort_data['route_entropy'].tail(ri_cfg['min_runs']).dropna()
                 if len(recent_entropy) > 0:
-                    return recent_entropy.iloc[-1] > 1.5  # High entropy = unstable routing
+                    return recent_entropy.iloc[-1] > ri_cfg['entropy_threshold']
             if 'route_changed' in cohort_data.columns:
-                recent_changes = cohort_data['route_changed'].tail(5).sum()
-                return recent_changes >= 3  # 3+ changes in last 5 runs
+                recent_changes = cohort_data['route_changed'].tail(ri_cfg['change_window']).sum()
+                return recent_changes >= ri_cfg['change_threshold']
             return False
         
         policies.append(DecisionPolicy(
@@ -85,16 +123,17 @@ class DecisionPolicy:
         ))
         
         # Policy 3: Performance decline with feature explosion
+        fed_cfg = policy_cfg['feature_explosion_decline']
         def feature_explosion_decline(cohort_data: pd.DataFrame, latest: pd.Series) -> bool:
-            if len(cohort_data) < 3:
+            if len(cohort_data) < fed_cfg['min_runs']:
                 return False
             if 'cs_auc' not in cohort_data.columns or 'n_features_selected' not in cohort_data.columns:
                 return False
-            recent = cohort_data.tail(3)
+            recent = cohort_data.tail(fed_cfg['min_runs'])
             auc_trend = recent['cs_auc'].diff().tail(2)
             feature_trend = recent['n_features_selected'].diff().tail(2)
             # AUC declining while features increasing
-            return (auc_trend.iloc[-1] < -0.01 and feature_trend.iloc[-1] > 10) if len(auc_trend) > 0 and len(feature_trend) > 0 else False
+            return (auc_trend.iloc[-1] < fed_cfg['auc_decline_threshold'] and feature_trend.iloc[-1] > fed_cfg['feature_increase_threshold']) if len(auc_trend) > 0 and len(feature_trend) > 0 else False
         
         policies.append(DecisionPolicy(
             name="feature_explosion_decline",
@@ -105,16 +144,17 @@ class DecisionPolicy:
         ))
         
         # Policy 4: Class balance drift
+        cbd_cfg = policy_cfg['class_balance_drift']
         def class_balance_drift(cohort_data: pd.DataFrame, latest: pd.Series) -> bool:
-            if len(cohort_data) < 3:
+            if len(cohort_data) < cbd_cfg['min_runs']:
                 return False
             if 'pos_rate' not in cohort_data.columns:
                 return False
-            recent = cohort_data['pos_rate'].tail(3).dropna()
-            if len(recent) < 2:
+            recent = cohort_data['pos_rate'].tail(cbd_cfg['min_runs']).dropna()
+            if len(recent) < cbd_cfg['min_recent_runs']:
                 return False
             drift = abs(recent.iloc[-1] - recent.iloc[0])
-            return drift > 0.1  # 10% drift
+            return drift > cbd_cfg['drift_threshold']
         
         policies.append(DecisionPolicy(
             name="class_balance_drift",

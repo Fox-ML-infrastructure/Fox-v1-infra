@@ -534,7 +534,7 @@ def train_and_evaluate_models(
                     horizon_minutes=resolved_config.horizon_minutes,
                     feature_lookback_max_minutes=feature_lookback_max_minutes,  # Now with actual pruned lookback
                     purge_buffer_bars=resolved_config.purge_buffer_bars,
-                    default_purge_minutes=85.0,  # Default value (not stored in ResolvedConfig)
+                    default_purge_minutes=None,  # Loads from safety_config.yaml (SST)
                     features_safe=resolved_config.features_safe,
                     features_dropped_nan=resolved_config.features_dropped_nan,
                     features_final=len(feature_names),  # Updated count
@@ -621,7 +621,7 @@ def train_and_evaluate_models(
             horizon_minutes=target_horizon_minutes,
             feature_lookback_max_minutes=feature_lookback_max_minutes,
             purge_buffer_bars=5,
-            default_purge_minutes=85.0,
+            default_purge_minutes=None,  # Loads from safety_config.yaml (SST)
             features_safe=original_feature_count,
             features_dropped_nan=0,
             features_final=len(feature_names),

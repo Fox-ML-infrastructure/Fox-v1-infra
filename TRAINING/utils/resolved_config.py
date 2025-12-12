@@ -131,7 +131,7 @@ def derive_purge_embargo(
     interval_minutes: Optional[float] = None,
     feature_lookback_max_minutes: Optional[float] = None,
     purge_buffer_bars: int = 5,
-    default_purge_minutes: float = 85.0
+    default_purge_minutes: Optional[float] = None  # If None, loads from safety_config.yaml (SST)
 ) -> tuple[float, float]:
     """
     CENTRALIZED purge/embargo derivation function.
@@ -152,7 +152,7 @@ def derive_purge_embargo(
         interval_minutes: Data interval in minutes (for buffer calculation)
         feature_lookback_max_minutes: Maximum feature lookback in minutes (accepted but not used)
         purge_buffer_bars: Number of bars to add as buffer
-        default_purge_minutes: Default if horizon cannot be determined
+        default_purge_minutes: Default if horizon cannot be determined (if None, loads from safety_config.yaml)
     
     Returns:
         (purge_minutes, embargo_minutes) tuple
@@ -170,8 +170,15 @@ def derive_purge_embargo(
     if horizon_minutes is not None:
         base_minutes = horizon_minutes
     else:
-        # Fallback to default if horizon unknown
-        base_minutes = default_purge_minutes
+        # Fallback to default if horizon unknown (load from config if not provided)
+        if default_purge_minutes is None:
+            try:
+                from CONFIG.config_loader import get_cfg
+                base_minutes = get_cfg('safety.temporal.default_purge_minutes', default=85.0, config_name='safety_config')
+            except Exception:
+                base_minutes = 85.0  # Final fallback
+        else:
+            base_minutes = default_purge_minutes
     
     # Add buffer
     purge_embargo_minutes = base_minutes + buffer_minutes

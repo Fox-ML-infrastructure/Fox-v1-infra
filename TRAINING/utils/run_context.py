@@ -121,7 +121,7 @@ class RunContext:
             interval_minutes=data_interval_minutes,
             feature_lookback_max_minutes=self.feature_lookback_max_minutes,
             purge_buffer_bars=buffer_bars,
-            default_purge_minutes=85.0
+            default_purge_minutes=None  # Loads from safety_config.yaml (SST)
         )
     
     def get_required_fields(self, reproducibility_mode: str = "COHORT_AWARE") -> List[str]:

@@ -58,21 +58,29 @@ class ImportanceDiffDetector:
     
     def __init__(
         self,
-        diff_threshold: float = 0.1,
-        relative_diff_threshold: float = 0.5,
-        min_importance_full: float = 0.01
+        diff_threshold: Optional[float] = None,
+        relative_diff_threshold: Optional[float] = None,
+        min_importance_full: Optional[float] = None
     ):
         """
-        Initialize importance diff detector.
+        Initialize importance diff detector (all thresholds config-driven via stability_config.yaml).
         
         Args:
-            diff_threshold: Absolute difference threshold (importance_full - importance_safe)
-            relative_diff_threshold: Relative difference threshold (diff / importance_full)
-            min_importance_full: Minimum importance in full model to consider (filters noise)
+            diff_threshold: Absolute difference threshold (if None, loads from config)
+            relative_diff_threshold: Relative difference threshold (if None, loads from config)
+            min_importance_full: Minimum importance in full model (if None, loads from config)
         """
-        self.diff_threshold = diff_threshold
-        self.relative_diff_threshold = relative_diff_threshold
-        self.min_importance_full = min_importance_full
+        # Load config (SST: Single Source of Truth)
+        try:
+            from CONFIG.config_loader import get_cfg
+            self.diff_threshold = diff_threshold if diff_threshold is not None else get_cfg('stability.importance_diff.diff_threshold', default=0.1, config_name='stability_config')
+            self.relative_diff_threshold = relative_diff_threshold if relative_diff_threshold is not None else get_cfg('stability.importance_diff.relative_diff_threshold', default=0.5, config_name='stability_config')
+            self.min_importance_full = min_importance_full if min_importance_full is not None else get_cfg('stability.importance_diff.min_importance_full', default=0.01, config_name='stability_config')
+        except Exception as e:
+            logger.warning(f"Failed to load stability_config, using defaults: {e}")
+            self.diff_threshold = diff_threshold if diff_threshold is not None else 0.1
+            self.relative_diff_threshold = relative_diff_threshold if relative_diff_threshold is not None else 0.5
+            self.min_importance_full = min_importance_full if min_importance_full is not None else 0.01
     
     def get_feature_importance(
         self,
