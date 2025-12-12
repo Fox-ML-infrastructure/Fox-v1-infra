@@ -35,8 +35,10 @@ from .barrier import (
 from .excess_returns import (
     rolling_beta,
     future_excess_return,
-    compute_neutral_band,
-    classify_excess_return
+    compute_epsilon_train_only,
+    label_excess_band,
+    create_targets,
+    validate_targets
 )
 
 __all__ = [
@@ -54,7 +56,9 @@ __all__ = [
     # Excess return targets
     "rolling_beta",
     "future_excess_return",
-    "compute_neutral_band",
-    "classify_excess_return",
+    "compute_epsilon_train_only",
+    "label_excess_band",
+    "create_targets",
+    "validate_targets",
 ]
 
