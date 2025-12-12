@@ -98,6 +98,14 @@ advanced:
   # Enable LOSO (Leave-One-Symbol-Out) evaluation (optional, high value)
   enable_loso: false
 
+# Decision application (regression/trend-based auto-config)
+decisions:
+  # Application mode: "off" (assist mode only), "dry_run" (show patch), "apply" (auto-apply)
+  apply_mode: "off"  # Options: "off", "dry_run", "apply"
+  
+  # Minimum decision level to apply (0=no action, 1=warning, 2=recommendation, 3=action)
+  min_level_to_apply: 2
+
 # Test mode configuration (auto-detected if 'test' in output_dir name)
 test:
   # Override settings for test runs

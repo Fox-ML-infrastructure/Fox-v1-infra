@@ -995,6 +995,8 @@ class IntelligentTrainer:
         auto_features: bool = False,
         top_m_features: int = 100,
         decision_apply_mode: bool = False,  # NEW: Enable apply mode for decisions
+        decision_dry_run: bool = False,  # NEW: Dry-run mode (show patch without applying)
+        decision_min_level: int = 2,  # NEW: Minimum decision level to apply
         targets: Optional[List[str]] = None,
         features: Optional[List[str]] = None,
         families: Optional[List[str]] = None,
@@ -1027,6 +1029,7 @@ class IntelligentTrainer:
         
         # Pre-run decision hook: Load latest decision and optionally apply to config
         resolved_config_patch = {}
+        decision_artifact_dir = None
         try:
             from TRAINING.decisioning.decision_engine import DecisionEngine
             from TRAINING.utils.cohort_metadata_extractor import extract_cohort_metadata
@@ -1040,31 +1043,114 @@ class IntelligentTrainer:
                     max_cs_samples=train_kwargs.get('max_cs_samples')
                 )
                 cohort_id = None
+                segment_id = None
                 if cohort_metadata:
                     # Compute approximate cohort_id (will be refined later)
                     from TRAINING.utils.reproducibility_tracker import ReproducibilityTracker
                     temp_tracker = ReproducibilityTracker(output_dir=self.output_dir)
                     cohort_id = temp_tracker._compute_cohort_id(cohort_metadata, route_type=None)
+                    
+                    # Try to get segment_id from index
+                    repro_dir = self.output_dir.parent / "REPRODUCIBILITY"
+                    index_file = repro_dir / "index.parquet"
+                    if index_file.exists():
+                        try:
+                            import pandas as pd
+                            df = pd.read_parquet(index_file)
+                            cohort_mask = df['cohort_id'] == cohort_id
+                            if cohort_mask.any() and 'segment_id' in df.columns:
+                                # Get latest segment_id for this cohort
+                                segment_id = int(df[cohort_mask]['segment_id'].iloc[-1])
+                        except Exception:
+                            pass
                 
-                if cohort_id:
+                if cohort_id and (decision_apply_mode or decision_dry_run):
                     repro_dir = self.output_dir.parent / "REPRODUCIBILITY"
                     index_file = repro_dir / "index.parquet"
                     if index_file.exists():
                         engine = DecisionEngine(index_file, apply_mode=decision_apply_mode)
                         latest_decision = engine.load_latest(cohort_id, base_dir=self.output_dir.parent)
-                        if latest_decision and latest_decision.decision_level >= 2 and decision_apply_mode:
-                            # Apply decision patch to config
-                            # Note: This modifies train_kwargs which will be used downstream
-                            patched_config, patch = engine.apply_patch(train_kwargs, latest_decision)
-                            resolved_config_patch = patch
-                            train_kwargs.update(patched_config)
-                            logger.info(f"🔧 Applied decision patch: {patch}")
-                            # Update config_hash to reflect patch
-                            import hashlib
-                            patch_hash = hashlib.sha256(json.dumps(patch, sort_keys=True).encode()).hexdigest()[:8]
-                            train_kwargs['decision_patch_hash'] = patch_hash
+                        
+                        if latest_decision:
+                            logger.info(f"📊 Decision selection: cohort_id={cohort_id}, segment_id={segment_id}, "
+                                      f"decision_level={latest_decision.decision_level}, "
+                                      f"actions={latest_decision.decision_action_mask}, "
+                                      f"reasons={latest_decision.decision_reason_codes}")
+                            
+                            if latest_decision.decision_level >= decision_min_level:
+                                # Create artifact directory for patched config
+                                decision_artifact_dir = self.output_dir / "REPRODUCIBILITY" / "applied_configs"
+                                decision_artifact_dir.mkdir(parents=True, exist_ok=True)
+                                
+                                # Save decision file used
+                                decision_used_file = decision_artifact_dir / f"decision_used_{latest_decision.run_id}.json"
+                                with open(decision_used_file, 'w') as f:
+                                    json.dump(latest_decision.to_dict(), f, indent=2, default=str)
+                                logger.info(f"📄 Decision file used: {decision_used_file.relative_to(self.output_dir)}")
+                                
+                                if decision_dry_run:
+                                    # Dry-run: show patch without applying
+                                    patched_config, patch = engine.apply_patch(train_kwargs, latest_decision)
+                                    patch_file = decision_artifact_dir / f"patch_dry_run_{latest_decision.run_id}.json"
+                                    with open(patch_file, 'w') as f:
+                                        json.dump({
+                                            "mode": "dry_run",
+                                            "decision_run_id": latest_decision.run_id,
+                                            "cohort_id": cohort_id,
+                                            "segment_id": segment_id,
+                                            "patch": patch,
+                                            "original_config": train_kwargs.copy(),
+                                            "patched_config": patched_config
+                                        }, f, indent=2, default=str)
+                                    logger.info(f"🔍 DRY RUN: Patch would be: {patch}")
+                                    logger.info(f"📄 Dry-run patch saved to: {patch_file.relative_to(self.output_dir)}")
+                                elif decision_apply_mode:
+                                    # Apply decision patch to config
+                                    patched_config, patch = engine.apply_patch(train_kwargs, latest_decision)
+                                    resolved_config_patch = patch
+                                    train_kwargs.update(patched_config)
+                                    
+                                    # Save patch artifact
+                                    patch_file = decision_artifact_dir / f"patch_applied_{latest_decision.run_id}.json"
+                                    with open(patch_file, 'w') as f:
+                                        json.dump({
+                                            "mode": "apply",
+                                            "decision_run_id": latest_decision.run_id,
+                                            "cohort_id": cohort_id,
+                                            "segment_id": segment_id,
+                                            "patch": patch,
+                                            "applied_at": datetime.now().isoformat()
+                                        }, f, indent=2, default=str)
+                                    
+                                    # Save patched config artifact
+                                    try:
+                                        import yaml
+                                        patched_config_file = decision_artifact_dir / f"patched_config_{latest_decision.run_id}.yaml"
+                                        with open(patched_config_file, 'w') as f:
+                                            yaml.dump(patched_config, f, default_flow_style=False, sort_keys=False)
+                                    except ImportError:
+                                        # Fallback to JSON if yaml not available
+                                        patched_config_file = decision_artifact_dir / f"patched_config_{latest_decision.run_id}.json"
+                                        with open(patched_config_file, 'w') as f:
+                                            json.dump(patched_config, f, indent=2, default=str)
+                                    
+                                    # Update config_hash to reflect patch
+                                    import hashlib
+                                    patch_hash = hashlib.sha256(json.dumps(patch, sort_keys=True).encode()).hexdigest()[:8]
+                                    train_kwargs['decision_patch_hash'] = patch_hash
+                                    
+                                    logger.info(f"🔧 Applied decision patch: {patch}")
+                                    logger.info(f"📄 Patch saved to: {patch_file.relative_to(self.output_dir)}")
+                                    logger.info(f"📄 Patched config saved to: {patched_config_file.relative_to(self.output_dir)}")
+                                    logger.info(f"🔑 Config hash updated with patch_hash: {patch_hash}")
+                            else:
+                                logger.info(f"⏭️  Decision level {latest_decision.decision_level} < {decision_min_level}, skipping application")
+                        else:
+                            logger.debug(f"No decision found for cohort_id={cohort_id}")
             except Exception as e:
                 logger.debug(f"Pre-run decision loading failed (non-critical): {e}")
+                import traceback
+                logger.debug(traceback.format_exc())
         except ImportError:
             logger.debug("Decision engine not available, skipping pre-run hook")
         
@@ -1639,6 +1725,10 @@ Examples:
     parser.add_argument('--experiment-config', type=str,
                        help='Experiment config name (without .yaml) from CONFIG/experiments/ [NEW - preferred]')
     
+    # Decision application
+    parser.add_argument('--apply-decisions', type=str, choices=['off', 'dry_run', 'apply'], default='off',
+                       help='Decision application mode: off (assist mode), dry_run (show patch without applying), apply (auto-apply patches)')
+    
     args = parser.parse_args()
     
     # NEW: Load experiment config if provided (PREFERRED)
@@ -1733,6 +1823,11 @@ Examples:
         max_cs_samples = data_cfg.get('max_cs_samples', 1000)
         run_leakage_diagnostics = advanced_cfg.get('run_leakage_diagnostics', False)
         
+        # Decision application mode
+        decisions_cfg = intel_config_data.get('decisions', {})
+        decision_apply_mode_config = decisions_cfg.get('apply_mode', 'off')
+        decision_min_level = decisions_cfg.get('min_level_to_apply', 2)
+        
         use_cache = cache_cfg.get('use_cache', True)
         force_refresh_config = cache_cfg.get('force_refresh', False)
         
@@ -1772,6 +1867,12 @@ Examples:
         max_rows_train = intel_cfg.get('max_rows_train', None)
         max_cs_samples = intel_cfg.get('max_cs_samples', None)
         run_leakage_diagnostics = intel_cfg.get('run_leakage_diagnostics', False)
+        
+        # Decision application mode (legacy config path)
+        decisions_cfg = intel_cfg.get('decisions', {})
+        decision_apply_mode_config = decisions_cfg.get('apply_mode', 'off')
+        decision_min_level = decisions_cfg.get('min_level_to_apply', 2)
+        
         use_cache = True
         force_refresh_config = False
         manual_targets = []
@@ -1793,6 +1894,11 @@ Examples:
         max_rows_train = None
         max_cs_samples = None
         run_leakage_diagnostics = False
+        
+        # Decision application mode (fallback defaults)
+        decision_apply_mode_config = 'off'
+        decision_min_level = 2
+        
         use_cache = True
         force_refresh_config = False
         manual_targets = []
@@ -1866,7 +1972,10 @@ Examples:
             min_cs=min_cs,
             max_rows_per_symbol=max_rows_per_symbol,
             max_rows_train=max_rows_train,
-            max_cs_samples=max_cs_samples
+            max_cs_samples=max_cs_samples,
+            decision_apply_mode=decision_apply_mode,
+            decision_dry_run=decision_dry_run,
+            decision_min_level=decision_min_level if 'decision_min_level' in locals() else 2
         )
         
         logger.info("="*80)
