@@ -180,6 +180,9 @@ Research notes, design rationale, advanced topics.
 - [Pressure Test Plan](03_technical/implementation/PRESSURE_TEST_PLAN.md) - Testing plan
 - [Performance Optimization](03_technical/implementation/PERFORMANCE_OPTIMIZATION.md) - Optimization work
 - [Adding Proprietary Models](03_technical/implementation/ADDING_PROPRIETARY_MODELS.md) - Using BaseModelTrainer to add custom models
+- [Decision Engine](03_technical/implementation/decisioning/DECISION_ENGINE.md) - ⚠️ **EXPERIMENTAL**: Automated decision-making system with configurable policies
+- [Bayesian Policy](03_technical/implementation/decisioning/BAYESIAN_POLICY.md) - ⚠️ **EXPERIMENTAL**: Thompson sampling for adaptive config tuning
+- [Decision Verification Checklist](03_technical/implementation/decisioning/VERIFICATION_CHECKLIST.md) - ⚠️ **EXPERIMENTAL**: How to verify decision application works correctly
 
 ### Refactoring
 - **[Refactoring & Wrappers](01_tutorials/REFACTORING_AND_WRAPPERS.md)** - **NEW**: User-facing guide explaining wrapper mechanism, import patterns, and backward compatibility
