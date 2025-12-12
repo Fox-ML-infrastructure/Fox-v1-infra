@@ -188,9 +188,10 @@ class IntelligentTrainer:
             output_dir = Path(output_dir)
             output_dir_name = output_dir.name
         
-        # Put ALL runs in RESULTS directory, organized by sample size (N_effective)
-        # Structure: RESULTS/{N_effective}/{run_name}/
-        # Try to determine N_effective early from data or existing metadata
+        # Put ALL runs in RESULTS directory, organized by sample size (N_effective) in bins
+        # Structure: RESULTS/sample_{bin_start}k-{bin_end}k/{run_name}/
+        # Bins: 0-5k, 5k-10k, 10k-25k, 25k-50k, 50k-100k, 100k-250k, 250k-500k, 500k-1M, 1M+
+        # This groups similar sample sizes together for easy comparison
         repo_root = Path(__file__).parent.parent.parent  # Go up from TRAINING/orchestration/ to repo root
         results_dir = repo_root / "RESULTS"
         
@@ -198,15 +199,17 @@ class IntelligentTrainer:
         self._n_effective = self._estimate_n_effective_early()
         
         if self._n_effective is not None:
-            # Create directory directly in RESULTS/{N_effective}/{run_name}/
-            self.output_dir = results_dir / str(self._n_effective) / output_dir_name
+            # Bin N_effective into readable ranges for grouping similar runs
+            bin_name = self._get_sample_size_bin(self._n_effective)
+            # Create directory directly in RESULTS/{bin_name}/{run_name}/
+            self.output_dir = results_dir / bin_name / output_dir_name
             self._initial_output_dir = self.output_dir  # Same location, no move needed
-            logger.info(f"📁 Output directory: {self.output_dir} (organized by sample size N={self._n_effective})")
+            logger.info(f"📁 Output directory: {self.output_dir} (organized by sample size bin: {bin_name}, N={self._n_effective})")
         else:
-            # Fallback: start in _pending/ - will be moved to N_effective directory after first target is processed
+            # Fallback: start in _pending/ - will be moved to bin directory after first target is processed
             self._initial_output_dir = results_dir / "_pending" / output_dir_name
             self.output_dir = self._initial_output_dir
-            logger.info(f"📁 Output directory: {self.output_dir} (will be organized by sample size after first target)")
+            logger.info(f"📁 Output directory: {self.output_dir} (will be organized by sample size bin after first target)")
         
         self._run_name = output_dir_name  # Store for move operation
         
@@ -332,6 +335,48 @@ class IntelligentTrainer:
         logger.info("⚠️  Could not determine N_effective early, will use _pending/ and organize after first target")
         return None
     
+    def _get_sample_size_bin(self, n_effective: int) -> str:
+        """
+        Bin N_effective into readable ranges for grouping similar sample sizes.
+        
+        Bins:
+        - 0-5k: sample_0-5k
+        - 5k-10k: sample_5k-10k
+        - 10k-25k: sample_10k-25k
+        - 25k-50k: sample_25k-50k
+        - 50k-100k: sample_50k-100k
+        - 100k-250k: sample_100k-250k
+        - 250k-500k: sample_250k-500k
+        - 500k-1M: sample_500k-1M
+        - 1M+: sample_1M+
+        
+        This groups runs with similar cross-sectional sample sizes together for easy comparison.
+        
+        Args:
+            n_effective: Effective sample size
+            
+        Returns:
+            Bin name string (e.g., "sample_25k-50k")
+        """
+        if n_effective < 5000:
+            return "sample_0-5k"
+        elif n_effective < 10000:
+            return "sample_5k-10k"
+        elif n_effective < 25000:
+            return "sample_10k-25k"
+        elif n_effective < 50000:
+            return "sample_25k-50k"
+        elif n_effective < 100000:
+            return "sample_50k-100k"
+        elif n_effective < 250000:
+            return "sample_100k-250k"
+        elif n_effective < 500000:
+            return "sample_250k-500k"
+        elif n_effective < 1000000:
+            return "sample_500k-1M"
+        else:
+            return "sample_1M+"
+    
     def _organize_by_cohort(self):
         """
         Organize the run directory by sample size (N_effective) after first target is processed.
@@ -349,7 +394,8 @@ class IntelligentTrainer:
         if self._n_effective is not None and "_pending" in str(self.output_dir):
             repo_root = Path(__file__).parent.parent.parent
             results_dir = repo_root / "RESULTS"
-            new_output_dir = results_dir / str(self._n_effective) / self._run_name
+            bin_name = self._get_sample_size_bin(self._n_effective)
+            new_output_dir = results_dir / bin_name / self._run_name
             
             if new_output_dir.exists():
                 logger.warning(f"Sample size directory {new_output_dir} already exists, not moving")
@@ -368,7 +414,7 @@ class IntelligentTrainer:
                 self.cache_dir = self.output_dir / "cache"
                 self.target_ranking_cache = self.cache_dir / "target_rankings.json"
                 self.feature_selection_cache = self.cache_dir / "feature_selections"
-                logger.info(f"✅ Organized run by sample size (N={self._n_effective}): {self.output_dir}")
+                logger.info(f"✅ Organized run by sample size bin (N={self._n_effective}, bin={bin_name}): {self.output_dir}")
                 return
             except Exception as move_error:
                 logger.error(f"Failed to move directory: {move_error}")
@@ -442,10 +488,11 @@ class IntelligentTrainer:
             
             # If we found N_effective, move the directory
             if self._n_effective is not None:
-                # Move the entire run directory to N_effective-organized location
+                # Move the entire run directory to sample-size-bin-organized location
                 repo_root = Path(__file__).parent.parent.parent
                 results_dir = repo_root / "RESULTS"
-                new_output_dir = results_dir / str(self._n_effective) / self._run_name
+                bin_name = self._get_sample_size_bin(self._n_effective)
+                new_output_dir = results_dir / bin_name / self._run_name
                 
                 if new_output_dir.exists():
                     logger.warning(f"Sample size directory {new_output_dir} already exists, not moving")
@@ -738,7 +785,8 @@ class IntelligentTrainer:
             logger.info(f"   Initial output_dir: {self._initial_output_dir}")
             self._organize_by_cohort()
             if self._n_effective is not None:
-                logger.info(f"✅ Successfully organized run by sample size (N={self._n_effective}): {self.output_dir}")
+                bin_name = self._get_sample_size_bin(self._n_effective)
+                logger.info(f"✅ Successfully organized run by sample size bin (N={self._n_effective}, bin={bin_name}): {self.output_dir}")
                 logger.info(f"   Moved from: {self._initial_output_dir}")
                 logger.info(f"   Moved to: {self.output_dir}")
             else:
