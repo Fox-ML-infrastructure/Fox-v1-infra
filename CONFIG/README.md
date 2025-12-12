@@ -2,26 +2,66 @@
 
 This directory contains all configuration files for the FoxML Core pipeline.
 
-## New Modular Structure (Recommended)
+## Directory Structure
 
-The configuration system has been refactored into a modular structure to prevent config "crossing" between pipeline components:
+The configuration system uses a modular structure to prevent config "crossing" between pipeline components:
 
 ```
 CONFIG/
 ├── experiments/              # Experiment-level configs (what are we running?)
-│   └── *.yaml
+│   ├── e2e_ranking_test.yaml
+│   └── fwd_ret_60m_test.yaml
 ├── feature_selection/        # Feature selection module configs
 │   └── multi_model.yaml
 ├── target_ranking/           # Target ranking module configs
 │   └── multi_model.yaml
-├── training/                 # Training module configs
-│   └── models.yaml
-├── logging_config.yaml       # Structured logging configuration (NEW)
-│                             # Global, module-level, and backend verbosity controls
-├── leakage/                  # Leakage detection configs
-├── system/                   # System-level configs (paths, logging)
-└── training_config/          # Legacy training configs (still used)
+├── training_config/          # Training pipeline configs (SST: Single Source of Truth)
+│   ├── intelligent_training_config.yaml  # Main intelligent trainer config
+│   ├── decision_policies.yaml            # Decision policy thresholds (NEW)
+│   ├── stability_config.yaml             # Stability analysis thresholds (NEW)
+│   ├── safety_config.yaml                # Safety & temporal configs
+│   ├── system_config.yaml                # System resources
+│   ├── pipeline_config.yaml              # Pipeline behavior
+│   ├── preprocessing_config.yaml         # Data preprocessing
+│   ├── optimizer_config.yaml             # Optimizer settings
+│   ├── gpu_config.yaml                   # GPU settings
+│   ├── memory_config.yaml                # Memory management
+│   ├── threading_config.yaml             # Threading policy
+│   ├── routing_config.yaml               # Target routing
+│   ├── callbacks_config.yaml             # Training callbacks
+│   ├── family_config.yaml                # Model family configs
+│   ├── sequential_config.yaml            # Sequential training
+│   └── first_batch_specs.yaml            # First batch specs
+├── model_config/             # Model-specific hyperparameters
+│   ├── lightgbm.yaml
+│   ├── xgboost.yaml
+│   ├── neural_network.yaml
+│   └── ... (all model families)
+├── routing/                  # Routing configs
+│   └── default.yaml
+├── logging_config.yaml       # Structured logging configuration
+├── feature_registry.yaml     # Feature registry (allowed/excluded)
+├── excluded_features.yaml    # Always-excluded features
+├── defaults.yaml             # Global defaults (SST)
+└── config_loader.py          # Configuration loader
 ```
+
+## Config Files Status
+
+### ✅ Active Config Files
+All files in `training_config/`, `model_config/`, `feature_selection/`, `target_ranking/`, and `experiments/` are actively used.
+
+### ⚠️ Potentially Unused Files (Verify Before Removing)
+- `comprehensive_feature_ranking.yaml` - May be legacy
+- `fast_target_ranking.yaml` - May be legacy
+- `feature_selection_config.yaml` - May be legacy
+- `target_configs.yaml` - Referenced in code, verify usage
+- `feature_target_schema.yaml` - Referenced in code, verify usage
+- `feature_groups.yaml` - Verify usage
+- `training/models.yaml` - May be superseded by `model_config/`
+
+### 🗑️ Deprecated Files (Safe to Remove)
+- `multi_model_feature_selection.yaml.deprecated` - Explicitly deprecated, moved to `feature_selection/multi_model.yaml`
 
 ## Quick Start
 
