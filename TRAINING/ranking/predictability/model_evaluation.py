@@ -2417,6 +2417,9 @@ def evaluate_target_predictability(
 ) -> TargetPredictabilityScore:
     """Evaluate predictability of a single target across symbols"""
     
+    # Ensure numpy is available (imported at module level, but ensure it's accessible)
+    import numpy as np  # Use global import from top of file
+    
     # Get logging config for this module (at function start)
     if _LOGGING_CONFIG_AVAILABLE:
         log_cfg = get_module_logging_config('rank_target_predictability')
@@ -2716,8 +2719,6 @@ def evaluate_target_predictability(
         
         # Remove leaky features
         leaky_indices = [i for i, name in enumerate(feature_names) if name in leaky_features]
-        # Ensure numpy is available (import at top of file)
-        import numpy as np
         X = np.delete(X, leaky_indices, axis=1)
         feature_names = [name for name in feature_names if name not in leaky_features]
         
@@ -2816,7 +2817,6 @@ def evaluate_target_predictability(
         )
     
     # Check if target is degenerate
-    # Note: np is imported at top of file, but ensure it's in scope
     unique_vals = np.unique(y[~np.isnan(y)])
     if len(unique_vals) < 2:
         logger.warning(f"Skipping: Target has only {len(unique_vals)} unique value(s)")
