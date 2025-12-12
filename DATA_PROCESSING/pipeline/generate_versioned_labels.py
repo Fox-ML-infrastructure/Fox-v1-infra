@@ -319,11 +319,18 @@ def main():
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    # Validate input directory structure
-    interval_dir = data_dir / "interval=5m"
+    # Check if data_dir already contains interval=5m (from config) or if we need to append it
+    if "interval=5m" in str(data_dir):
+        # Config already includes interval=5m, use data_dir directly
+        interval_dir = data_dir
+    else:
+        # Append interval=5m if not present
+        interval_dir = data_dir / "interval=5m"
+    
     if not interval_dir.exists():
         logger.error(f"Input directory structure not found: {interval_dir}")
         logger.error("Expected: data_dir/interval=5m/symbol=SYMBOL/*.parquet")
+        logger.error(f"  (data_dir from config/CLI: {args.data_dir})")
         return
     
     logger.info(f"📂 Input directory: {data_dir}")
