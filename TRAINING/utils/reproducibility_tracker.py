@@ -1064,7 +1064,17 @@ class ReproducibilityTracker:
             index_file = repro_dir / "index.parquet"
             if index_file.exists():
                 engine = DecisionEngine(index_file, apply_mode=False)  # Assist mode by default
-                decision_result = engine.evaluate(cohort_id, run_id_clean, segment_id=None)
+                # Get segment_id from index if available
+                segment_id_for_decision = None
+                try:
+                    if index_file.exists():
+                        df_temp = pd.read_parquet(index_file)
+                        mask = df_temp['cohort_id'] == cohort_id
+                        if mask.any():
+                            segment_id_for_decision = df_temp[mask]['segment_id'].iloc[-1] if 'segment_id' in df_temp.columns else None
+                except Exception:
+                    pass
+                decision_result = engine.evaluate(cohort_id, run_id_clean, segment_id=segment_id_for_decision)
                 engine.persist(decision_result, self.output_dir.parent)
                 # Store decision fields in metrics for index update
                 metrics['decision_level'] = decision_result.decision_level
@@ -1236,6 +1246,49 @@ class ReproducibilityTracker:
         
         # For TARGET_RANKING, mode is the view (already handled in _get_cohort_dir)
         
+        # Compute segment_id for decision-making (segments reset on identity breaks)
+        segment_id = None
+        try:
+            from TRAINING.utils.regression_analysis import prepare_segments
+            # Load existing index to compute segment
+            if index_file.exists():
+                try:
+                    df_existing = pd.read_parquet(index_file)
+                    # Filter to same cohort
+                    cohort_mask = df_existing['cohort_id'] == cohort_id
+                    if cohort_mask.any():
+                        df_cohort = df_existing[cohort_mask].copy()
+                        # Prepare segments (adds segment_id column)
+                        df_cohort = prepare_segments(df_cohort, time_col='run_started_at')
+                        # Get segment_id for this run (will be computed based on identity fields)
+                        # We need to check if this run's identity fields match previous segment
+                        if len(df_cohort) > 0:
+                            last_segment = df_cohort['segment_id'].iloc[-1]
+                            last_row = df_cohort.iloc[-1]
+                            # Check if identity fields changed
+                            identity_cols = ["data_fingerprint", "featureset_fingerprint", "config_hash", "git_commit"]
+                            identity_changed = False
+                            for col in identity_cols:
+                                new_val = metadata.get(col) or (metrics.get(col) if col in metrics else None)
+                                old_val = last_row.get(col)
+                                if new_val != old_val and (new_val is not None or old_val is not None):
+                                    identity_changed = True
+                                    break
+                            if identity_changed:
+                                segment_id = int(last_segment) + 1
+                            else:
+                                segment_id = int(last_segment)
+                        else:
+                            segment_id = 0
+                    else:
+                        segment_id = 0  # First run in cohort
+                except Exception:
+                    segment_id = 0  # Fallback: first segment
+            else:
+                segment_id = 0  # First run ever
+        except ImportError:
+            segment_id = None  # Regression analysis not available
+        
         # Extract CV details from metadata
         cv_details = metadata.get("cv_details", {})
         
@@ -1324,6 +1377,7 @@ class ReproducibilityTracker:
             "model_family": model_family,
             "cohort_id": cohort_id,
             "run_id": run_id,
+            "segment_id": segment_id,  # For decision-making (segments reset on identity breaks)
             "data_fingerprint": data_fingerprint,
             "featureset_fingerprint": featureset_fingerprint,
             "config_hash": config_hash,
