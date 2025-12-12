@@ -328,24 +328,95 @@ This roadmap reflects the maturation of FoxML Core from a high-powered solo proj
 
 ---
 
-# Known Issues & Environment Notes
+# Known Issues & Bugs
 
-## TensorFlow GPU Warnings
+## Critical / High Priority
 
-Some TensorFlow warnings (version compatibility, plugin registration) may appear during training. These are typically environment-specific and do not affect functionality:
-* **Version compatibility warnings** (`use_unbounded_threadpool`) — Harmless version mismatch messages when graphs are created with newer TensorFlow than runtime.
-* **Plugin registration warnings** (cuFFT, cuDNN, cuBLAS) — Expected when TensorFlow initializes CUDA plugins multiple times in isolated processes.
-* **Status:** TensorFlow GPU support is functional. Warnings are being investigated and may be computer-specific. Waiting on feedback if others experience similar issues.
+### Training Routing System Integration
+* **Status:** 🔄 In Progress (2025-12-11)
+* **Issue:** Symbol-specific training execution filtering not fully integrated
+  - Training plan generates symbol-specific jobs correctly
+  - Execution phase does not yet filter by symbol from plan
+  - **Workaround:** All symbols trained regardless of plan (functional but inefficient)
+* **Issue:** Model-family-level filtering not fully integrated
+  - Training plan includes per-job model families
+  - Execution phase does not yet respect per-job family filters
+  - **Workaround:** All model families trained for each job (functional but inefficient)
+* **Issue:** Advanced routing logic partially implemented
+  - Basic routing (cross-sectional vs symbol-specific) working
+  - Advanced features (stability states, experimental lane limits) may need enhancement
+  - **Workaround:** Use basic routing for now
 
-## Module Status
+### Memory Batching Instability
+* **Status:** 🔄 Known Issue
+* **Issue:** Memory batching behavior can be unstable under certain conditions
+  - May cause OOM failures on large datasets
+  - Adaptive batching not fully implemented
+* **Workaround:** Reduce batch size in config, monitor memory usage
+* **Planned Fix:** Phase 3 - Memory & Data Efficiency
 
-* **Focus:** Training and ranking are stable and under ongoing validation; current active work centers on training routing system testing, configuration validation, memory/polars optimization, and model integration interfaces.
+### Polars Cross-Sectional Optimization
+* **Status:** 🔄 Known Limitation
+* **Issue:** Large-universe symbol handling may be inefficient
+  - Streaming build operations not fully optimized
+  - Memory-efficient aggregation patterns need improvement
+* **Workaround:** Process smaller symbol sets, use data limits in config
+* **Planned Fix:** Phase 3 - Memory & Data Efficiency
 
-## Training Routing System
+## Medium Priority
 
-* **Status:** Currently being tested (2025-12-11)
-* **Features:** Config-driven routing, automatic plan generation, 2-stage training, one-command flow
-* **Known Limitations:**
-  - Symbol-specific training execution filtering: Plan generated, execution integration pending
-  - Model-family-level filtering: Plan includes families, execution integration pending
-  - Advanced routing logic: Basic routing implemented, advanced features (stability states, experimental lane limits) may need enhancement
+### TensorFlow GPU Warnings
+* **Status:** ⚠️ Non-Critical (Environment-Specific)
+* **Issue:** Some TensorFlow warnings may appear during training
+  - Version compatibility warnings (`use_unbounded_threadpool`) — Harmless version mismatch
+  - Plugin registration warnings (cuFFT, cuDNN, cuBLAS) — Expected when TensorFlow initializes CUDA plugins multiple times
+* **Impact:** Warnings only, functionality not affected
+* **Status:** TensorFlow GPU support is functional. Warnings are being investigated and may be computer-specific.
+
+### Feature Engineering Validation
+* **Status:** 🔄 Planned Investigation
+* **Issue:** Feature engineering review and validation needed
+  - Temporal alignment and lag structure need validation
+  - Leakage prevention in feature engineering needs review
+  - Statistical significance and predictive power assessment needed
+* **Planned Fix:** Phase 1 - Planned Investigation
+
+### Test Coverage
+* **Status:** 🔄 In Progress
+* **Issue:** Full test coverage expanding following SST + determinism changes
+  - Some edge cases may not be fully covered
+  - Integration tests need expansion
+* **Planned Fix:** Phase 7 - Production Hardening
+
+## Low Priority / Environment Notes
+
+### Module Status
+* **Focus:** Training and ranking are stable and under ongoing validation
+* **Current Active Work:** Training routing system testing, configuration validation, memory/polars optimization, model integration interfaces
+
+### Configuration Validation
+* **Status:** 🔄 In Progress
+* **Issue:** Validation layer and example templates in progress
+  - Config validation not fully complete
+  - Some invalid configs may not be caught early
+* **Workaround:** Follow config examples in documentation, validate manually
+
+### Logging & Output Formatting
+* **Status:** 🔄 In Progress
+* **Issue:** Unified logging and consistent output formatting in progress
+  - Log formats may vary between modules
+  - Output formatting not fully standardized
+* **Workaround:** Use structured logging config where available
+
+## Reporting Issues
+
+Report bugs or issues via:
+* GitHub Issues (if available)
+* Email: **jenn.lewis5789@gmail.com**
+* Include: Error messages, config files (redacted), steps to reproduce, environment details
+
+## See Also
+
+* [Known Issues Documentation](DOCS/03_technical/fixes/KNOWN_ISSUES.md) - Detailed known issues
+* [Bug Fixes History](DOCS/03_technical/fixes/BUG_FIXES.md) - Fix history
+* [Testing Plan](DOCS/03_technical/testing/TESTING_PLAN.md) - Testing procedures

@@ -1,5 +1,8 @@
 # FoxML Core — ML Cross-Sectional Infrastructure
 
+> **⚠️ ACTIVE DEVELOPMENT — EXPECT BREAKING CHANGES**  
+> This project is under **heavy active development**. Breaking changes may occur without notice. APIs, configuration schemas, directory structures, and file formats may change between commits. Use at your own risk in production environments. See [ROADMAP.md](ROADMAP.md) for current status and known issues.
+
 > **📋 See [ROADMAP.md](ROADMAP.md) for most recent updates, current development focus, and status of modules (including known broken/untested components).**  
 > **📝 See [CHANGELOG.md](CHANGELOG.md) for recent technical and compliance changes.**
 
@@ -11,6 +14,8 @@ FoxML Core is:
 
 FoxML Core is a high-performance research and machine learning infrastructure stack.  
 It provides a reference-grade architecture for ML pipelines, quantitative workflows, reproducible experiments, and performance-optimized engineering (single-node HPC optimized; distributed HPC planned) without exposing proprietary signals or production-ready trading systems.
+
+**⚠️ Development Status:** This project is under **heavy active development**. Breaking changes may occur without notice. See [ROADMAP.md](ROADMAP.md) for current status, known issues, and planned fixes.
 
 > **Note:** Personal / academic use is AGPL-3.0. **Company / production use requires a commercial license.**
 
