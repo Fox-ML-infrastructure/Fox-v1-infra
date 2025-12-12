@@ -61,7 +61,9 @@ experiment:
 data:
   data_dir: data/data_labeled/interval=5m
   symbols: [AAPL, MSFT, GOOGL]
-  bar_interval: "5m"  # Explicit interval (prevents warnings)
+  bar_interval: "5m"  # Explicit interval
+  interval_detection:
+    mode: fixed  # Skip auto-detection, use bar_interval directly (prevents all warnings)
   max_samples_per_symbol: 5000
 ```
 
