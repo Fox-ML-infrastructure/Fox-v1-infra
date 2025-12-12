@@ -228,7 +228,7 @@ class IntelligentTrainer:
         Returns:
             Estimated N_effective or None if cannot be determined
         """
-        logger.debug("🔍 Attempting early N_effective estimation...")
+        logger.info("🔍 Attempting early N_effective estimation...")
         
         # Method 1: Check if there's existing metadata from a previous run with same symbols/data
         # (This handles the case where you're re-running with same data)
@@ -270,7 +270,7 @@ class IntelligentTrainer:
             
             # Sample first few symbols to estimate
             sample_symbols = self.symbols[:3] if len(self.symbols) > 3 else self.symbols
-            logger.debug(f"Sampling {len(sample_symbols)} symbols from {self.data_dir} to estimate N_effective")
+            logger.info(f"🔍 Sampling {len(sample_symbols)} symbols from {self.data_dir} to estimate N_effective")
             
             for symbol in sample_symbols:
                 # Try multiple possible paths
@@ -287,10 +287,10 @@ class IntelligentTrainer:
                         break
                 
                 if data_path is None:
-                    logger.debug(f"Data file not found for {symbol} (tried: {[str(p) for p in possible_paths]})")
+                    logger.warning(f"⚠️  Data file not found for {symbol} (tried: {[str(p) for p in possible_paths]})")
                     continue
                 
-                logger.debug(f"Found data file for {symbol}: {data_path}")
+                logger.info(f"  ✓ Found data file for {symbol}: {data_path}")
                 
                 try:
                     # Use parquet metadata if available (faster - no data load)
@@ -329,7 +329,7 @@ class IntelligentTrainer:
             import traceback
             logger.debug(f"Traceback: {traceback.format_exc()}")
         
-        logger.debug("Could not determine N_effective early, will use _pending/ and organize after first target")
+        logger.info("⚠️  Could not determine N_effective early, will use _pending/ and organize after first target")
         return None
     
     def _organize_by_cohort(self):
