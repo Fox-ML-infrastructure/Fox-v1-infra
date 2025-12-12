@@ -60,6 +60,14 @@ except ImportError:
 from TRAINING.utils.task_types import TargetConfig, TaskType
 from TRAINING.utils.leakage_filtering import reload_feature_configs
 
+# Import parallel execution utilities
+try:
+    from TRAINING.common.parallel_exec import execute_parallel, get_max_workers
+    _PARALLEL_AVAILABLE = True
+except ImportError:
+    _PARALLEL_AVAILABLE = False
+    logger.warning("Parallel execution utilities not available; will run sequentially")
+
 # Try to import config loader
 _CONFIG_AVAILABLE = False
 try:
@@ -329,8 +337,269 @@ def rank_targets(
         except Exception:
             pass
     
-    # Evaluate each target in dual views
-    for idx, (target_name, target_config) in enumerate(targets_to_evaluate.items(), 1):
+    # Load parallel execution config
+    parallel_targets = False
+    if _CONFIG_AVAILABLE:
+        try:
+            from CONFIG.config_loader import get_cfg
+            multi_target_cfg = get_cfg("multi_target", default={}, config_name="target_configs")
+            parallel_targets = multi_target_cfg.get('parallel_targets', False)
+        except Exception:
+            pass
+    
+    # Check if parallel execution is globally enabled
+    parallel_enabled = _PARALLEL_AVAILABLE and parallel_targets
+    if parallel_enabled:
+        try:
+            from CONFIG.config_loader import get_cfg
+            parallel_global = get_cfg("threading.parallel.enabled", default=True, config_name="threading_config")
+            parallel_enabled = parallel_enabled and parallel_global
+        except Exception:
+            pass
+    
+    # Helper function for parallel target evaluation (must be picklable)
+    def _evaluate_single_target(item):
+        """Evaluate a single target - wrapper for parallel execution"""
+        target_name, target_config = item
+        result_data = {
+            'target_name': target_name,
+            'result_cs': None,
+            'result_sym_dict': {},
+            'result_loso_dict': {},
+            'error': None
+        }
+        
+        try:
+            # View A: Cross-sectional evaluation (always run)
+            if auto_rerun_enabled and _AUTOFIX_AVAILABLE:
+                try:
+                    result_cs = evaluate_target_with_autofix(
+                        target_name=target_name,
+                        target_config=target_config,
+                        symbols=symbols,
+                        data_dir=data_dir,
+                        model_families=model_families,
+                        multi_model_config=multi_model_config,
+                        output_dir=output_dir,
+                        min_cs=min_cs,
+                        max_cs_samples=max_cs_samples,
+                        max_rows_per_symbol=max_rows_per_symbol,
+                        max_reruns=max_reruns,
+                        rerun_on_perfect_train_acc=rerun_on_perfect_train_acc,
+                        rerun_on_high_auc_only=rerun_on_high_auc_only,
+                        explicit_interval=explicit_interval,
+                        experiment_config=experiment_config,
+                        view="CROSS_SECTIONAL",
+                        symbol=None
+                    )
+                except TypeError:
+                    result_cs = evaluate_target_with_autofix(
+                        target_name=target_name,
+                        target_config=target_config,
+                        symbols=symbols,
+                        data_dir=data_dir,
+                        model_families=model_families,
+                        multi_model_config=multi_model_config,
+                        output_dir=output_dir,
+                        min_cs=min_cs,
+                        max_cs_samples=max_cs_samples,
+                        max_rows_per_symbol=max_rows_per_symbol,
+                        max_reruns=max_reruns,
+                        rerun_on_perfect_train_acc=rerun_on_perfect_train_acc,
+                        rerun_on_high_auc_only=rerun_on_high_auc_only,
+                        explicit_interval=explicit_interval,
+                        experiment_config=experiment_config
+                    )
+            else:
+                result_cs = evaluate_target_predictability(
+                    target_name=target_name,
+                    target_config=target_config,
+                    symbols=symbols,
+                    data_dir=data_dir,
+                    model_families=model_families,
+                    multi_model_config=multi_model_config,
+                    output_dir=output_dir,
+                    min_cs=min_cs,
+                    max_cs_samples=max_cs_samples,
+                    max_rows_per_symbol=max_rows_per_symbol,
+                    explicit_interval=explicit_interval,
+                    experiment_config=experiment_config,
+                    view="CROSS_SECTIONAL",
+                    symbol=None
+                )
+            
+            result_data['result_cs'] = result_cs
+            
+            # View B: Symbol-specific evaluation (if enabled and cross-sectional succeeded)
+            skip_statuses = ["LEAKAGE_UNRESOLVED", "LEAKAGE_UNRESOLVED_MAX_RETRIES", "SUSPICIOUS", "SUSPICIOUS_STRONG"]
+            cs_succeeded = result_cs.mean_score != -999.0 and result_cs.status not in skip_statuses
+            
+            if enable_symbol_specific and cs_succeeded:
+                result_sym_dict = {}
+                for symbol in symbols:
+                    try:
+                        if auto_rerun_enabled and _AUTOFIX_AVAILABLE:
+                            try:
+                                result_sym = evaluate_target_with_autofix(
+                                    target_name=target_name,
+                                    target_config=target_config,
+                                    symbols=[symbol],
+                                    data_dir=data_dir,
+                                    model_families=model_families,
+                                    multi_model_config=multi_model_config,
+                                    output_dir=output_dir,
+                                    min_cs=1,
+                                    max_cs_samples=max_cs_samples,
+                                    max_rows_per_symbol=max_rows_per_symbol,
+                                    max_reruns=max_reruns,
+                                    rerun_on_perfect_train_acc=rerun_on_perfect_train_acc,
+                                    rerun_on_high_auc_only=rerun_on_high_auc_only,
+                                    explicit_interval=explicit_interval,
+                                    experiment_config=experiment_config,
+                                    view="SYMBOL_SPECIFIC",
+                                    symbol=symbol
+                                )
+                            except TypeError:
+                                result_sym = evaluate_target_with_autofix(
+                                    target_name=target_name,
+                                    target_config=target_config,
+                                    symbols=[symbol],
+                                    data_dir=data_dir,
+                                    model_families=model_families,
+                                    multi_model_config=multi_model_config,
+                                    output_dir=output_dir,
+                                    min_cs=1,
+                                    max_cs_samples=max_cs_samples,
+                                    max_rows_per_symbol=max_rows_per_symbol,
+                                    max_reruns=max_reruns,
+                                    rerun_on_perfect_train_acc=rerun_on_perfect_train_acc,
+                                    rerun_on_high_auc_only=rerun_on_high_auc_only,
+                                    explicit_interval=explicit_interval,
+                                    experiment_config=experiment_config
+                                )
+                        else:
+                            result_sym = evaluate_target_predictability(
+                                target_name=target_name,
+                                target_config=target_config,
+                                symbols=[symbol],
+                                data_dir=data_dir,
+                                model_families=model_families,
+                                multi_model_config=multi_model_config,
+                                output_dir=output_dir,
+                                min_cs=1,
+                                max_cs_samples=max_cs_samples,
+                                max_rows_per_symbol=max_rows_per_symbol,
+                                explicit_interval=explicit_interval,
+                                experiment_config=experiment_config,
+                                view="SYMBOL_SPECIFIC",
+                                symbol=symbol
+                            )
+                        
+                        if result_sym.mean_score != -999.0:
+                            result_sym_dict[symbol] = result_sym
+                    except Exception as e:
+                        logger.warning(f"    Failed to evaluate {target_name} for symbol {symbol}: {e}")
+                        continue
+                
+                result_data['result_sym_dict'] = result_sym_dict
+            
+            # View C: LOSO evaluation (if enabled)
+            if enable_loso:
+                result_loso_dict = {}
+                for symbol in symbols:
+                    try:
+                        result_loso_sym = evaluate_target_predictability(
+                            target_name=target_name,
+                            target_config=target_config,
+                            symbols=symbols,
+                            data_dir=data_dir,
+                            model_families=model_families,
+                            multi_model_config=multi_model_config,
+                            output_dir=output_dir,
+                            min_cs=min_cs,
+                            max_cs_samples=max_cs_samples,
+                            max_rows_per_symbol=max_rows_per_symbol,
+                            explicit_interval=explicit_interval,
+                            experiment_config=experiment_config,
+                            view="LOSO",
+                            symbol=symbol
+                        )
+                        result_loso_dict[symbol] = result_loso_sym
+                    except Exception as e:
+                        logger.warning(f"    Failed LOSO evaluation for {target_name} on symbol {symbol}: {e}")
+                        continue
+                
+                result_data['result_loso_dict'] = result_loso_dict
+                
+        except Exception as e:
+            result_data['error'] = str(e)
+            logger.exception(f"  Failed to evaluate {target_name}: {e}")
+        
+        return result_data
+    
+    # Evaluate targets (parallel or sequential)
+    if parallel_enabled and len(targets_to_evaluate) > 1:
+        logger.info(f"🚀 Parallel target evaluation enabled ({len(targets_to_evaluate)} targets)")
+        parallel_results = execute_parallel(
+            _evaluate_single_target,
+            targets_to_evaluate.items(),
+            max_workers=None,  # Auto-detect from config
+            task_type="process",  # CPU-bound
+            desc="Evaluating targets",
+            show_progress=True
+        )
+        
+        # Process parallel results
+        for item, result_data in parallel_results:
+            target_name = result_data['target_name']
+            if result_data['error']:
+                logger.error(f"  ❌ {target_name}: {result_data['error']}")
+                continue
+            
+            result_cs = result_data['result_cs']
+            result_sym_dict = result_data.get('result_sym_dict', {})
+            result_loso_dict = result_data.get('result_loso_dict', {})
+            
+            # Process cross-sectional result
+            skip_statuses = ["LEAKAGE_UNRESOLVED", "LEAKAGE_UNRESOLVED_MAX_RETRIES", "SUSPICIOUS", "SUSPICIOUS_STRONG"]
+            cs_succeeded = result_cs.mean_score != -999.0 and result_cs.status not in skip_statuses
+            if cs_succeeded:
+                results_cs.append(result_cs)
+                results.append(result_cs)
+            else:
+                reason = result_cs.status if result_cs.status in skip_statuses else (result_cs.leakage_flag if result_cs.leakage_flag != "OK" else "degenerate/failed")
+                if result_cs.status in ["SUSPICIOUS", "SUSPICIOUS_STRONG"]:
+                    logger.warning(f"  ⚠️  Excluded {target_name} CROSS_SECTIONAL ({reason}) - High score suggests structural leakage")
+                else:
+                    logger.info(f"  Skipped {target_name} CROSS_SECTIONAL ({reason})")
+            
+            # Store symbol-specific results
+            if enable_symbol_specific:
+                if target_name not in results_sym:
+                    results_sym[target_name] = {}
+                for symbol, result_sym in result_sym_dict.items():
+                    if result_sym.mean_score != -999.0 and result_sym.status not in skip_statuses:
+                        results_sym[target_name][symbol] = result_sym
+                    else:
+                        reason = result_sym.status if result_sym.status in skip_statuses else "degenerate/failed"
+                        logger.debug(f"    Skipped {target_name} SYMBOL_SPECIFIC ({symbol}): {reason}")
+            
+            # Store LOSO results
+            if enable_loso:
+                if target_name not in results_loso:
+                    results_loso[target_name] = {}
+                for symbol, result_loso_sym in result_loso_dict.items():
+                    if result_loso_sym.mean_score != -999.0 and result_loso_sym.status not in skip_statuses:
+                        results_loso[target_name][symbol] = result_loso_sym
+    else:
+        # Sequential evaluation (original code path)
+        if parallel_enabled and len(targets_to_evaluate) == 1:
+            logger.info("Running sequentially (only 1 target)")
+        elif not parallel_enabled:
+            logger.info("Parallel execution disabled (parallel_targets=false or not available)")
+        
+        # Evaluate each target in dual views
+        for idx, (target_name, target_config) in enumerate(targets_to_evaluate.items(), 1):
         logger.info(f"[{idx}/{total_to_evaluate}] Evaluating {target_name}...")
         
         try:

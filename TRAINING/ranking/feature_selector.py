@@ -60,6 +60,13 @@ warnings.filterwarnings('ignore', category=FutureWarning)
 warnings.filterwarnings('ignore', category=UserWarning)
 warnings.filterwarnings('ignore', message='X does not have valid feature names')
 
+# Import parallel execution utilities
+try:
+    from TRAINING.common.parallel_exec import execute_parallel, get_max_workers
+    _PARALLEL_AVAILABLE = True
+except ImportError:
+    _PARALLEL_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 
 
@@ -176,23 +183,35 @@ def select_features_for_target(
     logger.info(f"Selecting features for target: {target_column} (view={view})")
     logger.info(f"Model families: {', '.join([f for f, cfg in model_families_config.items() if cfg.get('enabled', False)])}")
     
-    # Process each symbol (filtered by view)
-    all_results = []
-    all_family_statuses = []  # Collect status info for all families across all symbols
-    for idx, symbol in enumerate(symbols_to_process, 1):
-        logger.info(f"[{idx}/{len(symbols_to_process)}] Processing {symbol}...")
-        
-        # Find symbol data file
+    # Load parallel execution config
+    parallel_symbols = False
+    try:
+        from CONFIG.config_loader import get_cfg
+        feature_selection_cfg = get_cfg("multi_model_feature_selection", default={}, config_name="multi_model_feature_selection")
+        parallel_symbols = feature_selection_cfg.get('parallel_symbols', False)
+    except Exception:
+        pass
+    
+    # Check if parallel execution is globally enabled
+    parallel_enabled = _PARALLEL_AVAILABLE and parallel_symbols
+    if parallel_enabled:
+        try:
+            from CONFIG.config_loader import get_cfg
+            parallel_global = get_cfg("threading.parallel.enabled", default=True, config_name="threading_config")
+            parallel_enabled = parallel_enabled and parallel_global
+        except Exception:
+            pass
+    
+    # Helper function for parallel symbol processing (must be picklable)
+    def _process_single_symbol_wrapper(symbol):
+        """Process a single symbol - wrapper for parallel execution"""
         symbol_dir = data_dir / f"symbol={symbol}"
         data_path = symbol_dir / f"{symbol}.parquet"
         
         if not data_path.exists():
-            logger.warning(f"  Data file not found: {data_path}")
-            continue
+            return symbol, None, None, f"Data file not found: {data_path}"
         
         try:
-            # Process symbol (preserves all leakage-free behavior)
-            # Returns tuple: (results, family_statuses)
             symbol_results, symbol_statuses = _process_single_symbol(
                 symbol=symbol,
                 data_path=data_path,
@@ -201,16 +220,80 @@ def select_features_for_target(
                 max_samples=max_samples_per_symbol,
                 explicit_interval=explicit_interval,
                 experiment_config=experiment_config,
-                output_dir=output_dir  # Pass output_dir for reproducibility tracking
+                output_dir=output_dir
             )
+            return symbol, symbol_results, symbol_statuses, None
+        except Exception as e:
+            return symbol, None, None, str(e)
+    
+    # Process symbols (parallel or sequential)
+    all_results = []
+    all_family_statuses = []
+    
+    if parallel_enabled and len(symbols_to_process) > 1:
+        logger.info(f"🚀 Parallel symbol processing enabled ({len(symbols_to_process)} symbols)")
+        parallel_results = execute_parallel(
+            _process_single_symbol_wrapper,
+            symbols_to_process,
+            max_workers=None,  # Auto-detect from config
+            task_type="process",  # CPU-bound
+            desc="Processing symbols",
+            show_progress=True
+        )
+        
+        # Process parallel results
+        for symbol, symbol_results, symbol_statuses, error in parallel_results:
+            if error:
+                logger.error(f"  ❌ {symbol} failed: {error}")
+                continue
+            
+            if symbol_results is None:
+                logger.warning(f"  ⚠️  {symbol}: No results")
+                continue
             
             all_results.extend(symbol_results)
-            all_family_statuses.extend(symbol_statuses)
+            if symbol_statuses:
+                all_family_statuses.extend(symbol_statuses)
             logger.info(f"  ✅ {symbol}: {len(symbol_results)} model results")
+    else:
+        # Sequential processing (original code path)
+        if parallel_enabled and len(symbols_to_process) == 1:
+            logger.info("Running sequentially (only 1 symbol)")
+        elif not parallel_enabled:
+            logger.info("Parallel execution disabled (parallel_symbols=false or not available)")
         
-        except Exception as e:
-            logger.error(f"  ❌ {symbol} failed: {e}")
-            continue
+        for idx, symbol in enumerate(symbols_to_process, 1):
+            logger.info(f"[{idx}/{len(symbols_to_process)}] Processing {symbol}...")
+            
+            # Find symbol data file
+            symbol_dir = data_dir / f"symbol={symbol}"
+            data_path = symbol_dir / f"{symbol}.parquet"
+            
+            if not data_path.exists():
+                logger.warning(f"  Data file not found: {data_path}")
+                continue
+            
+            try:
+                # Process symbol (preserves all leakage-free behavior)
+                # Returns tuple: (results, family_statuses)
+                symbol_results, symbol_statuses = _process_single_symbol(
+                    symbol=symbol,
+                    data_path=data_path,
+                    target_column=target_column,
+                    model_families_config=model_families_config,
+                    max_samples=max_samples_per_symbol,
+                    explicit_interval=explicit_interval,
+                    experiment_config=experiment_config,
+                    output_dir=output_dir  # Pass output_dir for reproducibility tracking
+                )
+                
+                all_results.extend(symbol_results)
+                all_family_statuses.extend(symbol_statuses)
+                logger.info(f"  ✅ {symbol}: {len(symbol_results)} model results")
+            
+            except Exception as e:
+                logger.error(f"  ❌ {symbol} failed: {e}")
+                continue
     
     if not all_results:
         logger.warning("No results from any symbol")
