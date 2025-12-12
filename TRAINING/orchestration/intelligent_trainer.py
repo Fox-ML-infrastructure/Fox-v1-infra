@@ -1992,6 +1992,11 @@ Examples:
     # Force refresh from config or CLI
     force_refresh = args.force_refresh or force_refresh_config
     
+    # Decision application mode (CLI overrides config)
+    decision_mode = args.apply_decisions if hasattr(args, 'apply_decisions') and args.apply_decisions else decision_apply_mode_config
+    decision_apply_mode = (decision_mode == 'apply')
+    decision_dry_run = (decision_mode == 'dry_run')
+    
     # Run training with config-driven settings
     try:
         results = trainer.train_with_intelligence(
