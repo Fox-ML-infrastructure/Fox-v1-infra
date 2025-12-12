@@ -518,7 +518,8 @@ class IntelligentTrainer:
                     self.target_ranking_cache = self.cache_dir / "target_rankings.json"
                     self.feature_selection_cache = self.cache_dir / "feature_selections"
                     
-                    logger.info(f"✅ Organized run by sample size (N={self._n_effective}): {self.output_dir}")
+                    bin_name = self._get_sample_size_bin(self._n_effective)
+                    logger.info(f"✅ Organized run by sample size bin (N={self._n_effective}, bin={bin_name}): {self.output_dir}")
                     return
                 except Exception as move_error:
                     logger.error(f"Failed to move directory: {move_error}")
@@ -561,13 +562,14 @@ class IntelligentTrainer:
                                 
                                 import shutil
                                 new_output_dir.parent.mkdir(parents=True, exist_ok=True)
-                                logger.info(f"📁 Moving run from {self._initial_output_dir} to {new_output_dir} (found via recursive search, N={self._n_effective})")
+                                bin_name = self._get_sample_size_bin(self._n_effective)
+                                logger.info(f"📁 Moving run from {self._initial_output_dir} to {new_output_dir} (found via recursive search, N={self._n_effective}, bin={bin_name})")
                                 shutil.move(str(self._initial_output_dir), str(new_output_dir))
                                 self.output_dir = new_output_dir
                                 self.cache_dir = self.output_dir / "cache"
                                 self.target_ranking_cache = self.cache_dir / "target_rankings.json"
                                 self.feature_selection_cache = self.cache_dir / "feature_selections"
-                                logger.info(f"✅ Organized run by sample size (N={self._n_effective}): {self.output_dir}")
+                                logger.info(f"✅ Organized run by sample size bin (N={self._n_effective}, bin={bin_name}): {self.output_dir}")
                                 return
                         except Exception as e:
                             logger.debug(f"Failed to read metadata from {metadata_file}: {e}")
