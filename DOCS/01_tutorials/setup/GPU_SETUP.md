@@ -78,18 +78,26 @@ lightgbm:
 
 ## Performance Expectations
 
+### When GPU Acceleration Helps
+- **Large datasets (>100k-200k rows)**: GPU provides 10-50x speedup
+- **Small datasets (<100k rows)**: CPU may be faster due to GPU overhead (data transfer, kernel management)
+- **Rule of thumb**: If your dataset is < 50k rows, consider using CPU instead of GPU
+
 ### Target Ranking
 - **CPU**: ~5-15 minutes per target (with 11 model families)
-- **GPU**: ~1-3 minutes per target (10-50x speedup on large datasets)
+- **GPU (large datasets)**: ~1-3 minutes per target (10-50x speedup)
+- **GPU (small datasets)**: May be slower than CPU due to overhead
 
 ### Feature Selection
 - **CPU**: ~2-5 minutes per symbol (421 features)
-- **GPU (7GB)**: ~10-30 seconds per symbol
-- **GPU (11GB+)**: ~5-15 seconds per symbol
+- **GPU (7GB, large datasets)**: ~10-30 seconds per symbol
+- **GPU (11GB+, large datasets)**: ~5-15 seconds per symbol
+- **GPU (small datasets)**: May be slower than CPU due to overhead
 
 ### Model Training
 - **CPU**: Varies by model family
-- **GPU**: 10-50x speedup for supported families (LightGBM, XGBoost, CatBoost, neural networks)
+- **GPU (large datasets)**: 10-50x speedup for supported families (LightGBM, XGBoost, CatBoost, neural networks)
+- **GPU (small datasets)**: May be slower than CPU due to overhead
 
 ## Troubleshooting
 

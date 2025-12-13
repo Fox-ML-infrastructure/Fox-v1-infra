@@ -59,6 +59,20 @@ This document tracks features that are **not yet fully functional**, have **know
 - **Configuration**: Ensure `gpu.catboost.task_type: "GPU"` is set in `gpu_config.yaml`
 - **Verification**: Watch GPU memory allocation with `watch -n 0.1 nvidia-smi` (quantization happens on CPU first)
 
+**CPU Bottleneck (GPU Underutilization):**
+- **Symptom**: CPU at 100% usage, GPU at low utilization (30-40%), slow training despite GPU being enabled
+- **Cause**: For small datasets (<100k-200k rows), the overhead of CPU data preparation, VRAM transfers, and CUDA kernel management exceeds the actual GPU computation time. The GPU finishes quickly and waits for the CPU to prepare the next batch.
+- **Diagnosis**: 
+  - Check system monitor: CPU at 100%, load average > number of cores
+  - GPU utilization < 50% despite `task_type='GPU'` being set
+  - Dataset size < 100k rows
+- **Solutions**:
+  1. **For datasets < 100k rows**: Use CPU training instead of GPU (counter-intuitive but faster due to reduced overhead)
+  2. **Reduce CPU threads**: Set `thread_count=8` or `10` (leave headroom for OS and GPU driver) instead of `-1` (all cores)
+  3. **Check metric calculation**: Use built-in GPU metrics (e.g., `eval_metric='AUC'`) rather than custom Python functions (which force CPU evaluation)
+  4. **Increase batch size**: If using data loaders, increase batch size to give GPU more work per iteration
+- **When to use GPU**: GPU acceleration is most beneficial for datasets > 100k-200k rows where the computation time exceeds the overhead
+
 **General GPU Issues:**
 - If GPU isn't being used, check logs for:
   - `✅ Using GPU (CUDA) for [Model]` - GPU is active
