@@ -6,7 +6,7 @@ Installation and basic usage.
 
 - Python 3.11+
 - 8GB+ RAM (16GB+ recommended)
-- GPU optional (CUDA 11.8+ if using GPU)
+- GPU optional (CUDA 11.8+ if using GPU) - **Recommended for target ranking and feature selection** (10-50x speedup)
 
 ## Installation
 
@@ -45,6 +45,17 @@ python DATA_PROCESSING/pipeline/barrier_pipeline.py \
     --input-dir data/data_labeled/interval=5m/ \
     --output-dir DATA_PROCESSING/data/labeled/
 ```
+
+## GPU Acceleration (Optional but Recommended)
+
+GPU acceleration is automatically enabled for target ranking and feature selection when available:
+
+- **Automatic**: System detects and uses GPU automatically
+- **Configuration**: All settings in `CONFIG/training_config/gpu_config.yaml`
+- **Performance**: 10-50x speedup on large datasets (>100k samples)
+- **Supported**: LightGBM, XGBoost, CatBoost
+
+See [GPU Setup Guide](../01_tutorials/setup/GPU_SETUP.md) for detailed configuration.
 
 ## Model Training
 

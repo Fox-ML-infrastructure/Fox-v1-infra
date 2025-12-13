@@ -28,6 +28,7 @@ Independent Contractor • ML Engineering • Cross-Sectional ML Systems • Sys
 FoxML Core demonstrates:
 
 - **Intelligent training pipeline** with automated target ranking and feature selection
+- **GPU acceleration** (NEW 2025-12-12): Target ranking and feature selection automatically use GPU (LightGBM, XGBoost, CatBoost) when available
 - **Dual-view target ranking** (NEW): Cross-sectional and symbol-specific evaluation views with automatic routing decisions
 - **Config-based simple usage** (NEW): Run full pipeline with minimal command-line arguments using configuration files
 - **ResolvedConfig system** (NEW): Centralized configuration resolution ensures consistent logging and correct purge/embargo calculation
