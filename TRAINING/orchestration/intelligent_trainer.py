@@ -1942,7 +1942,14 @@ Examples:
         top_m_features = intel_cfg.get('top_m_features', 100)
         strategy = intel_cfg.get('strategy', 'single_task')
         min_cs = intel_cfg.get('min_cs', 10)
-        max_rows_per_symbol = intel_cfg.get('max_rows_per_symbol', None)
+        
+        # Priority: experiment_config object > intel_cfg dict (backward compatibility)
+        # Support both max_rows_per_symbol and max_samples_per_symbol
+        if experiment_config and hasattr(experiment_config, 'max_samples_per_symbol'):
+            max_rows_per_symbol = experiment_config.max_samples_per_symbol
+        else:
+            max_rows_per_symbol = intel_cfg.get('max_rows_per_symbol') or intel_cfg.get('max_samples_per_symbol', None)
+        
         max_rows_train = intel_cfg.get('max_rows_train', None)
         max_cs_samples = intel_cfg.get('max_cs_samples', None)
         run_leakage_diagnostics = intel_cfg.get('run_leakage_diagnostics', False)
