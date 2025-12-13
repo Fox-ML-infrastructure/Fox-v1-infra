@@ -1689,14 +1689,24 @@ def train_and_evaluate_models(
             # Use random_forest config for Boruta estimator
             rf_config = get_model_config('random_forest', multi_model_config)
             
-            if is_binary or is_multiclass:
-                rf = RandomForestClassifier(**rf_config)
-            else:
-                rf = RandomForestRegressor(**rf_config)
+            # Get random_state from SST (determinism system) - no hardcoded defaults
+            boruta_random_state = boruta_config.get('random_state')
+            if boruta_random_state is None:
+                from TRAINING.common.determinism import stable_seed_from
+                boruta_random_state = stable_seed_from(['boruta', target_column if target_column else 'default'])
             
-            boruta = BorutaPy(rf, n_estimators='auto', verbose=0, 
-                            random_state=boruta_config['random_state'],
-                            max_iter=boruta_config['max_iter'])
+            # Remove random_state from rf_config to prevent double argument error
+            rf_config_clean = rf_config.copy()
+            rf_config_clean.pop('random_state', None)
+            
+            if is_binary or is_multiclass:
+                rf = RandomForestClassifier(**rf_config_clean, random_state=boruta_random_state)
+            else:
+                rf = RandomForestRegressor(**rf_config_clean, random_state=boruta_random_state)
+            
+            boruta = BorutaPy(rf, n_estimators='auto', verbose=0,
+                            random_state=boruta_random_state,
+                            max_iter=boruta_config.get('max_iter', 100))
             boruta.fit(X_dense, y)
             
             # Get R² using cross-validation on selected features (proper validation)
@@ -1755,11 +1765,15 @@ def train_and_evaluate_models(
             
             # Get config values
             stability_config = get_model_config('stability_selection', multi_model_config)
-            n_bootstrap = stability_config['n_bootstrap']
-            random_state = stability_config['random_state']
-            stability_cv = stability_config['cv']
-            stability_n_jobs = stability_config['n_jobs']
-            stability_cs = stability_config['Cs']
+            n_bootstrap = stability_config.get('n_bootstrap', 50)
+            # Get random_state from SST (determinism system) - no hardcoded defaults
+            random_state = stability_config.get('random_state')
+            if random_state is None:
+                from TRAINING.common.determinism import stable_seed_from
+                random_state = stable_seed_from(['stability_selection', target_column if target_column else 'default'])
+            stability_cv = stability_config.get('cv', 3)
+            stability_n_jobs = stability_config.get('n_jobs', 1)
+            stability_cs = stability_config.get('Cs', 10)
             stability_scores = np.zeros(X_dense.shape[1])
             bootstrap_r2_scores = []
             

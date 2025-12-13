@@ -1298,13 +1298,19 @@ def train_model_and_get_importance(
             estimator_n_estimators = model_config.get('estimator_n_estimators', rfe_cfg.get('estimator_n_estimators', 100))
             estimator_max_depth = model_config.get('estimator_max_depth', rfe_cfg.get('estimator_max_depth', 10))
             estimator_n_jobs = model_config.get('estimator_n_jobs', rfe_cfg.get('estimator_n_jobs', 1))
-            estimator_random_state = model_config.get('random_state', 42)  # Use model_config random_state if available
+            # Get random_state from SST (determinism system) - no hardcoded defaults
+            estimator_random_state = model_config.get('random_state')
+            if estimator_random_state is None:
+                estimator_random_state = stable_seed_from(['rfe', target_column if target_column else 'default', symbol if symbol else 'all'])
         except Exception as e:
             logger.debug(f"Failed to load RFE config: {e}, using model_config defaults")
             estimator_n_estimators = model_config.get('estimator_n_estimators', 100)
             estimator_max_depth = model_config.get('estimator_max_depth', 10)
             estimator_n_jobs = model_config.get('estimator_n_jobs', 1)
-            estimator_random_state = model_config.get('random_state', 42)
+            # Get random_state from SST (determinism system) - no hardcoded defaults
+            estimator_random_state = model_config.get('random_state')
+            if estimator_random_state is None:
+                estimator_random_state = stable_seed_from(['rfe', target_column if target_column else 'default', symbol if symbol else 'all'])
         
         if is_binary or is_multiclass:
             estimator = RandomForestClassifier(
@@ -1388,12 +1394,17 @@ def train_model_and_get_importance(
             # Use ExtraTrees (more random, better for stability testing) with Boruta-optimized hyperparams
             # More trees + shallower depth = stable importance signals, not best predictive performance
             # Load from preprocessing config if not in model_config
+            # CRITICAL: random_state comes from SST (determinism system), not hardcoded
             try:
                 from CONFIG.config_loader import get_cfg
                 boruta_cfg = get_cfg("preprocessing.multi_model_feature_selection.boruta", default={}, config_name="preprocessing_config")
                 boruta_n_estimators = model_config.get('n_estimators', boruta_cfg.get('n_estimators', 500))
                 boruta_max_depth = model_config.get('max_depth', boruta_cfg.get('max_depth', 6))
-                boruta_random_state = model_config.get('random_state', 42)
+                # Get random_state from SST (determinism config) - no hardcoded defaults
+                boruta_random_state = model_config.get('random_state') or boruta_cfg.get('random_state')
+                if boruta_random_state is None:
+                    # Fallback to determinism system if not in config
+                    boruta_random_state = stable_seed_from(['boruta', target_column if target_column else 'default', symbol if symbol else 'all'])
                 boruta_max_iter = model_config.get('max_iter', boruta_cfg.get('max_iter', 100))
                 boruta_n_jobs = model_config.get('n_jobs', boruta_cfg.get('n_jobs', 1))
                 boruta_verbose = model_config.get('verbose', boruta_cfg.get('verbose', 0))
@@ -1401,7 +1412,10 @@ def train_model_and_get_importance(
                 logger.debug(f"Failed to load Boruta config: {e}, using model_config defaults")
                 boruta_n_estimators = model_config.get('n_estimators', 500)
                 boruta_max_depth = model_config.get('max_depth', 6)
-                boruta_random_state = model_config.get('random_state', 42)
+                # Get random_state from SST (determinism system) - no hardcoded defaults
+                boruta_random_state = model_config.get('random_state')
+                if boruta_random_state is None:
+                    boruta_random_state = stable_seed_from(['boruta', target_column if target_column else 'default', symbol if symbol else 'all'])
                 boruta_max_iter = model_config.get('max_iter', 100)
                 boruta_n_jobs = model_config.get('n_jobs', 1)
                 boruta_verbose = model_config.get('verbose', 0)
@@ -1553,7 +1567,10 @@ def train_model_and_get_importance(
         purged_cv = PurgedTimeSeriesSplit(n_splits=n_splits, purge_overlap=purge_overlap)
         
         n_bootstrap = model_config.get('n_bootstrap', 50)  # Reduced for speed
-        stability_random_state = model_config.get('random_state', 42)
+        # Get random_state from SST (determinism system) - no hardcoded defaults
+        stability_random_state = model_config.get('random_state')
+        if stability_random_state is None:
+            stability_random_state = stable_seed_from(['stability_selection', target_column if target_column else 'default', symbol if symbol else 'all'])
         stability_cs = model_config.get('Cs', 10)  # Number of C values for LogisticRegressionCV
         stability_max_iter = model_config.get('max_iter', 1000)  # Max iterations for LassoCV/LogisticRegressionCV
         stability_n_jobs = model_config.get('n_jobs', 1)  # Parallel jobs

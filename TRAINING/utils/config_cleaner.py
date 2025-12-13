@@ -108,6 +108,16 @@ def clean_config_for_estimator(
         if verbose_val is not None:
             logger.debug(f"[{family_name}] Removed verbose={verbose_val} from config (will use explicit value if provided)")
     
+    # Special case: Remove 'random_state' from config if it exists and will be passed explicitly
+    # random_state is often set explicitly in code (from determinism system), so remove from config to avoid conflicts
+    # This is a defensive measure - explicit random_state= in code takes precedence
+    if 'random_state' in config and 'random_state' not in extra_kwargs:
+        # Only remove if not in extra_kwargs (if in extra_kwargs, it was already removed above)
+        # But we still want to remove it to prevent conflicts with explicit random_state= in code
+        random_state_val = config.pop('random_state', None)
+        if random_state_val is not None:
+            logger.debug(f"[{family_name}] Removed random_state={random_state_val} from config (will use explicit value if provided)")
+    
     # Remove keys the estimator doesn't know about (unknown params)
     if valid_params is not None:
         for k in list(config.keys()):
