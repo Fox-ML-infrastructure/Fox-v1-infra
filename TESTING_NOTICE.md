@@ -44,6 +44,7 @@ Recent improvements:
   - XGBoost, CatBoost, and LightGBM GPU acceleration
   - XGBoost 3.1+ compatibility (fixed `gpu_id` removal issue)
   - CatBoost GPU verification (explicit `task_type='GPU'` requirement)
+  - CatBoost CPU bottleneck mitigation (thread_count limiting added, under investigation)
   - Automatic detection with graceful CPU fallback
   - All settings config-driven from `gpu_config.yaml` (SST)
 - ✅ **NEW**: Training Routing & Planning System (2025-12-11) - **Currently being tested**
@@ -79,6 +80,12 @@ Recent improvements:
 ### GPU Acceleration
 - **XGBoost 3.1+**: If you see `gpu_id has been removed since 3.1` errors, ensure you're using the latest code (fixed 2025-12-12)
 - **CatBoost GPU**: CatBoost requires `task_type='GPU'` explicitly set. Check logs for `✅ CatBoost GPU verified` to confirm GPU is being used
+- **CatBoost CPU Bottleneck** ⚠️ **UNDER INVESTIGATION** (2025-12-12):
+  - **Issue**: CPU at 100% usage, GPU at low utilization (30-40%) during CatBoost GPU training, especially on small datasets (<100k rows)
+  - **Cause**: CPU data preparation/quantization overhead exceeds GPU computation time for small datasets
+  - **Current Fix**: `thread_count` limiting added (default: 8 threads) via `gpu.catboost.thread_count` in `gpu_config.yaml`
+  - **Status**: Being actively investigated. For small datasets (<50k rows), consider using CPU instead of GPU
+  - **Workaround**: Set `gpu.catboost.thread_count: 8` (or lower) in `gpu_config.yaml` to reduce CPU bottleneck
 - **GPU Detection**: If GPU isn't being used, check logs for `⚠️ [Model] GPU test failed` messages and verify CUDA drivers are installed
 - See [GPU Setup Guide](DOCS/01_tutorials/setup/GPU_SETUP.md) and [Known Issues](DOCS/02_reference/KNOWN_ISSUES.md) for detailed troubleshooting
 
