@@ -1847,6 +1847,34 @@ Examples:
         max_targets_to_evaluate = targets_cfg.get('max_targets_to_evaluate', None)
         manual_targets = targets_cfg.get('manual_targets', [])
         
+        # NEW: Extract manual_targets from experiment config if available (overrides config file)
+        if experiment_config:
+            try:
+                import yaml
+                from pathlib import Path
+                exp_name = experiment_config.name
+                exp_file = Path("CONFIG/experiments") / f"{exp_name}.yaml"
+                if exp_file.exists():
+                    with open(exp_file, 'r') as f:
+                        exp_yaml = yaml.safe_load(f) or {}
+                    intel_training = exp_yaml.get('intelligent_training', {})
+                    if intel_training:
+                        exp_manual_targets = intel_training.get('manual_targets', [])
+                        if exp_manual_targets:
+                            manual_targets = exp_manual_targets
+                            logger.info(f"📋 Using manual targets from experiment config: {manual_targets}")
+                        exp_auto_targets = intel_training.get('auto_targets', True)
+                        if not exp_auto_targets:
+                            auto_targets = False
+                            logger.info(f"📋 Disabled auto_targets from experiment config (using manual targets)")
+            except Exception as e:
+                logger.debug(f"Could not load intelligent_training from experiment config: {e}")
+            
+            # Fallback: Use targets.primary if no manual_targets specified
+            if not manual_targets and hasattr(experiment_config, 'target') and experiment_config.target:
+                manual_targets = [experiment_config.target]
+                logger.info(f"📋 Using primary target from experiment config: {manual_targets}")
+        
         auto_features = features_cfg.get('auto_features', True)
         top_m_features = features_cfg.get('top_m_features', 100)
         manual_features = features_cfg.get('manual_features', [])
