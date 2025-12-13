@@ -67,6 +67,21 @@ This document tracks features that are **not yet fully functional**, have **know
 - Verify GPU config in `CONFIG/training_config/gpu_config.yaml`
 - Ensure CUDA drivers and GPU-enabled libraries are installed
 
+**Process Deadlock/Hang (readline library conflict):**
+- **Symptom**: Process hangs for 10+ minutes on small datasets, CPU at 100%, error: `sh: symbol lookup error: sh: undefined symbol: rl_print_keybinding`
+- **Cause**: Conda environment's `readline` library conflicts with system's `readline` library, causing shell command failures (e.g., `nvidia-smi` checks) to retry indefinitely
+- **Fix**:
+  1. Kill the hung process (`Ctrl+C` or `kill -9`)
+  2. Repair Conda environment:
+     ```bash
+     conda install -c conda-forge readline=8.2
+     # Or: conda update readline
+     # If that doesn't work, also install:
+     conda install -c conda-forge ncurses
+     ```
+  3. Verify fix: Run a quick test - training should complete in seconds, not minutes
+- **Prevention**: The system already sets `TERM=dumb` and `SHELL=/usr/bin/bash` in isolation runner to mitigate readline issues, but Conda environment conflicts can still occur
+
 ---
 
 ## Target Ranking & Feature Selection

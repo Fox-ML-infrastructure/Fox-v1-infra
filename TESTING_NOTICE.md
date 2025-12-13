@@ -54,30 +54,41 @@ Recent improvements:
 
 ## What's Being Tested
 
-- **GPU Acceleration** (NEW - 2025-12-12):
-  - XGBoost 3.1+ GPU compatibility (verify no `gpu_id` errors)
-  - CatBoost GPU usage verification (check logs for `✅ CatBoost GPU verified`)
-  - GPU detection and fallback behavior
-  - Performance improvements on large datasets
-  - **Note**: CatBoost does quantization on CPU first (20+ seconds), then trains on GPU. Watch GPU memory allocation, not just utilization %, to verify GPU usage.
-
 - **Training Routing System** (NEW - 2025-12-11):
   - One-command pipeline: target ranking → feature selection → training plan → training execution
   - 2-stage training (CPU models first, then GPU models)
   - Training plan auto-detection and filtering
   - All 20 models (sequential + cross-sectional)
-
 - Full pipeline validation: target ranking → feature selection → model training
 - Testing with 5 symbols (AAPL, MSFT, GOOGL, TSLA, NVDA)
 - Validating all model families (20 families)
 - Verifying config-driven reproducibility
+
+## Known Issues & Workarounds
+
+### Process Deadlock/Hang (readline library conflict)
+- **Symptom**: Process hangs for 10+ minutes on small datasets, CPU at 100%, error: `sh: symbol lookup error: sh: undefined symbol: rl_print_keybinding`
+- **Cause**: Conda environment's `readline` library conflicts with system's `readline` library
+- **Fix**: 
+  1. Kill hung process (`Ctrl+C` or `kill -9`)
+  2. Repair environment: `conda install -c conda-forge readline=8.2` (or `conda update readline`)
+  3. If needed: `conda install -c conda-forge ncurses`
+- **Prevention**: System sets `TERM=dumb` and `SHELL=/usr/bin/bash` to mitigate, but Conda conflicts can still occur
+- See [Known Issues](DOCS/02_reference/KNOWN_ISSUES.md) for details
+
+### GPU Acceleration
+- **XGBoost 3.1+**: If you see `gpu_id has been removed since 3.1` errors, ensure you're using the latest code (fixed 2025-12-12)
+- **CatBoost GPU**: CatBoost requires `task_type='GPU'` explicitly set. Check logs for `✅ CatBoost GPU verified` to confirm GPU is being used
+- **GPU Detection**: If GPU isn't being used, check logs for `⚠️ [Model] GPU test failed` messages and verify CUDA drivers are installed
+- See [GPU Setup Guide](DOCS/01_tutorials/setup/GPU_SETUP.md) and [Known Issues](DOCS/02_reference/KNOWN_ISSUES.md) for detailed troubleshooting
 
 ## Reporting Issues
 
 If you encounter issues:
 1. Check `CHANGELOG.md` for recent changes
 2. Review detailed changelog: `DOCS/02_reference/changelog/README.md`
-3. Report with sufficient detail (config, error messages, environment)
+3. Check [Known Issues & Limitations](DOCS/02_reference/KNOWN_ISSUES.md) for known problems and workarounds
+4. Report with sufficient detail (config, error messages, environment, GPU status)
 
 ---
 

@@ -256,13 +256,18 @@ class XGBoostTrainer(BaseModelTrainer):
             # Check if CUDA runtime is actually available
             try:
                 import subprocess
-                result = subprocess.run(['nvidia-smi', '--query-gpu=name', '--format=csv,noheader'], 
-                                      capture_output=True, timeout=2)
+                # Set environment to avoid readline conflicts (see KNOWN_ISSUES.md)
+                env = os.environ.copy()
+                env.setdefault('TERM', 'dumb')  # Disable readline features
+                env.setdefault('SHELL', '/usr/bin/bash')  # Use bash instead of sh
+                result = subprocess.run(['nvidia-smi', '--query-gpu=name', '--format=csv,noheader'],
+                                      capture_output=True, timeout=2, env=env)
                 if result.returncode != 0:
                     logger.info("[XGBoost] nvidia-smi failed, GPU not accessible")
                     return False
-            except (FileNotFoundError, subprocess.TimeoutExpired):
-                logger.info("[XGBoost] nvidia-smi not available, GPU not accessible")
+            except (FileNotFoundError, subprocess.TimeoutExpired, OSError) as e:
+                # OSError can occur with readline library conflicts (symbol lookup errors)
+                logger.info(f"[XGBoost] nvidia-smi not available, GPU not accessible: {e}")
                 return False
             
             # Try to actually use GPU - this is the real test
