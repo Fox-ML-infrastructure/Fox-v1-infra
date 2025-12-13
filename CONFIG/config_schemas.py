@@ -63,7 +63,7 @@ class ExperimentConfig:
     name: str
     data_dir: Path
     symbols: List[str]
-    target: str
+    target: str = ""  # Optional: can be empty if auto_targets=true
     data: DataConfig = field(default_factory=lambda: DataConfig())  # Data configuration
     max_samples_per_symbol: int = 5000
     description: Optional[str] = None
@@ -83,8 +83,9 @@ class ExperimentConfig:
             raise ValueError("ExperimentConfig.name cannot be empty")
         if not self.symbols:
             raise ValueError("ExperimentConfig.symbols cannot be empty")
-        if not self.target:
-            raise ValueError("ExperimentConfig.target cannot be empty")
+        # target is optional when auto_targets=true (will be discovered)
+        # Only validate if target is explicitly set (non-empty string)
+        # Empty string is allowed and will be overridden by auto_targets
         if self.max_samples_per_symbol < 1:
             raise ValueError(f"ExperimentConfig.max_samples_per_symbol must be >= 1, got {self.max_samples_per_symbol}")
     
