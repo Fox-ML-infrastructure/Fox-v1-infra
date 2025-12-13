@@ -1315,24 +1315,66 @@ def train_model_and_get_importance(
                             )
                     
                     # Check for high cardinality categoricals (potential ID columns)
+                    # Only flag for DROP when multiple ID signals agree (categorical + high unique ratio + ID-like name)
+                    # Numeric columns with high cardinality are normal (continuous features) - just warn, don't suggest dropping
+                    cat_features_list = cb_config.get('cat_features', [])
+                    if isinstance(cat_features_list, (list, tuple)):
+                        cat_features_set = set(cat_features_list)
+                    else:
+                        cat_features_set = set()
+                    
                     high_cardinality_features = []
                     for col in feature_names:
                         if col in X_df.columns:
                             try:
                                 unique_count = X_df[col].nunique()
-                                if unique_count > 1000 and unique_count > len(X_df) * 0.8:  # >80% unique values
-                                    # Check if name suggests it's an ID column
-                                    id_patterns = ['_id', '_ID', 'id_', 'ID_', 'user_', 'User_', 'ip_', 'IP_', 'row_', 'Row_']
-                                    if any(pattern in col for pattern in id_patterns) or unique_count == len(X_df):
-                                        high_cardinality_features.append((col, unique_count))
+                                unique_ratio = unique_count / len(X_df) if len(X_df) > 0 else 0
+                                
+                                # Check if column is treated as categorical
+                                is_categorical = (
+                                    col in cat_features_set or
+                                    X_df[col].dtype.name in ['object', 'category', 'string'] or
+                                    str(X_df[col].dtype).startswith('category')
+                                )
+                                
+                                # Check if it's numeric (float/int) - high cardinality is normal for continuous features
+                                is_numeric = pd.api.types.is_numeric_dtype(X_df[col])
+                                
+                                # ID-like name patterns
+                                id_patterns = ['_id', '_ID', 'id_', 'ID_', 'user_', 'User_', 'ip_', 'IP_', 'row_', 'Row_',
+                                              'uuid', 'UUID', 'tx_', 'order_', 'session_', 'hash_', '_key', '_Key']
+                                has_id_name = any(pattern in col for pattern in id_patterns)
+                                
+                                # Check if values mostly occur once (median count per value <= 2)
+                                value_counts = X_df[col].value_counts()
+                                median_count = value_counts.median() if len(value_counts) > 0 else float('inf')
+                                
+                                # Only suggest DROP when multiple ID signals agree:
+                                # 1. Treated as categorical (not numeric)
+                                # 2. High unique ratio (>0.2 or >0.5 for strict)
+                                # 3. Values mostly unique (median count <= 2) OR unique_ratio > 0.8
+                                # 4. ID-like name OR near-perfect uniqueness
+                                should_drop = (
+                                    is_categorical and  # Must be categorical (not numeric)
+                                    unique_ratio > 0.2 and  # High unique ratio
+                                    (median_count <= 2 or unique_ratio > 0.8) and  # Mostly unique values
+                                    (has_id_name or unique_ratio > 0.95)  # ID-like name OR near-perfect uniqueness
+                                )
+                                
+                                if should_drop:
+                                    high_cardinality_features.append((col, unique_count, unique_ratio, is_categorical))
+                                elif is_numeric and unique_ratio > 0.8 and unique_count > 1000:
+                                    # Numeric column with high cardinality - this is normal for continuous features
+                                    # Just log a debug message, don't warn (this is expected behavior)
+                                    logger.debug(f"    catboost: Column '{col}' is numeric with high cardinality ({unique_count} unique, {unique_ratio:.1%} unique ratio) - this is normal for continuous features")
                             except Exception:
                                 pass  # Skip if can't compute unique count
                     
                     if high_cardinality_features:
-                        id_cols = [col for col, _ in high_cardinality_features[:5]]
+                        id_cols = [col for col, _, _, _ in high_cardinality_features[:5]]
                         warnings_issued.append(
-                            f"⚠️  CatBoost: Detected {len(high_cardinality_features)} high-cardinality ID-like columns: {id_cols}{'...' if len(high_cardinality_features) > 5 else ''}. "
-                            f"Consider dropping these columns (they don't generalize and slow training)."
+                            f"⚠️  CatBoost: Detected {len(high_cardinality_features)} high-cardinality ID-like CATEGORICAL columns: {id_cols}{'...' if len(high_cardinality_features) > 5 else ''}. "
+                            f"These are treated as categorical with high unique ratios and ID-like names. Consider dropping or encoding differently (they don't generalize and slow training)."
                         )
                 except Exception as e:
                     # If DataFrame conversion fails, skip diagnostics (non-critical)

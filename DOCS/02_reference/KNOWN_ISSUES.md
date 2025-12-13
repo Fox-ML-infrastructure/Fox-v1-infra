@@ -83,8 +83,17 @@ This document tracks features that are **not yet fully functional**, have **know
      - **Check**: Look for columns with string/object dtype that aren't explicitly marked as text
   2. **High Cardinality Categoricals**: Categorical columns with thousands of unique values (e.g., `User_ID`, `IP_Address`)
      - **Problem**: One-hot encoding on 10k unique values creates 10k feature columns
-     - **Fix**: Drop ID-like columns that don't generalize, or let CatBoost use default target encoding
-     - **Check**: Identify columns with >1000 unique values that might be IDs
+     - **Important**: **Numeric columns with high cardinality are normal** (continuous features like `mid_price_vol`, `bid_ask_spread_est`). Only categorical columns with ID-like characteristics should be flagged.
+     - **Auto-Detection Logic**: System only suggests dropping when multiple signals agree:
+       - Column is treated as **categorical** (in `cat_features` or object/category dtype)
+       - High unique ratio (>20% or >50% for strict)
+       - Values mostly occur once (median count per value ≤ 2) OR unique ratio > 80%
+       - ID-like name patterns (`_id`, `uuid`, `tx_`, `order_`, `session_`, `hash_`) OR near-perfect uniqueness (>95%)
+     - **Fix**: 
+       - For **categorical ID columns**: Drop or encode differently
+       - For **numeric columns**: Keep them (high cardinality is normal for continuous features)
+       - Verify columns are not accidentally in `cat_features` list if they should be numeric
+     - **Check**: System automatically detects and warns about problematic categorical ID columns, but preserves numeric columns
   3. **Tree Depth Too High**: Depth > 8 causes exponential complexity ($2^d$)
      - **Problem**: Default depth is 6, but if set to 10+ training time explodes
      - **Fix**: Keep `depth: 6` (default) or `depth: 8` maximum
