@@ -402,9 +402,9 @@ Email: licensing@foxml.io
 Subject: Fox Infrastructure Licensing Inquiry
 
 **IMPORTANT — Physical Mail Requirements:**
-- **Email notification required first:** Before sending any physical mail (including certified mail, overnight courier, or any other physical delivery method) to Licensor, the sending party MUST first send an email to jenn.lewis5789@gmail.com with the subject line "Physical Mail Notification" describing the nature of the physical mail and the expected delivery date. Physical mail sent without prior email notification will not be deemed received and will not satisfy any notice requirements under this License.
+- **Email notification required first:** Before sending any physical mail (including certified mail, overnight courier, or any other physical delivery method) to Licensor, the sending party MUST first send an email to licensing@foxml.io with the subject line "Physical Mail Notification" describing the nature of the physical mail and the expected delivery date. Physical mail sent without prior email notification will not be deemed received and will not satisfy any notice requirements under this License.
 - **Registered Agent address prohibited:** Do NOT send mail to any registered agent address or corporate filing address. Mail sent to registered agent addresses will not be accepted and will not be deemed received.
-- **Physical mail address:** Physical mail (if required after email notification) should be sent only to an address that Licensor designates in writing after receiving the email notification. Contact jenn.lewis5789@gmail.com to obtain the appropriate physical mailing address.
+- **Physical mail address:** Physical mail (if required after email notification) should be sent only to an address that Licensor designates in writing after receiving the email notification. Contact licensing@foxml.io to obtain the appropriate physical mailing address.
 
 **To Licensee:**
 The address specified in the Ordering Documents or as otherwise provided by Licensee in writing.
