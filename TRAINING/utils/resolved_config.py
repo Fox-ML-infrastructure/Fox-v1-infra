@@ -170,6 +170,9 @@ def derive_purge_embargo(
     
     # NUCLEAR TEST MODE: Force 24-hour purge to test feature leak vs target leak
     # If default_purge_minutes >= 1500, use it regardless of horizon (diagnostic test)
+    # TEST COMPLETE (2025-12-12): Score dropped from 0.99 to 0.763 with 24h purge
+    # This confirmed feature leak is fixed, but 0.763 is still suspicious (target repainting likely)
+    # Final Gatekeeper now handles feature leaks autonomously - nuclear test mode kept for future diagnostics
     force_nuclear_test = False
     if default_purge_minutes is None:
         try:
