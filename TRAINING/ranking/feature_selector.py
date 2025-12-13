@@ -45,6 +45,9 @@ from TRAINING.ranking.multi_model_feature_selection import (
     save_multi_model_results as _save_multi_model_results
 )
 
+# Import shared ranking harness for unified evaluation contract
+from TRAINING.ranking.shared_ranking_harness import RankingHarness
+
 # Import new config system (optional - for backward compatibility)
 try:
     from CONFIG.config_builder import build_feature_selection_config
@@ -183,99 +186,328 @@ def select_features_for_target(
     logger.info(f"Selecting features for target: {target_column} (view={view})")
     logger.info(f"Model families: {', '.join([f for f, cfg in model_families_config.items() if cfg.get('enabled', False)])}")
     
-    # Load parallel execution config
-    parallel_symbols = False
-    try:
-        from CONFIG.config_loader import get_cfg
-        feature_selection_cfg = get_cfg("multi_model_feature_selection", default={}, config_name="multi_model_feature_selection")
-        parallel_symbols = feature_selection_cfg.get('parallel_symbols', False)
-    except Exception:
-        pass
+    # NEW: Use shared ranking harness for both CROSS_SECTIONAL and SYMBOL_SPECIFIC views
+    # This reuses the same split policy, model runner, metrics, and telemetry as target ranking
+    # Both views use the same evaluation contract, just with different data preparation
+    use_shared_harness = (view == "CROSS_SECTIONAL" or view == "SYMBOL_SPECIFIC")
     
-    # Check if parallel execution is globally enabled
-    parallel_enabled = _PARALLEL_AVAILABLE and parallel_symbols
-    if parallel_enabled:
+    # Load min_cs and max_cs_samples from config if not provided (for shared harness)
+    if use_shared_harness:
+        # Load defaults from config (same as target ranking)
+        harness_min_cs = None
+        harness_max_cs_samples = None
         try:
             from CONFIG.config_loader import get_cfg
-            parallel_global = get_cfg("threading.parallel.enabled", default=True, config_name="threading_config")
-            parallel_enabled = parallel_enabled and parallel_global
+            if experiment_config:
+                try:
+                    import yaml
+                    exp_name = experiment_config.name
+                    exp_file = Path("CONFIG/experiments") / f"{exp_name}.yaml"
+                    if exp_file.exists():
+                        with open(exp_file, 'r') as f:
+                            exp_yaml = yaml.safe_load(f) or {}
+                        exp_data = exp_yaml.get('data', {})
+                        harness_min_cs = exp_data.get('min_cs')
+                        harness_max_cs_samples = exp_data.get('max_cs_samples')
+                except Exception:
+                    pass
+            
+            if harness_min_cs is None:
+                harness_min_cs = int(get_cfg("pipeline.data_limits.min_cross_sectional_samples", default=10, config_name="pipeline_config"))
+            if harness_max_cs_samples is None:
+                harness_max_cs_samples = int(get_cfg("pipeline.data_limits.max_cs_samples", default=1000, config_name="pipeline_config"))
+        except Exception:
+            harness_min_cs = 10
+            harness_max_cs_samples = 1000
+    
+    if use_shared_harness:
+        logger.info("🔧 Using shared ranking harness (same evaluation contract as target ranking)")
+        try:
+            # Extract model family names from config
+            model_families_list = [f for f, cfg in model_families_config.items() if cfg.get('enabled', False)]
+            
+            all_results = []
+            all_family_statuses = []
+            
+            # For SYMBOL_SPECIFIC view, process each symbol separately (same as target ranking)
+            # For CROSS_SECTIONAL view, process all symbols together
+            if view == "SYMBOL_SPECIFIC":
+                # Process each symbol separately with shared harness (maintains view differences)
+                for symbol_to_process in symbols_to_process:
+                    logger.info(f"Processing {symbol_to_process} with shared harness (SYMBOL_SPECIFIC view)...")
+                    
+                    # Create shared harness for this symbol
+                    harness = RankingHarness(
+                        job_type="rank_features",
+                        target_column=target_column,
+                        symbols=[symbol_to_process],  # Single symbol for SYMBOL_SPECIFIC
+                        data_dir=data_dir,
+                        model_families=model_families_list,
+                        multi_model_config=multi_model_config,
+                        output_dir=output_dir,
+                        view=view,
+                        symbol=symbol_to_process,  # Required for SYMBOL_SPECIFIC
+                        explicit_interval=explicit_interval,
+                        experiment_config=experiment_config,
+                        min_cs=1,  # SYMBOL_SPECIFIC uses min_cs=1
+                        max_cs_samples=harness_max_cs_samples,
+                        max_rows_per_symbol=max_samples_per_symbol
+                    )
+                    
+                    # Build panel data for this symbol (includes all cleaning checks and target-conditional exclusions)
+                    # Note: target-conditional exclusions are saved automatically by build_panel if output_dir is set
+                    X, y, feature_names, symbols_array, time_vals, mtf_data, detected_interval, resolved_config = harness.build_panel(
+                        target_column=target_column,
+                        target_name=target_column,  # Use target_column as target_name for exclusions
+                        feature_names=None
+                    )
+                    
+                    if X is None or y is None:
+                        logger.warning(f"Failed to build panel data for {symbol_to_process}, skipping")
+                        continue
+                    
+                    # Sanitize and canonicalize dtypes
+                    X, feature_names = harness.sanitize_and_canonicalize_dtypes(X, feature_names)
+                    
+                    # Apply all cleaning and audit checks
+                    X_cleaned, y_cleaned, feature_names_cleaned, resolved_config_updated, success = harness.apply_cleaning_and_audit_checks(
+                        X=X, y=y, feature_names=feature_names, target_column=target_column,
+                        resolved_config=resolved_config, detected_interval=detected_interval, task_type=None
+                    )
+                    
+                    if not success:
+                        logger.warning(f"Cleaning and audit checks failed for {symbol_to_process}, skipping")
+                        continue
+                    
+                    X = X_cleaned
+                    y = y_cleaned
+                    feature_names = feature_names_cleaned
+                    resolved_config = resolved_config_updated
+                    
+                    # Extract horizon and create split policy
+                    from TRAINING.utils.leakage_filtering import _extract_horizon, _load_leakage_config
+                    leakage_config = _load_leakage_config()
+                    horizon_minutes = _extract_horizon(target_column, leakage_config) if target_column else None
+                    data_interval_minutes = detected_interval
+                    
+                    cv_splitter = harness.split_policy(
+                        time_vals=time_vals, groups=None,
+                        horizon_minutes=horizon_minutes, data_interval_minutes=data_interval_minutes
+                    )
+                    
+                    # Run importance producers
+                    model_metrics, model_scores, mean_importance, suspicious_features, \
+                    all_feature_importances, fold_timestamps = harness.run_importance_producers(
+                        X=X, y=y, feature_names=feature_names, time_vals=time_vals,
+                        task_type=None, resolved_config=resolved_config
+                    )
+                    
+                    # Save stability snapshots for each model family (same as target ranking)
+                    # Per-symbol snapshots for SYMBOL_SPECIFIC view
+                    if all_feature_importances and output_dir:
+                        try:
+                            from TRAINING.stability.feature_importance import save_snapshot_hook
+                            for model_family, importance_dict in all_feature_importances.items():
+                                if importance_dict:
+                                    save_snapshot_hook(
+                                        target_name=target_column,
+                                        method=model_family,
+                                        importance_dict=importance_dict,
+                                        universe_id=symbol_to_process,  # Symbol name for SYMBOL_SPECIFIC
+                                        output_dir=output_dir,
+                                        auto_analyze=None,  # Load from config
+                                    )
+                        except Exception as e:
+                            logger.debug(f"Stability snapshot save failed for {symbol_to_process} (non-critical): {e}")
+                    
+                    # Convert to ImportanceResult format (per-symbol for SYMBOL_SPECIFIC)
+                    for model_family in model_families_list:
+                        if model_family in all_feature_importances:
+                            importance_dict = all_feature_importances[model_family]
+                            importance_series = pd.Series(importance_dict)
+                            result = FeatureImportanceResult(
+                                model_family=model_family,
+                                symbol=symbol_to_process,  # Per-symbol for SYMBOL_SPECIFIC
+                                importance_scores=importance_series,
+                                method="native",
+                                train_score=model_scores.get(model_family, 0.0)
+                            )
+                            all_results.append(result)
+                            all_family_statuses.append({
+                                "status": "success",
+                                "family": model_family,
+                                "symbol": symbol_to_process,
+                                "score": float(model_scores.get(model_family, 0.0)),
+                                "top_feature": importance_series.idxmax() if len(importance_series) > 0 else None,
+                                "top_feature_score": float(importance_series.max()) if len(importance_series) > 0 else None,
+                                "error": None,
+                                "error_type": None
+                            })
+                    
+                    logger.info(f"✅ {symbol_to_process}: {len([r for r in all_results if r.symbol == symbol_to_process])} model results")
+            else:
+                # CROSS_SECTIONAL: process all symbols together
+                harness = RankingHarness(
+                    job_type="rank_features",
+                    target_column=target_column,
+                    symbols=symbols_to_process,
+                    data_dir=data_dir,
+                    model_families=model_families_list,
+                    multi_model_config=multi_model_config,
+                    output_dir=output_dir,
+                    view=view,
+                    symbol=None,  # CROSS_SECTIONAL doesn't use symbol
+                    explicit_interval=explicit_interval,
+                    experiment_config=experiment_config,
+                    min_cs=harness_min_cs,
+                    max_cs_samples=harness_max_cs_samples,
+                    max_rows_per_symbol=max_samples_per_symbol
+                )
+                
+                # Build panel data using same logic as target ranking (includes target-conditional exclusions)
+                X, y, feature_names, symbols_array, time_vals, mtf_data, detected_interval, resolved_config = harness.build_panel(
+                    target_column=target_column,
+                    target_name=target_column,  # Use target_column as target_name for exclusions
+                    feature_names=None  # Will filter automatically
+                )
+                
+                if X is None or y is None:
+                    logger.warning("Failed to build panel data with shared harness, falling back to per-symbol processing")
+                    use_shared_harness = False
+                else:
+                    # Sanitize and canonicalize dtypes (prevents CatBoost object column errors)
+                    X, feature_names = harness.sanitize_and_canonicalize_dtypes(X, feature_names)
+                    
+                    # Apply all cleaning and audit checks (same as target ranking)
+                    # This includes: leak scan, duplicate checks, target validation, final gatekeeper
+                    X_cleaned, y_cleaned, feature_names_cleaned, resolved_config_updated, success = harness.apply_cleaning_and_audit_checks(
+                        X=X,
+                        y=y,
+                        feature_names=feature_names,
+                        target_column=target_column,
+                        resolved_config=resolved_config,
+                        detected_interval=detected_interval,
+                        task_type=None  # Will be inferred
+                    )
+                    
+                    if not success:
+                        logger.warning("Cleaning and audit checks failed, falling back to per-symbol processing")
+                        use_shared_harness = False
+                    else:
+                        X = X_cleaned
+                        y = y_cleaned
+                        feature_names = feature_names_cleaned
+                        resolved_config = resolved_config_updated
+                        
+                        # Extract horizon for split policy
+                        from TRAINING.utils.leakage_filtering import _extract_horizon, _load_leakage_config
+                        leakage_config = _load_leakage_config()
+                        horizon_minutes = _extract_horizon(target_column, leakage_config) if target_column else None
+                        
+                        # Use detected_interval from build_panel
+                        data_interval_minutes = detected_interval
+                        
+                        # Create split policy (same as target ranking)
+                        cv_splitter = harness.split_policy(
+                            time_vals=time_vals,
+                            groups=None,
+                            horizon_minutes=horizon_minutes,
+                            data_interval_minutes=data_interval_minutes
+                        )
+                        
+                        # Run importance producers using same harness as target ranking
+                        model_metrics, model_scores, mean_importance, suspicious_features, \
+                        all_feature_importances, fold_timestamps = harness.run_importance_producers(
+                            X=X,
+                            y=y,
+                            feature_names=feature_names,
+                            time_vals=time_vals,
+                            task_type=None,  # Will be inferred
+                            resolved_config=resolved_config  # Use resolved_config from build_panel
+                        )
+                    
+                        # Convert to ImportanceResult format for aggregation
+                        for model_family in model_families_list:
+                            if model_family in all_feature_importances:
+                                importance_dict = all_feature_importances[model_family]
+                                importance_series = pd.Series(importance_dict)
+                                # For cross-sectional, we don't have per-symbol results, so use "ALL" as symbol
+                                result = FeatureImportanceResult(
+                                    model_family=model_family,
+                                    symbol="ALL",  # Cross-sectional uses all symbols
+                                    importance_scores=importance_series,
+                                    method="native",  # Will be determined from config
+                                    train_score=model_scores.get(model_family, 0.0)
+                                )
+                                all_results.append(result)
+                                all_family_statuses.append({
+                                    "status": "success",
+                                    "family": model_family,
+                                    "symbol": "ALL",
+                                    "score": float(model_scores.get(model_family, 0.0)),
+                                    "top_feature": importance_series.idxmax() if len(importance_series) > 0 else None,
+                                    "top_feature_score": float(importance_series.max()) if len(importance_series) > 0 else None,
+                                    "error": None,
+                                    "error_type": None
+                                })
+                        
+                        # Create RunContext for reproducibility tracking
+                        ctx = harness.create_run_context(
+                            X=X,
+                            y=y,
+                            feature_names=feature_names,
+                            symbols_array=symbols_array,
+                            time_vals=time_vals,
+                            cv_splitter=cv_splitter,
+                            horizon_minutes=horizon_minutes,
+                            purge_minutes=None,  # Will be derived from resolved_config
+                            embargo_minutes=None,
+                            data_interval_minutes=data_interval_minutes
+                        )
+                        
+                        logger.info(f"✅ Shared harness completed: {len(all_results)} model results")
+                
+        except Exception as e:
+            logger.warning(f"Shared harness failed: {e}, falling back to per-symbol processing", exc_info=True)
+            use_shared_harness = False
+            all_results = []
+            all_family_statuses = []
+    
+    if not use_shared_harness:
+        # Fallback to original per-symbol processing (for SYMBOL_SPECIFIC view or if harness fails)
+        logger.info("Using per-symbol processing (original method)")
+        all_results = []
+        all_family_statuses = []
+        
+        # Load parallel execution config
+        parallel_symbols = False
+        try:
+            from CONFIG.config_loader import get_cfg
+            feature_selection_cfg = get_cfg("multi_model_feature_selection", default={}, config_name="multi_model_feature_selection")
+            parallel_symbols = feature_selection_cfg.get('parallel_symbols', False)
         except Exception:
             pass
-    
-    # Helper function for parallel symbol processing (must be picklable)
-    def _process_single_symbol_wrapper(symbol):
-        """Process a single symbol - wrapper for parallel execution"""
-        symbol_dir = data_dir / f"symbol={symbol}"
-        data_path = symbol_dir / f"{symbol}.parquet"
         
-        if not data_path.exists():
-            return symbol, None, None, f"Data file not found: {data_path}"
+        # Check if parallel execution is globally enabled
+        parallel_enabled = _PARALLEL_AVAILABLE and parallel_symbols
+        if parallel_enabled:
+            try:
+                from CONFIG.config_loader import get_cfg
+                parallel_global = get_cfg("threading.parallel.enabled", default=True, config_name="threading_config")
+                parallel_enabled = parallel_enabled and parallel_global
+            except Exception:
+                pass
         
-        try:
-            symbol_results, symbol_statuses = _process_single_symbol(
-                symbol=symbol,
-                data_path=data_path,
-                target_column=target_column,
-                model_families_config=model_families_config,
-                max_samples=max_samples_per_symbol,
-                explicit_interval=explicit_interval,
-                experiment_config=experiment_config,
-                output_dir=output_dir
-            )
-            return symbol, symbol_results, symbol_statuses, None
-        except Exception as e:
-            return symbol, None, None, str(e)
-    
-    # Process symbols (parallel or sequential)
-    all_results = []
-    all_family_statuses = []
-    
-    if parallel_enabled and len(symbols_to_process) > 1:
-        logger.info(f"🚀 Parallel symbol processing enabled ({len(symbols_to_process)} symbols)")
-        parallel_results = execute_parallel(
-            _process_single_symbol_wrapper,
-            symbols_to_process,
-            max_workers=None,  # Auto-detect from config
-            task_type="process",  # CPU-bound
-            desc="Processing symbols",
-            show_progress=True
-        )
-        
-        # Process parallel results
-        for symbol, symbol_results, symbol_statuses, error in parallel_results:
-            if error:
-                logger.error(f"  ❌ {symbol} failed: {error}")
-                continue
-            
-            if symbol_results is None:
-                logger.warning(f"  ⚠️  {symbol}: No results")
-                continue
-            
-            all_results.extend(symbol_results)
-            if symbol_statuses:
-                all_family_statuses.extend(symbol_statuses)
-            logger.info(f"  ✅ {symbol}: {len(symbol_results)} model results")
-    else:
-        # Sequential processing (original code path)
-        if parallel_enabled and len(symbols_to_process) == 1:
-            logger.info("Running sequentially (only 1 symbol)")
-        elif not parallel_enabled:
-            logger.info("Parallel execution disabled (parallel_symbols=false or not available)")
-        
-        for idx, symbol in enumerate(symbols_to_process, 1):
-            logger.info(f"[{idx}/{len(symbols_to_process)}] Processing {symbol}...")
-            
-            # Find symbol data file
+        # Helper function for parallel symbol processing (must be picklable)
+        def _process_single_symbol_wrapper(symbol):
+            """Process a single symbol - wrapper for parallel execution"""
             symbol_dir = data_dir / f"symbol={symbol}"
             data_path = symbol_dir / f"{symbol}.parquet"
             
             if not data_path.exists():
-                logger.warning(f"  Data file not found: {data_path}")
-                continue
+                return symbol, None, None, f"Data file not found: {data_path}"
             
             try:
-                # Process symbol (preserves all leakage-free behavior)
-                # Returns tuple: (results, family_statuses)
                 symbol_results, symbol_statuses = _process_single_symbol(
                     symbol=symbol,
                     data_path=data_path,
@@ -284,16 +516,81 @@ def select_features_for_target(
                     max_samples=max_samples_per_symbol,
                     explicit_interval=explicit_interval,
                     experiment_config=experiment_config,
-                    output_dir=output_dir  # Pass output_dir for reproducibility tracking
+                    output_dir=output_dir
                 )
+                return symbol, symbol_results, symbol_statuses, None
+            except Exception as e:
+                return symbol, None, None, str(e)
+        
+        # Process symbols (parallel or sequential)
+        if parallel_enabled and len(symbols_to_process) > 1:
+            logger.info(f"🚀 Parallel symbol processing enabled ({len(symbols_to_process)} symbols)")
+            parallel_results = execute_parallel(
+                _process_single_symbol_wrapper,
+                symbols_to_process,
+                max_workers=None,  # Auto-detect from config
+                task_type="process",  # CPU-bound
+                desc="Processing symbols",
+                show_progress=True
+            )
+            
+            # Process parallel results
+            for symbol, symbol_results, symbol_statuses, error in parallel_results:
+                if error:
+                    logger.error(f"  ❌ {symbol} failed: {error}")
+                    continue
+                
+                if symbol_results is None:
+                    logger.warning(f"  ⚠️  {symbol}: No results")
+                    continue
                 
                 all_results.extend(symbol_results)
-                all_family_statuses.extend(symbol_statuses)
+                if symbol_statuses:
+                    all_family_statuses.extend(symbol_statuses)
                 logger.info(f"  ✅ {symbol}: {len(symbol_results)} model results")
+        else:
+            # Sequential processing (original code path)
+            if parallel_enabled and len(symbols_to_process) == 1:
+                logger.info("Running sequentially (only 1 symbol)")
+            elif not parallel_enabled:
+                logger.info("Parallel execution disabled (parallel_symbols=false or not available)")
             
-            except Exception as e:
-                logger.error(f"  ❌ {symbol} failed: {e}")
-                continue
+            for idx, symbol in enumerate(symbols_to_process, 1):
+                logger.info(f"[{idx}/{len(symbols_to_process)}] Processing {symbol}...")
+                
+                # Find symbol data file
+                symbol_dir = data_dir / f"symbol={symbol}"
+                data_path = symbol_dir / f"{symbol}.parquet"
+                
+                if not data_path.exists():
+                    logger.warning(f"  Data file not found: {data_path}")
+                    continue
+                
+                try:
+                    # Process symbol (preserves all leakage-free behavior)
+                    # Returns tuple: (results, family_statuses)
+                    symbol_results, symbol_statuses = _process_single_symbol(
+                        symbol=symbol,
+                        data_path=data_path,
+                        target_column=target_column,
+                        model_families_config=model_families_config,
+                        max_samples=max_samples_per_symbol,
+                        explicit_interval=explicit_interval,
+                        experiment_config=experiment_config,
+                        output_dir=output_dir  # Pass output_dir for reproducibility tracking
+                    )
+                    
+                    all_results.extend(symbol_results)
+                    all_family_statuses.extend(symbol_statuses)
+                    logger.info(f"  ✅ {symbol}: {len(symbol_results)} model results")
+                
+                except Exception as e:
+                    logger.error(f"  ❌ {symbol} failed: {e}")
+                    continue
+    else:
+        # Shared harness was used - all_results already populated
+        # Create empty family_statuses for compatibility
+        all_family_statuses = []
     
     if not all_results:
         logger.warning("No results from any symbol")
@@ -509,13 +806,16 @@ def select_features_for_target(
             'n_model_results': len(all_results),
             'top_n': top_n or len(selected_features),
             'model_families_config': model_families_config,  # Include for confidence computation
-            'family_statuses': all_family_statuses  # Include family status tracking for debugging
+            'family_statuses': all_family_statuses,  # Include family status tracking for debugging
+            'view': view,
+            'symbol': symbol if view == "SYMBOL_SPECIFIC" else None
         }
         
         # Add cross-sectional stability to metadata if available
         if cs_stability_results is not None:
             metadata['cross_sectional_stability'] = cs_stability_results
         
+        # Save using existing multi-model results function (detailed CSVs, etc.)
         _save_multi_model_results(
             summary_df=summary_df,
             selected_features=selected_features,
@@ -523,6 +823,175 @@ def select_features_for_target(
             output_dir=output_dir,
             metadata=metadata
         )
+        
+        # NEW: Also save in same format as target ranking (CSV, YAML, REPRODUCIBILITY structure)
+        try:
+            from TRAINING.ranking.feature_selection_reporting import (
+                save_feature_selection_rankings,
+                save_dual_view_feature_selections,
+                save_feature_importances_for_reproducibility
+            )
+            
+            # Save rankings in target ranking format
+            save_feature_selection_rankings(
+                summary_df=summary_df,
+                selected_features=selected_features,
+                target_column=target_column,
+                output_dir=output_dir,
+                view=view,
+                symbol=symbol,
+                metadata=metadata
+            )
+            
+            # Save feature importances (if available from shared harness)
+            # For CROSS_SECTIONAL: all_feature_importances is available from run_importance_producers
+            # For SYMBOL_SPECIFIC: we need to collect from each symbol's results
+            if use_shared_harness:
+                if view == "CROSS_SECTIONAL":
+                    # Try to get from shared harness results (if available in scope)
+                    if 'all_feature_importances' in locals() and all_feature_importances:
+                        save_feature_importances_for_reproducibility(
+                            all_feature_importances=all_feature_importances,
+                            target_column=target_column,
+                            output_dir=output_dir,
+                            view=view,
+                            symbol=None
+                        )
+                elif view == "SYMBOL_SPECIFIC":
+                    # Collect importances from all_results (per-symbol results from shared harness)
+                    symbol_importances = {}
+                    for result in all_results:
+                        if result.symbol not in symbol_importances:
+                            symbol_importances[result.symbol] = {}
+                        # Convert Series to dict for JSON serialization
+                        if hasattr(result.importance_scores, 'to_dict'):
+                            symbol_importances[result.symbol][result.model_family] = result.importance_scores.to_dict()
+                        else:
+                            symbol_importances[result.symbol][result.model_family] = dict(result.importance_scores)
+                    
+                    # Save per-symbol importances (same structure as target ranking)
+                    for sym, importances_dict in symbol_importances.items():
+                        save_feature_importances_for_reproducibility(
+                            all_feature_importances=importances_dict,
+                            target_column=target_column,
+                            output_dir=output_dir,
+                            view=view,
+                            symbol=sym
+                        )
+            else:
+                # Fallback: collect from all_results (per-symbol processing)
+                symbol_importances = {}
+                for result in all_results:
+                    if result.symbol not in symbol_importances:
+                        symbol_importances[result.symbol] = {}
+                    if hasattr(result.importance_scores, 'to_dict'):
+                        symbol_importances[result.symbol][result.model_family] = result.importance_scores.to_dict()
+                    else:
+                        symbol_importances[result.symbol][result.model_family] = dict(result.importance_scores)
+                
+                # Save per-symbol importances
+                for sym, importances_dict in symbol_importances.items():
+                    save_feature_importances_for_reproducibility(
+                        all_feature_importances=importances_dict,
+                        target_column=target_column,
+                        output_dir=output_dir,
+                        view="SYMBOL_SPECIFIC",  # Per-symbol processing is SYMBOL_SPECIFIC
+                        symbol=sym
+                    )
+            
+            # Prepare dual-view results for saving (if we have both views)
+            # Note: This function is called once per view, so we save what we have
+            results_cs = None
+            results_sym = None
+            if view == "CROSS_SECTIONAL":
+                results_cs = {
+                    'target_column': target_column,
+                    'selected_features': selected_features,
+                    'n_features': len(selected_features),
+                    'top_n': top_n or len(selected_features)
+                }
+            elif view == "SYMBOL_SPECIFIC" and symbol:
+                results_sym = {
+                    symbol: {
+                        'target_column': target_column,
+                        'selected_features': selected_features,
+                        'n_features': len(selected_features),
+                        'top_n': top_n or len(selected_features)
+                    }
+                }
+            
+            # Save dual-view structure (same as target ranking)
+            save_dual_view_feature_selections(
+                results_cs=results_cs,
+                results_sym=results_sym,
+                target_column=target_column,
+                output_dir=output_dir
+            )
+            
+        except ImportError as e:
+            logger.debug(f"Feature selection reporting module not available: {e}, using basic save only")
+        except Exception as e:
+            logger.warning(f"Failed to save feature selection results in target ranking format: {e}", exc_info=True)
+        
+        # Save leak detection summary (same as target ranking)
+        # Collect suspicious features from shared harness results if available
+        try:
+            from TRAINING.ranking.predictability.reporting import save_leak_report_summary
+            all_suspicious_features = {}
+            
+            # Collect from shared harness results (if used)
+            if use_shared_harness:
+                # Check if we have suspicious features from the harness
+                if view == "CROSS_SECTIONAL" and 'all_suspicious_features' in locals():
+                    # all_suspicious_features is a dict from run_importance_producers
+                    if all_suspicious_features:
+                        all_suspicious_features[target_column] = all_suspicious_features
+                elif view == "SYMBOL_SPECIFIC":
+                    # Collect per-symbol suspicious features
+                    symbol_suspicious = {}
+                    for result in all_results:
+                        if hasattr(result, 'suspicious_features') and result.suspicious_features:
+                            symbol = getattr(result, 'symbol', 'ALL')
+                            model_family = getattr(result, 'model_family', 'unknown')
+                            if symbol not in symbol_suspicious:
+                                symbol_suspicious[symbol] = {}
+                            symbol_suspicious[symbol][model_family] = result.suspicious_features
+                    if symbol_suspicious:
+                        all_suspicious_features[target_column] = symbol_suspicious
+            
+            # Also collect from all_results (fallback for non-harness path)
+            if not all_suspicious_features:
+                for result in all_results:
+                    if hasattr(result, 'suspicious_features') and result.suspicious_features:
+                        model_key = f"{getattr(result, 'model_family', 'unknown')}_{getattr(result, 'symbol', 'ALL')}"
+                        if target_column not in all_suspicious_features:
+                            all_suspicious_features[target_column] = {}
+                        # Convert to list of tuples if needed
+                        if isinstance(result.suspicious_features, dict):
+                            suspicious_list = list(result.suspicious_features.items())
+                        else:
+                            suspicious_list = result.suspicious_features
+                        all_suspicious_features[target_column][model_key] = suspicious_list
+            
+            if all_suspicious_features:
+                save_leak_report_summary(output_dir, all_suspicious_features)
+                logger.info("✅ Saved leak detection summary (same format as target ranking)")
+        except ImportError:
+            logger.debug("Leak detection summary not available (non-critical)")
+        except Exception as e:
+            logger.debug(f"Failed to save leak detection summary: {e}")
+        
+        # Analyze stability for all feature selection methods (same as target ranking)
+        try:
+            from TRAINING.stability.feature_importance import analyze_all_stability_hook
+            logger.info("\n" + "="*60)
+            logger.info("Feature Importance Stability Analysis")
+            logger.info("="*60)
+            analyze_all_stability_hook(output_dir=output_dir)
+        except ImportError:
+            logger.debug("Stability analysis hook not available (non-critical)")
+        except Exception as e:
+            logger.debug(f"Stability analysis failed (non-critical): {e}")
         
         # Save CS stability metadata separately (similar to model_metadata.json)
         if cs_stability_results is not None and output_dir:
@@ -602,38 +1071,42 @@ def select_features_for_target(
                 from TRAINING.utils.run_context import RunContext
                 from TRAINING.utils.cohort_metadata_extractor import extract_cohort_metadata
                 
-                # Build RunContext from available data
-                # Note: For feature selection, we don't have X, y directly, but we can extract from cohort_context
-                X_for_ctx = None
-                y_for_ctx = None
-                feature_names_for_ctx = selected_features if selected_features else []
-                
-                # Try to get X, y from cohort_context if available (for data fingerprint)
-                if 'cohort_context' in locals() and cohort_context:
-                    mtf_data_for_ctx = cohort_context.get('mtf_data')
-                    if mtf_data_for_ctx:
-                        # We can't easily reconstruct X, y here, so pass None
-                        # The data fingerprint will be computed from symbols/time_vals if available
-                        pass
-                
-                # Build RunContext
-                ctx = RunContext(
-                    stage="FEATURE_SELECTION",
-                    target_name=target_column,
-                    target_column=target_column,
-                    X=X_for_ctx,  # May be None - fingerprint will use symbols/time_vals
-                    y=y_for_ctx,  # May be None
-                    feature_names=feature_names_for_ctx,
-                    symbols=symbols,
-                    time_vals=None,  # Not directly available here
-                    horizon_minutes=None,  # Not applicable for feature selection
-                    purge_minutes=None,
-                    embargo_minutes=None,
-                    cv_folds=None,
-                    fold_timestamps=None,
-                    data_interval_minutes=None,
-                    seed=None
-                )
+                # Use RunContext from shared harness if available, otherwise build from available data
+                if use_shared_harness and 'ctx' in locals():
+                    # Use the RunContext created by the shared harness (has all required fields)
+                    ctx_to_use = ctx
+                else:
+                    # Build RunContext from available data (fallback for per-symbol processing)
+                    X_for_ctx = None
+                    y_for_ctx = None
+                    feature_names_for_ctx = selected_features if selected_features else []
+                    
+                    # Try to get X, y from cohort_context if available (for data fingerprint)
+                    if 'cohort_context' in locals() and cohort_context:
+                        mtf_data_for_ctx = cohort_context.get('mtf_data')
+                        if mtf_data_for_ctx:
+                            # We can't easily reconstruct X, y here, so pass None
+                            # The data fingerprint will be computed from symbols/time_vals if available
+                            pass
+                    
+                    # Build RunContext
+                    ctx_to_use = RunContext(
+                        stage="FEATURE_SELECTION",
+                        target_name=target_column,
+                        target_column=target_column,
+                        X=X_for_ctx,  # May be None - fingerprint will use symbols/time_vals
+                        y=y_for_ctx,  # May be None
+                        feature_names=feature_names_for_ctx,
+                        symbols=symbols,
+                        time_vals=None,  # Not directly available here
+                        horizon_minutes=None,  # Not applicable for feature selection
+                        purge_minutes=None,
+                        embargo_minutes=None,
+                        cv_folds=None,
+                        fold_timestamps=None,
+                        data_interval_minutes=None,
+                        seed=None
+                    )
                 
                 # Build metrics dict
                 metrics_dict = {
@@ -648,7 +1121,7 @@ def select_features_for_target(
                 }
                 
                 # Use automated log_run API (includes trend analysis)
-                audit_result = tracker.log_run(ctx, metrics_dict)
+                audit_result = tracker.log_run(ctx_to_use, metrics_dict)
                 
                 # Log audit report summary if available
                 if audit_result.get("audit_report"):

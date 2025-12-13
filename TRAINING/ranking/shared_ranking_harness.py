@@ -1,0 +1,725 @@
+"""
+Shared Ranking Harness
+
+Unified harness for both target ranking and feature selection that ensures:
+- Same split policy (PurgedTimeSeriesSplit with time-based purging)
+- Same model evaluation (train_and_evaluate_models)
+- Same telemetry (RunContext, reproducibility tracking)
+- Same data sanitization and dtype canonicalization
+
+This prevents "in-sample-ish" mistakes from scaling and ensures both paths
+use identical evaluation contracts.
+"""
+
+import logging
+from pathlib import Path
+from typing import Dict, Any, Optional, List, Tuple, Union
+import numpy as np
+import pandas as pd
+
+logger = logging.getLogger(__name__)
+
+
+class RankingHarness:
+    """
+    Shared harness for ranking operations (target ranking and feature selection).
+    
+    Ensures both use:
+    - Same split generator (walk-forward / purged, same embargo, same grouping)
+    - Same scoring function + metric normalization
+    - Same leakage-safe imputation policy
+    - Same RunContext + reproducibility tracker payload
+    - Same logging/artifact writer
+    """
+    
+    def __init__(
+        self,
+        job_type: str,  # "rank_targets" or "rank_features"
+        target_column: str,
+        symbols: List[str],
+        data_dir: Path,
+        model_families: List[str],
+        multi_model_config: Dict[str, Any] = None,
+        output_dir: Optional[Path] = None,
+        view: str = "CROSS_SECTIONAL",  # "CROSS_SECTIONAL", "SYMBOL_SPECIFIC", "LOSO"
+        symbol: Optional[str] = None,  # Required for SYMBOL_SPECIFIC and LOSO views
+        explicit_interval: Optional[Union[int, str]] = None,
+        experiment_config: Optional[Any] = None,
+        min_cs: Optional[int] = None,
+        max_cs_samples: Optional[int] = None,
+        max_rows_per_symbol: Optional[int] = None
+    ):
+        """
+        Initialize the ranking harness.
+        
+        Args:
+            job_type: "rank_targets" or "rank_features"
+            target_column: Target column name
+            symbols: List of symbols to process
+            data_dir: Directory containing symbol data
+            model_families: List of model family names
+            multi_model_config: Multi-model configuration dict
+            output_dir: Optional output directory for results
+            view: Evaluation view ("CROSS_SECTIONAL", "SYMBOL_SPECIFIC", "LOSO")
+            symbol: Symbol name (required for SYMBOL_SPECIFIC and LOSO views)
+            explicit_interval: Explicit data interval (e.g., "5m" or 5)
+            experiment_config: Optional ExperimentConfig
+            min_cs: Minimum cross-sectional samples
+            max_cs_samples: Maximum cross-sectional samples
+            max_rows_per_symbol: Maximum rows per symbol
+        """
+        self.job_type = job_type
+        self.target_column = target_column
+        self.symbols = symbols
+        self.data_dir = data_dir
+        self.model_families = model_families
+        self.multi_model_config = multi_model_config or {}
+        self.output_dir = output_dir
+        self.view = view
+        self.symbol = symbol
+        self.explicit_interval = explicit_interval
+        self.experiment_config = experiment_config
+        self.min_cs = min_cs
+        self.max_cs_samples = max_cs_samples
+        self.max_rows_per_symbol = max_rows_per_symbol
+        
+        # Validate view and symbol parameters
+        if view == "SYMBOL_SPECIFIC" and symbol is None:
+            raise ValueError(f"symbol parameter required for SYMBOL_SPECIFIC view")
+        if view == "LOSO" and symbol is None:
+            raise ValueError(f"symbol parameter required for LOSO view")
+        if view == "CROSS_SECTIONAL" and symbol is not None:
+            logger.warning(f"symbol={symbol} provided but view=CROSS_SECTIONAL, ignoring symbol")
+            self.symbol = None
+    
+    def build_panel(
+        self,
+        target_column: str,
+        target_name: Optional[str] = None,
+        feature_names: Optional[List[str]] = None
+    ) -> Tuple[Optional[np.ndarray], Optional[np.ndarray], Optional[List[str]], 
+               Optional[np.ndarray], Optional[np.ndarray], Optional[Dict[str, pd.DataFrame]], 
+               Optional[float], Optional[Any]]:
+        """
+        Build panel data (X, y, feature_names, symbols_array, time_vals, mtf_data, detected_interval, resolved_config).
+        
+        This is the same data build logic used by target ranking, including:
+        - Target-conditional exclusions
+        - Leakage filtering with registry validation
+        - Resolved config creation
+        
+        Args:
+            target_column: Target column name
+            target_name: Optional target name (for exclusion list generation)
+            feature_names: Optional list of feature names to use (None = all safe features)
+        
+        Returns:
+            Tuple of (X, y, feature_names, symbols_array, time_vals, mtf_data, detected_interval, resolved_config)
+            Any can be None if data preparation fails
+        """
+        from TRAINING.utils.cross_sectional_data import (
+            load_mtf_data_for_ranking,
+            prepare_cross_sectional_data_for_ranking
+        )
+        from TRAINING.utils.leakage_filtering import filter_features_for_target, _extract_horizon, _load_leakage_config
+        from TRAINING.utils.data_interval import detect_interval_from_dataframe
+        from TRAINING.utils.target_conditional_exclusions import (
+            generate_target_exclusion_list,
+            load_target_exclusion_list
+        )
+        from TRAINING.utils.resolved_config import create_resolved_config
+        from TRAINING.ranking.predictability.scoring import TaskType
+        
+        # Filter symbols based on view
+        symbols_to_load = self.symbols
+        if self.view == "SYMBOL_SPECIFIC":
+            symbols_to_load = [self.symbol]
+        elif self.view == "LOSO":
+            # LOSO: train on all symbols except symbol, validate on symbol
+            symbols_to_load = [s for s in self.symbols if s != self.symbol]
+            validation_symbol = self.symbol
+        else:
+            validation_symbol = None
+        
+        logger.info(f"Loading data for {len(symbols_to_load)} symbol(s) (max {self.max_rows_per_symbol} rows per symbol)...")
+        if self.view == "LOSO":
+            logger.info(f"  LOSO: Training on {len(symbols_to_load)} symbols, validating on {validation_symbol}")
+        
+        mtf_data = load_mtf_data_for_ranking(
+            self.data_dir, 
+            symbols_to_load, 
+            max_rows_per_symbol=self.max_rows_per_symbol
+        )
+        
+        if not mtf_data:
+            logger.error(f"No data loaded for any symbols")
+            return None, None, None, None, None, None, None, None
+        
+        # Get sample dataframe for interval detection and feature filtering
+        sample_df = next(iter(mtf_data.values()))
+        all_columns = sample_df.columns.tolist()
+        
+        # TARGET-CONDITIONAL EXCLUSIONS: Generate per-target exclusion list
+        # This implements "Target-Conditional Feature Selection" - tailoring features to target physics
+        target_conditional_exclusions = []
+        exclusion_metadata = {}
+        target_exclusion_dir = None
+        
+        if self.output_dir and target_name:
+            target_exclusion_dir = Path(self.output_dir) / "feature_exclusions"
+            target_exclusion_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Try to load existing exclusion list first
+            existing_exclusions = load_target_exclusion_list(target_name, target_exclusion_dir)
+            if existing_exclusions is not None:
+                target_conditional_exclusions = existing_exclusions
+                logger.info(
+                    f"📋 Loaded existing target-conditional exclusions for {target_name}: "
+                    f"{len(target_conditional_exclusions)} features "
+                    f"(from {target_exclusion_dir})"
+                )
+            else:
+                # Generate new exclusion list
+                try:
+                    from TRAINING.common.feature_registry import get_registry
+                    registry = get_registry()
+                except Exception:
+                    registry = None
+                
+                # Detect interval for lookback calculation
+                temp_interval = detect_interval_from_dataframe(
+                    sample_df, 
+                    explicit_interval=self.explicit_interval,
+                    experiment_config=self.experiment_config
+                )
+                
+                target_conditional_exclusions, exclusion_metadata = generate_target_exclusion_list(
+                    target_name=target_name,
+                    all_features=all_columns,
+                    interval_minutes=temp_interval,
+                    output_dir=target_exclusion_dir,
+                    registry=registry
+                )
+                
+                if target_conditional_exclusions:
+                    logger.info(
+                        f"📋 Generated target-conditional exclusions for {target_name}: "
+                        f"{len(target_conditional_exclusions)} features excluded "
+                        f"(horizon={exclusion_metadata.get('target_horizon_minutes', 'unknown')}m, "
+                        f"semantics={exclusion_metadata.get('target_semantics', {})})"
+                    )
+        else:
+            logger.debug("No output_dir or target_name provided - skipping target-conditional exclusions")
+        
+        # Detect data interval
+        detected_interval = detect_interval_from_dataframe(
+            sample_df,
+            timestamp_column='ts',
+            default=5,
+            explicit_interval=self.explicit_interval,
+            experiment_config=self.experiment_config
+        )
+        
+        # Extract target horizon for error messages and resolved config
+        leakage_config = _load_leakage_config()
+        target_horizon_minutes = _extract_horizon(target_column, leakage_config) if target_column else None
+        
+        # Apply target-conditional exclusions BEFORE global filtering
+        columns_after_target_exclusions = [c for c in all_columns if c not in target_conditional_exclusions]
+        
+        if target_conditional_exclusions:
+            logger.info(
+                f"  🎯 Target-conditional exclusions: Removed {len(target_conditional_exclusions)} features "
+                f"({len(columns_after_target_exclusions)} remaining before global filtering)"
+            )
+        
+        # Apply leakage filtering if feature_names not provided
+        if feature_names is None:
+            safe_columns = filter_features_for_target(
+                columns_after_target_exclusions,  # Use pre-filtered columns
+                target_column,
+                verbose=True,
+                use_registry=True,
+                data_interval_minutes=detected_interval,
+                for_ranking=True  # Use permissive rules for ranking
+            )
+            feature_names = safe_columns
+        
+        excluded_count = len(all_columns) - len(feature_names) - 1  # -1 for target itself
+        features_safe = len(feature_names)
+        logger.debug(f"Filtered out {excluded_count} potentially leaking features (kept {features_safe} safe features)")
+        
+        # Check if we have enough features to train
+        try:
+            from CONFIG.config_loader import get_cfg
+            from CONFIG.config_loader import get_safety_config
+            safety_cfg = get_safety_config()
+            safety_section = safety_cfg.get('safety', {})
+            leakage_cfg = safety_section.get('leakage_detection', {})
+            ranking_cfg = leakage_cfg.get('ranking', {})
+            MIN_FEATURES_REQUIRED = int(ranking_cfg.get('min_features_required', 2))
+        except Exception:
+            MIN_FEATURES_REQUIRED = 2
+        
+        if len(feature_names) < MIN_FEATURES_REQUIRED:
+            target_horizon_bars = None
+            if target_horizon_minutes is not None and detected_interval > 0:
+                target_horizon_bars = int(target_horizon_minutes // detected_interval)
+            horizon_info = f"horizon={target_horizon_bars} bars" if target_horizon_bars is not None else "this horizon"
+            logger.error(
+                f"❌ INSUFFICIENT FEATURES: Only {len(feature_names)} features remain after filtering "
+                f"(minimum required: {MIN_FEATURES_REQUIRED}). "
+                f"This target may not be predictable with current feature set."
+            )
+            return None, None, None, None, None, None, detected_interval, None
+        
+        # Prepare data based on view
+        if self.view == "SYMBOL_SPECIFIC":
+            # For symbol-specific, prepare single-symbol time series data
+            X, y, feature_names_out, symbols_array, time_vals = prepare_cross_sectional_data_for_ranking(
+                mtf_data, target_column, min_cs=1, max_cs_samples=self.max_cs_samples, feature_names=feature_names
+            )
+        elif self.view == "LOSO":
+            # LOSO: prepare training data (all symbols except validation symbol)
+            X, y, feature_names_out, symbols_array, time_vals = prepare_cross_sectional_data_for_ranking(
+                mtf_data, target_column, min_cs=self.min_cs, max_cs_samples=self.max_cs_samples, feature_names=feature_names
+            )
+            # TODO: Handle validation symbol separately for LOSO
+            logger.warning("LOSO view: Using combined data for now (LOSO-specific CV splitter not yet implemented)")
+        else:
+            # CROSS_SECTIONAL: standard pooled data
+            X, y, feature_names_out, symbols_array, time_vals = prepare_cross_sectional_data_for_ranking(
+                mtf_data, target_column, min_cs=self.min_cs, max_cs_samples=self.max_cs_samples, feature_names=feature_names
+            )
+        
+        # Update feature counts after data preparation
+        features_dropped_nan = 0
+        features_final = features_safe
+        if feature_names_out is not None:
+            features_final = len(feature_names_out)
+            features_dropped_nan = features_safe - features_final
+        
+        # Create resolved_config (same as target ranking)
+        n_symbols_available = len(mtf_data)
+        selected_features = feature_names_out.copy() if feature_names_out else []
+        
+        resolved_config = create_resolved_config(
+            requested_min_cs=self.min_cs if self.view != "SYMBOL_SPECIFIC" else 1,
+            n_symbols_available=n_symbols_available,
+            max_cs_samples=self.max_cs_samples,
+            interval_minutes=detected_interval,
+            horizon_minutes=target_horizon_minutes,
+            feature_lookback_max_minutes=None,  # Will be computed from feature_names
+            purge_buffer_bars=5,
+            default_purge_minutes=None,  # Loads from safety_config.yaml
+            features_safe=features_safe,
+            features_dropped_nan=features_dropped_nan,
+            features_final=len(selected_features),
+            view=self.view,
+            symbol=self.symbol,
+            feature_names=selected_features,  # Pass feature names for lookback computation
+            recompute_lookback=True  # CRITICAL: Compute feature lookback to auto-adjust purge
+        )
+        
+        return X, y, feature_names_out, symbols_array, time_vals, mtf_data, detected_interval, resolved_config
+    
+    def split_policy(
+        self,
+        time_vals: np.ndarray,
+        groups: Optional[np.ndarray] = None,
+        horizon_minutes: Optional[float] = None,
+        data_interval_minutes: float = 5.0
+    ) -> Any:
+        """
+        Create split policy (PurgedTimeSeriesSplit) with time-based purging.
+        
+        This is the SAME split policy used by target ranking to ensure
+        identical evaluation contracts.
+        
+        Args:
+            time_vals: Timestamps for each sample
+            groups: Optional grouping array (for panel data)
+            horizon_minutes: Target horizon in minutes (for purge calculation)
+            data_interval_minutes: Data bar interval in minutes
+        
+        Returns:
+            PurgedTimeSeriesSplit instance
+        """
+        from TRAINING.utils.purged_time_series_split import PurgedTimeSeriesSplit
+        from TRAINING.utils.resolved_config import derive_purge_embargo
+        
+        # Get CV config
+        cv_config = self.multi_model_config.get('cross_validation', {}) if self.multi_model_config else {}
+        try:
+            from CONFIG.config_loader import get_cfg
+            cv_folds = int(get_cfg("training.cv_folds", default=cv_config.get('cv_folds', 3), config_name="intelligent_training_config"))
+        except Exception:
+            cv_folds = cv_config.get('cv_folds', 3)
+        
+        # Derive purge and embargo from horizon
+        if horizon_minutes is not None:
+            purge_minutes, embargo_minutes = derive_purge_embargo(
+                horizon_minutes=horizon_minutes,
+                interval_minutes=data_interval_minutes,
+                feature_lookback_max_minutes=None,  # Will be computed from features if needed
+                purge_buffer_bars=5,
+                default_purge_minutes=None  # Loads from safety_config.yaml
+            )
+            purge_time = pd.Timedelta(minutes=purge_minutes)
+        else:
+            # Fallback: use default purge (60m = 12 bars + buffer)
+            purge_time = pd.Timedelta(minutes=60)
+        
+        # Create time-based purged splitter (REQUIRED for panel data)
+        cv_splitter = PurgedTimeSeriesSplit(
+            n_splits=cv_folds,
+            purge_overlap_time=purge_time,
+            time_column_values=time_vals
+        )
+        
+        return cv_splitter
+    
+    def run_importance_producers(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        feature_names: List[str],
+        time_vals: Optional[np.ndarray] = None,
+        task_type: Any = None,
+        resolved_config: Optional[Any] = None
+    ) -> Tuple[Dict[str, Dict[str, float]], Dict[str, float], float, 
+               Dict[str, List[Tuple[str, float]]], Dict[str, Dict[str, float]], 
+               List[Dict[str, Any]]]:
+        """
+        Run importance producers (models) using the SAME evaluation harness.
+        
+        This calls train_and_evaluate_models which uses:
+        - PurgedTimeSeriesSplit with time-based purging
+        - Same scoring functions
+        - Same leakage-safe imputation
+        - Same fold timestamp tracking
+        
+        Args:
+            X: Feature matrix
+            y: Target array
+            feature_names: List of feature names
+            time_vals: Timestamps for each sample
+            task_type: TaskType enum
+            resolved_config: Optional ResolvedConfig with purge/embargo
+        
+        Returns:
+            Tuple of (model_metrics, model_scores, mean_importance, 
+                     all_suspicious_features, all_feature_importances, fold_timestamps)
+        """
+        from TRAINING.ranking.predictability.model_evaluation import train_and_evaluate_models
+        from TRAINING.ranking.predictability.scoring import TaskType
+        
+        # Infer task type if not provided
+        if task_type is None:
+            y_sample = pd.Series(y).dropna()
+            task_type = TaskType.from_target_column(self.target_column, y_sample.to_numpy())
+        
+        # Detect data interval from time_vals if available
+        data_interval_minutes = 5.0  # Default
+        if time_vals is not None and len(time_vals) > 1:
+            try:
+                time_series = pd.Series(time_vals) if not isinstance(time_vals, pd.Series) else time_vals
+                if pd.api.types.is_datetime64_any_dtype(time_series):
+                    unique_times = time_series.unique()
+                    unique_times_sorted = pd.Series(unique_times).sort_values()
+                    time_diffs = unique_times_sorted.diff().dropna()
+                    if isinstance(time_diffs, pd.TimedeltaIndex) and len(time_diffs) > 0:
+                        median_diff_minutes = abs(time_diffs.median().total_seconds()) / 60.0
+                        # Round to common intervals
+                        common_intervals = [1, 5, 15, 30, 60]
+                        detected_interval = min(common_intervals, key=lambda x: abs(x - median_diff_minutes))
+                        data_interval_minutes = detected_interval
+            except Exception:
+                pass
+        
+        # Call the SAME train_and_evaluate_models function used by target ranking
+        results = train_and_evaluate_models(
+            X=X,
+            y=y,
+            feature_names=feature_names,
+            task_type=task_type,
+            model_families=self.model_families,
+            multi_model_config=self.multi_model_config,
+            target_column=self.target_column,
+            data_interval_minutes=data_interval_minutes,
+            time_vals=time_vals,
+            explicit_interval=self.explicit_interval,
+            experiment_config=self.experiment_config,
+            output_dir=self.output_dir,
+            resolved_config=resolved_config
+        )
+        
+        return results
+    
+    def create_run_context(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        feature_names: List[str],
+        symbols_array: np.ndarray,
+        time_vals: np.ndarray,
+        cv_splitter: Any,
+        horizon_minutes: Optional[float] = None,
+        purge_minutes: Optional[float] = None,
+        embargo_minutes: Optional[float] = None,
+        data_interval_minutes: Optional[float] = None
+    ) -> Any:
+        """
+        Create RunContext for reproducibility tracking.
+        
+        This ensures both target ranking and feature selection use the SAME
+        RunContext fields for consistent telemetry.
+        
+        Args:
+            X: Feature matrix
+            y: Target array
+            feature_names: List of feature names
+            symbols_array: Symbol array
+            time_vals: Timestamps
+            cv_splitter: CV splitter instance
+            horizon_minutes: Target horizon
+            purge_minutes: Purge minutes
+            embargo_minutes: Embargo minutes
+            data_interval_minutes: Data interval
+        
+        Returns:
+            RunContext instance
+        """
+        from TRAINING.utils.run_context import RunContext
+        
+        ctx = RunContext(
+            stage="FEATURE_SELECTION" if self.job_type == "rank_features" else "TARGET_RANKING",
+            target_name=self.target_column,
+            target_column=self.target_column,
+            X=X,
+            y=y,
+            feature_names=feature_names,
+            symbols=symbols_array.tolist() if isinstance(symbols_array, np.ndarray) else symbols_array,
+            time_vals=time_vals,
+            horizon_minutes=horizon_minutes,
+            purge_minutes=purge_minutes,
+            embargo_minutes=embargo_minutes,
+            data_interval_minutes=data_interval_minutes,
+            cv_splitter=cv_splitter,
+            view=self.view,
+            symbol=self.symbol
+        )
+        
+        return ctx
+    
+    def sanitize_and_canonicalize_dtypes(
+        self,
+        X: np.ndarray,
+        feature_names: List[str]
+    ) -> Tuple[np.ndarray, List[str]]:
+        """
+        Sanitize data and enforce numeric dtypes.
+        
+        This is done ONCE upstream and reused everywhere to prevent
+        dtype issues (e.g., CatBoost object column errors).
+        
+        Args:
+            X: Feature matrix (can be DataFrame or array)
+            feature_names: List of feature names
+        
+        Returns:
+            Tuple of (X_sanitized, feature_names_sanitized)
+        """
+        # Convert to DataFrame if needed
+        if isinstance(X, np.ndarray):
+            X_df = pd.DataFrame(X, columns=feature_names)
+        else:
+            X_df = X.copy()
+        
+        # Enforce numeric dtypes - hard-fail if "should be numeric" columns are object
+        object_cols = X_df.select_dtypes(include=['object']).columns.tolist()
+        if object_cols:
+            logger.warning(f"Found {len(object_cols)} object columns: {object_cols}")
+            logger.warning("Dropping object columns to prevent dtype errors")
+            X_df = X_df.drop(columns=object_cols)
+            feature_names = [f for f in feature_names if f not in object_cols]
+        
+        # Ensure all remaining columns are numeric
+        for col in X_df.columns:
+            if not pd.api.types.is_numeric_dtype(X_df[col]):
+                logger.warning(f"Column {col} is not numeric (dtype={X_df[col].dtype}), converting")
+                try:
+                    X_df[col] = pd.to_numeric(X_df[col], errors='coerce')
+                except Exception as e:
+                    logger.error(f"Failed to convert {col} to numeric: {e}, dropping")
+                    X_df = X_df.drop(columns=[col])
+                    feature_names = [f for f in feature_names if f != col]
+        
+        # Convert to float32/float64 for numeric features
+        X_df = X_df.astype({col: 'float32' for col in X_df.columns})
+        
+        # Convert back to numpy array
+        X_sanitized = X_df.values
+        
+        return X_sanitized, feature_names
+    
+    def apply_cleaning_and_audit_checks(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        feature_names: List[str],
+        target_column: str,
+        resolved_config: Any,
+        detected_interval: float,
+        task_type: Any = None
+    ) -> Tuple[Optional[np.ndarray], Optional[np.ndarray], Optional[List[str]], Optional[Any], bool]:
+        """
+        Apply all cleaning and audit checks from target ranking.
+        
+        This includes:
+        - Duplicate column name checks
+        - Pre-training leak scan (find_near_copy_features)
+        - Target validation
+        - Degenerate target checks
+        - Class imbalance checks
+        - Final gatekeeper (ghost buster)
+        
+        Args:
+            X: Feature matrix
+            y: Target array
+            feature_names: List of feature names
+            target_column: Target column name
+            resolved_config: ResolvedConfig object
+            detected_interval: Data interval in minutes
+            task_type: Optional TaskType (will be inferred if None)
+        
+        Returns:
+            Tuple of (X_cleaned, y_cleaned, feature_names_cleaned, resolved_config_updated, success)
+            If success is False, X_cleaned will be None
+        """
+        from TRAINING.ranking.predictability.leakage_detection import find_near_copy_features
+        from TRAINING.ranking.predictability.model_evaluation import _enforce_final_safety_gate, validate_target
+        from TRAINING.ranking.predictability.scoring import TaskType
+        from TRAINING.utils.cross_sectional_data import _log_feature_set
+        from TRAINING.utils.resolved_config import compute_feature_lookback_max
+        
+        # Infer task type if not provided
+        if task_type is None:
+            y_sample = pd.Series(y).dropna()
+            task_type = TaskType.from_target_column(target_column, y_sample.to_numpy())
+        
+        # Check for duplicate column names
+        if len(feature_names) != len(set(feature_names)):
+            duplicates = [name for name in set(feature_names) if feature_names.count(name) > 1]
+            logger.error(f"  🚨 DUPLICATE COLUMN NAMES DETECTED: {duplicates}")
+            raise ValueError(f"Duplicate feature names detected: {duplicates}")
+        
+        # PRE-TRAINING LEAK SCAN: Detect and remove near-copy features
+        logger.info("🔍 Pre-training leak scan: Checking for near-copy features...")
+        feature_names_before_leak_scan = feature_names.copy()
+        
+        X_df = pd.DataFrame(X, columns=feature_names)
+        y_series = pd.Series(y)
+        leaky_features = find_near_copy_features(X_df, y_series, task_type)
+        
+        if leaky_features:
+            logger.error(
+                f"  ❌ CRITICAL: Found {len(leaky_features)} leaky features that are near-copies of target: {leaky_features}"
+            )
+            logger.error(
+                f"  Removing leaky features and continuing with {X.shape[1] - len(leaky_features)} features..."
+            )
+            
+            # Remove leaky features
+            leaky_indices = [i for i, name in enumerate(feature_names) if name in leaky_features]
+            X = np.delete(X, leaky_indices, axis=1)
+            feature_names = [name for name in feature_names if name not in leaky_features]
+            
+            logger.info(f"  After leak removal: {X.shape[1]} features remaining")
+            _log_feature_set("AFTER_LEAK_REMOVAL", feature_names, previous_names=feature_names_before_leak_scan, logger_instance=logger)
+            
+            # Check if we removed too many features
+            try:
+                from CONFIG.config_loader import get_safety_config
+                safety_cfg = get_safety_config()
+                safety_section = safety_cfg.get('safety', {})
+                leakage_cfg = safety_section.get('leakage_detection', {})
+                ranking_cfg = leakage_cfg.get('ranking', {})
+                MIN_FEATURES_AFTER_LEAK_REMOVAL = int(ranking_cfg.get('min_features_after_leak_removal', 2))
+            except Exception:
+                MIN_FEATURES_AFTER_LEAK_REMOVAL = 2
+            
+            if X.shape[1] < MIN_FEATURES_AFTER_LEAK_REMOVAL:
+                logger.error(
+                    f"  ❌ Too few features remaining after leak removal ({X.shape[1]}). "
+                    f"Marking as LEAKAGE_DETECTED."
+                )
+                return None, None, None, None, False
+        else:
+            logger.info("  ✅ No obvious leaky features detected in pre-training scan")
+            _log_feature_set("AFTER_LEAK_REMOVAL", feature_names, previous_names=feature_names_before_leak_scan, logger_instance=logger)
+        
+        # Early exit if too few features
+        try:
+            from CONFIG.config_loader import get_safety_config
+            safety_cfg = get_safety_config()
+            safety_section = safety_cfg.get('safety', {})
+            leakage_cfg = safety_section.get('leakage_detection', {})
+            ranking_cfg = leakage_cfg.get('ranking', {})
+            MIN_FEATURES_FOR_MODEL = int(ranking_cfg.get('min_features_for_model', 3))
+        except Exception:
+            MIN_FEATURES_FOR_MODEL = 3
+        
+        if X.shape[1] < MIN_FEATURES_FOR_MODEL:
+            logger.warning(
+                f"Too few features ({X.shape[1]}) after filtering (minimum: {MIN_FEATURES_FOR_MODEL}); "
+                f"marking as degenerate and skipping."
+            )
+            return None, None, None, None, False
+        
+        # Validate target
+        is_valid, error_msg = validate_target(y, task_type=task_type)
+        if not is_valid:
+            logger.warning(f"Skipping: {error_msg}")
+            return None, None, None, None, False
+        
+        # Check if target is degenerate
+        unique_vals = np.unique(y[~np.isnan(y)])
+        if len(unique_vals) < 2:
+            logger.warning(f"Skipping: Target has only {len(unique_vals)} unique value(s)")
+            return None, None, None, None, False
+        
+        # For classification, check if classes are too imbalanced for CV
+        if len(unique_vals) <= 10:  # Likely classification
+            class_counts = np.bincount(y[~np.isnan(y)].astype(int))
+            min_class_count = class_counts[class_counts > 0].min()
+            if min_class_count < 2:
+                logger.warning(f"Skipping: Smallest class has only {min_class_count} sample(s) (too few for CV)")
+                return None, None, None, None, False
+        
+        # FINAL GATEKEEPER: Enforce safety at the last possible moment (ghost buster)
+        # This runs AFTER all loading/merging/sanitization is done
+        X, feature_names = _enforce_final_safety_gate(
+            X=X,
+            feature_names=feature_names,
+            resolved_config=resolved_config,
+            interval_minutes=detected_interval,
+            logger=logger
+        )
+        
+        # Recompute resolved_config.feature_lookback_max AFTER Final Gatekeeper
+        if feature_names and len(feature_names) > 0:
+            max_lookback_after_gatekeeper, _ = compute_feature_lookback_max(
+                feature_names,
+                interval_minutes=detected_interval,
+                max_lookback_cap_minutes=None
+            )
+            if max_lookback_after_gatekeeper is not None:
+                resolved_config.feature_lookback_max_minutes = max_lookback_after_gatekeeper
+                logger.debug(f"📊 Updated feature_lookback_max after Final Gatekeeper: {max_lookback_after_gatekeeper:.1f}m (from {len(feature_names)} remaining features)")
+        
+        if X.shape[1] == 0:
+            logger.error("❌ FINAL GATEKEEPER: All features were dropped! Cannot proceed.")
+            return None, None, None, None, False
+        
+        return X, y, feature_names, resolved_config, True

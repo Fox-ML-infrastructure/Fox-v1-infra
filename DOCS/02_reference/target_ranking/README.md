@@ -77,6 +77,8 @@ REPRODUCIBILITY/TARGET_RANKING/{target}/
 
 ## Integration with Feature Selection
 
+**NEW (2025-12-13)**: Feature selection now uses the same shared ranking harness as target ranking, ensuring identical evaluation contracts and comprehensive hardening.
+
 Feature selection automatically respects the view from target ranking:
 
 ```python
@@ -95,6 +97,17 @@ features = select_features_for_target(
     symbol=symbol
 )
 ```
+
+### Shared Harness Benefits
+
+Both target ranking and feature selection now use the same:
+- **Evaluation Contract**: Same split generator, scoring function, metric normalization
+- **Cleaning Checks**: Same ghost busters, leak scan, target validation
+- **Config System**: Same config hierarchy and loading methods
+- **Stability Tracking**: Same snapshot machinery (overlap, Kendall tau)
+- **Output Structure**: Same CSV, YAML, and REPRODUCIBILITY structure
+
+This ensures consistency across the entire pipeline: target ranking → feature selection → training.
 
 ## See Also
 

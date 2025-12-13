@@ -6,6 +6,9 @@ This directory contains detailed per-day changelogs for FoxML Core. For the ligh
 
 ### December
 
+- **2025-12-13 (Feature Selection Unification)** — Shared Ranking Harness, Comprehensive Hardening, Same Output Structure, Config-Driven Setup  
+  → [View](2025-12-13-feature-selection-unification.md)
+
 - **2025-12-13 (Duration System)** — Generalized Duration Parsing System, Lookback Detection Precedence Fix, Documentation Review, Non-Auditable Status Markers  
   → [View](2025-12-13-duration-system.md)
 

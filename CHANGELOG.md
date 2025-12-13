@@ -14,6 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Recent Highlights
 
+#### Feature Selection Unification (2025-12-13) – **NEW**
+- **Shared Ranking Harness**: Feature selection now uses same harness as target ranking, ensuring identical evaluation contracts
+- **Comprehensive Hardening**: Feature selection now has complete parity with target ranking (ghost busters, leak scan, stability tracking, linear models)
+- **Same Output Structure**: Feature selection saves results in same format as target ranking (CSV, YAML, REPRODUCIBILITY structure)
+- **Config-Driven**: Feature selection uses same config hierarchy and loading methods as target ranking
+- See [2025-12-13 feature selection unification changelog](DOCS/02_reference/changelog/2025-12-13-feature-selection-unification.md) for details
+
 #### Generalized Duration Parsing System & Audit Fixes (2025-12-13) – **NEW**
 - **Duration Parsing System**: New duration parsing system handles time period formats (minutes, hours, days, bars, compound durations)
 - **Interval-Aware Strictness**: Primary mechanism uses data resolution for purge/lookback enforcement
@@ -90,6 +97,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 **Recent additions (2025-12-12 - 2025-12-13):**
+- **Shared Ranking Harness** - Unified evaluation contract for target ranking and feature selection
+- **Feature Selection Unification** - Feature selection now has complete parity with target ranking
 - Experiment Configuration System - Reusable experiment configs with auto target discovery
 - Active Sanitization System - Proactive feature quarantine before training
 - Dual-View Target Ranking System - Multiple evaluation views with automatic routing

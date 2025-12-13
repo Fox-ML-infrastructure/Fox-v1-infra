@@ -110,7 +110,7 @@ model_families:
   # ============================================================================
   
   ridge:
-    enabled: false  # Linear baseline
+    enabled: true  # ✅ ENABLED - Linear baseline (same as target ranking)
     importance_method: "native"  # Uses absolute coefficients
     weight: 0.7
     config:
@@ -119,7 +119,7 @@ model_families:
       # random_state: auto-injected from global.random_state (or pipeline.determinism.base_seed)
   
   elastic_net:
-    enabled: false  # Sparse linear model
+    enabled: true  # ✅ ENABLED - Sparse linear model (same as target ranking)
     importance_method: "native"
     weight: 0.8
     config:

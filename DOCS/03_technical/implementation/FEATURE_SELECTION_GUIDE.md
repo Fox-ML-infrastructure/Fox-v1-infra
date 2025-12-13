@@ -2,6 +2,30 @@
 
 Feature selection methodology and implementation.
 
+**NEW (2025-12-13)**: Feature selection now uses the same shared ranking harness as target ranking, ensuring identical evaluation contracts, comprehensive hardening, and consistent output structure. See [Feature Selection Unification Changelog](../../02_reference/changelog/2025-12-13-feature-selection-unification.md) for details.
+
+## Key Features
+
+### Shared Ranking Harness
+- **Same Evaluation Contract**: Uses `RankingHarness` class shared with target ranking
+- **Same Split Policy**: PurgedTimeSeriesSplit with time-based purging
+- **Same Cleaning Checks**: Ghost busters, leak scan, target validation, duplicate detection
+- **Same Config System**: Uses same config hierarchy and loading methods as target ranking
+- **Same Stability Tracking**: Per-model snapshots + aggregated consensus snapshots
+- **Same Leak Detection**: Saves `leak_detection_summary.txt` in same format as target ranking
+
+### Comprehensive Hardening
+- **Linear Models**: Lasso, Ridge, and ElasticNet enabled (same as target ranking)
+- **Pre-training Leak Scan**: Detects near-copy features before training
+- **Target-Conditional Exclusions**: Per-target exclusion lists tailored to target physics
+- **Final Gatekeeper**: Drops problematic features before training starts
+- **Stability Analysis**: Calls `analyze_all_stability_hook()` at end of run
+
+### Output Structure
+- **Same Format**: CSV and YAML files match target ranking format
+- **Same Reproducibility**: REPRODUCIBILITY/FEATURE_SELECTION/ structure matches TARGET_RANKING/
+- **Same Artifacts**: Feature importances, stability snapshots, leak detection summaries
+
 ## Implementation Status
 
 ### Step 1: SingleTaskStrategy with Early Stopping
