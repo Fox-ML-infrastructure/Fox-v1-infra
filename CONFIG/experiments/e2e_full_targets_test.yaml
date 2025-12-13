@@ -53,9 +53,10 @@ intelligent_training:
 # ============================================================================
 # TARGET CONFIGURATION (Legacy/Reference)
 # ============================================================================
+# NOTE: When auto_targets=true, this is ignored. Only used as fallback if auto_targets=false
 targets:
-  # Primary target (fallback if manual_targets not specified)
-  primary: fwd_ret_60m
+  # Primary target (fallback ONLY if auto_targets=false and no manual_targets)
+  # primary: fwd_ret_60m  # Commented out since we're using auto_targets=true
 
 # ============================================================================
 # FEATURE SELECTION CONFIGURATION
