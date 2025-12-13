@@ -61,17 +61,44 @@ This document tracks features that are **not yet fully functional**, have **know
 
 **CPU Bottleneck (GPU Underutilization):**
 - **Symptom**: CPU at 100% usage, GPU at low utilization (30-40%), slow training despite GPU being enabled
-- **Cause**: For small datasets (<100k-200k rows), the overhead of CPU data preparation, VRAM transfers, and CUDA kernel management exceeds the actual GPU computation time. The GPU finishes quickly and waits for the CPU to prepare the next batch.
+- **Common Causes** (ordered by likelihood):
+  1. **Outer Parallelism** (Most Common): `thread_count` only limits threads inside a single `fit()`. If you have outer parallelism (CV folds in parallel, multiple symbols/targets in parallel, GridSearch `n_jobs`), CPU will still peg.
+     - **Tell-tale**: Load average ≈ number of threads, multiple Python/CatBoost processes visible
+     - **Fix**: Set all outer parallelism to 1: `GridSearchCV(..., n_jobs=1)`, don't parallelize across symbols/targets while also capping threads
+     - **Check**: Look for `cv_n_jobs > 1` or parallel execution of multiple models
+  2. **CatBoost Not Actually Using GPU**: GPU at ~7% while CPU is 100% usually means CPU training or CPU-side prep dominates
+     - **Diagnosis**: Check `model.get_all_params()` after fit - verify `task_type="GPU"` and `devices="0"` are actually set
+     - **Fix**: System automatically verifies GPU params post-fit and warns if GPU not active
+     - **Check CatBoost logs**: Should explicitly say "GPU" in training logs
+  3. **CPU Burn from Pool Building/Quantization/Metrics** (Not Training Threads): Even with `task_type="GPU"`, CatBoost can hammer CPU for:
+     - pandas→numpy conversion
+     - quantization/binarization (happens on CPU before GPU training)
+     - frequent metric evaluation
+     - **Fixes**:
+       - Build `Pool` once and reuse it (don't rebuild each fold/target)
+       - Reduce metric frequency: `metric_period=50` (or larger), `verbose=50` (system automatically sets this)
+       - If using eval every iter + early stopping, that can dominate
+  4. **BLAS/OpenMP Threads Exploding Outside CatBoost**: Even if CatBoost respects `thread_count`, NumPy/OpenBLAS/MKL can spawn threads during preprocessing
+     - **Fix**: Set environment variables before importing numpy/pandas/catboost:
+       ```python
+       import os
+       for k in ["OMP_NUM_THREADS","OPENBLAS_NUM_THREADS","MKL_NUM_THREADS","VECLIB_MAXIMUM_THREADS","NUMEXPR_NUM_THREADS"]:
+           os.environ[k] = "2"  # Or appropriate limit
+       ```
+     - **Note**: System's threading utilities should handle this, but check if preprocessing is spawning extra threads
+  5. **Small Dataset Overhead**: For datasets <100k-200k rows, CPU data preparation overhead can exceed GPU computation time
+     - **Fix**: For datasets < 50k rows, consider using CPU instead of GPU
 - **Diagnosis**: 
   - Check system monitor: CPU at 100%, load average > number of cores
   - GPU utilization < 50% despite `task_type='GPU'` being set
-  - Dataset size < 100k rows
+  - Check for multiple Python/CatBoost processes (outer parallelism)
+  - Verify GPU is actually active: `model.get_all_params()` after fit
 - **Solutions**:
-  1. **For datasets < 100k rows**: Use CPU training instead of GPU (counter-intuitive but faster due to reduced overhead)
-  2. **CatBoost thread limiting**: CatBoost now limits CPU threads via `gpu.catboost.thread_count` in `gpu_config.yaml` (default: 8 threads). This prevents CPU bottleneck during data preparation/quantization.
-  3. **Reduce CPU threads for other models**: Set `thread_count=8` or `10` (leave headroom for OS and GPU driver) instead of `-1` (all cores)
-  4. **Check metric calculation**: Use built-in GPU metrics (e.g., `eval_metric='AUC'`) rather than custom Python functions (which force CPU evaluation)
-  5. **Increase batch size**: If using data loaders, increase batch size to give GPU more work per iteration
+  1. **Disable outer parallelism**: Set `cv_n_jobs=1` when using GPU training
+  2. **CatBoost thread limiting**: CatBoost now limits CPU threads via `gpu.catboost.thread_count` in `gpu_config.yaml` (default: 8 threads)
+  3. **Verify GPU usage**: System automatically checks `model.get_all_params()` post-fit and warns if GPU not active
+  4. **Reduce metric frequency**: System automatically sets `metric_period=50` to reduce evaluation overhead
+  5. **For datasets < 50k rows**: Consider using CPU instead of GPU (overhead exceeds benefit)
 - **When to use GPU**: GPU acceleration is most beneficial for datasets > 100k-200k rows where the computation time exceeds the overhead
 
 **CatBoost Slow Training (20+ minutes for 50k samples):**

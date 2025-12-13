@@ -2042,6 +2042,15 @@ def train_and_evaluate_models(
                 if log_cfg.edu_hints:
                     logger.info(f"  💡 Note: GPU is most efficient for large datasets (>100k samples)")
             
+            # Check for outer parallelism that might cause CPU bottleneck
+            # If CV is parallelized (cv_n_jobs > 1), this can cause CPU to peg even with thread_count limited
+            if cv_n_jobs and cv_n_jobs > 1 and gpu_params and gpu_params.get('task_type') == 'GPU':
+                logger.warning(
+                    f"  ⚠️  CatBoost GPU training with parallel CV (n_jobs={cv_n_jobs}). "
+                    f"Outer parallelism can cause CPU bottleneck even with thread_count limited. "
+                    f"Consider setting cv_n_jobs=1 for GPU training."
+                )
+            
             try:
                 scores = cross_val_score(model, X, y, cv=tscv, scoring=scoring, n_jobs=cv_n_jobs, error_score=np.nan)
                 valid_scores = scores[~np.isnan(scores)]
@@ -2057,6 +2066,21 @@ def train_and_evaluate_models(
             
             if not np.isnan(primary_score):
                 model.fit(X, y)
+                
+                # Verify GPU is actually being used (post-fit check)
+                if gpu_params and gpu_params.get('task_type') == 'GPU':
+                    try:
+                        actual_params = model.get_all_params()
+                        actual_task_type = actual_params.get('task_type', 'UNKNOWN')
+                        if actual_task_type != 'GPU':
+                            logger.warning(
+                                f"  ⚠️  CatBoost GPU requested but model reports task_type='{actual_task_type}'. "
+                                f"GPU may not be active. Check model.get_all_params() for actual configuration."
+                            )
+                        elif log_cfg.gpu_detail:
+                            logger.debug(f"  ✅ CatBoost GPU verified post-fit: task_type={actual_task_type}, devices={actual_params.get('devices', 'UNKNOWN')}")
+                    except Exception as e:
+                        logger.debug(f"  CatBoost post-fit GPU verification skipped (non-critical): {e}")
 
                 # Compute and store full task-aware metrics
                 _compute_and_store_metrics('catboost', model, X, y, primary_score, task_type)
