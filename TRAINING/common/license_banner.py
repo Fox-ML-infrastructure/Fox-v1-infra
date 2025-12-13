@@ -60,8 +60,15 @@ def print_license_banner(suppress: bool = False):
     if os.getenv("FOXML_SUPPRESS_BANNER", "").lower() in ("true", "1", "yes"):
         return
     
-    # Use logger if available, otherwise print directly
-    log_func = logger.info if logger else print
+    # Use logger if available and configured, otherwise print directly to stderr
+    # Print to stderr so it appears even if stdout is redirected
+    try:
+        if logger and logger.handlers:
+            log_func = logger.info
+        else:
+            log_func = lambda msg: print(msg, file=sys.stderr)
+    except Exception:
+        log_func = lambda msg: print(msg, file=sys.stderr)
     
     banner_lines = [
         "=" * 60,
