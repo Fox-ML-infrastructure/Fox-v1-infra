@@ -1524,17 +1524,23 @@ def train_and_evaluate_models(
             # Get config values
             mi_config = get_model_config('mutual_information', multi_model_config)
             
+            # Get random_state from SST (determinism system) - no hardcoded defaults
+            mi_random_state = mi_config.get('random_state')
+            if mi_random_state is None:
+                from TRAINING.common.determinism import stable_seed_from
+                mi_random_state = stable_seed_from(['mutual_information', target_column if target_column else 'default'])
+            
             # Suppress warnings for zero-variance features
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", RuntimeWarning)
                 if is_binary or is_multiclass:
                     importance = mutual_info_classif(X_dense, y, 
-                                                    random_state=mi_config['random_state'],
-                                                    discrete_features=mi_config['discrete_features'])
+                                                    random_state=mi_random_state,
+                                                    discrete_features=mi_config.get('discrete_features', 'auto'))
                 else:
                     importance = mutual_info_regression(X_dense, y, 
-                                                       random_state=mi_config['random_state'],
-                                                       discrete_features=mi_config['discrete_features'])
+                                                       random_state=mi_random_state,
+                                                       discrete_features=mi_config.get('discrete_features', 'auto'))
             
             # Update feature_names to match dense array
             feature_names = feature_names_dense
