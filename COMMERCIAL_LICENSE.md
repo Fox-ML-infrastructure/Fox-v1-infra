@@ -1,5 +1,5 @@
 # FOX ML INFRASTRUCTURE — COMMERCIAL LICENSE v1.0
-Copyright (c) 2025-2026 Jennifer Lewis
+Copyright (c) 2025-2026 Fox ML Infrastructure LLC
 
 > **Note:** This Commercial License is provided for informational purposes and may be supplemented or modified by a separate signed agreement. Licensor is not providing legal advice; Licensee should consult its own counsel before entering into this License.
 
@@ -398,7 +398,7 @@ All notices, requests, consents, claims, demands, and other communications under
 **To Licensor:**
 Jennifer Lewis  
 Fox ML Infrastructure LLC  
-Email: jenn.lewis5789@gmail.com  
+Email: licensing@foxml.io
 Subject: Fox Infrastructure Licensing Inquiry
 
 **IMPORTANT — Physical Mail Requirements:**
@@ -460,6 +460,6 @@ For commercial licensing, enterprise usage, or SOW negotiation, contact:
 
 **Jennifer Lewis**  
 Fox ML Infrastructure LLC  
-Email: **jenn.lewis5789@gmail.com**  
+Email: **licensing@foxml.io**
 Subject: *Fox Infrastructure Licensing Inquiry*
 

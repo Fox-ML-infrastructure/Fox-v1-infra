@@ -30,8 +30,11 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 # Contact information (can be overridden via environment variable)
-# Default contact email from README.md and LEGAL docs
-_CONTACT_EMAIL = os.getenv("FOXML_CONTACT_EMAIL", "jenn.lewis5789@gmail.com")
+# Professional domain email for enterprise licensing inquiries
+# Default: licensing@foxml.io (professional domain)
+# Fallback: jenn.lewis5789@gmail.com (if domain not yet configured)
+# To use professional domain, set FOXML_CONTACT_EMAIL environment variable or update this default
+_CONTACT_EMAIL = os.getenv("FOXML_CONTACT_EMAIL", "licensing@foxml.io")
 
 # Project root (for finding legal docs)
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]
