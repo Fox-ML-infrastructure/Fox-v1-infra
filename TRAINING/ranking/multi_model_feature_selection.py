@@ -1052,28 +1052,34 @@ def train_model_and_get_importance(
                 
                 if xgb_device == 'cuda':
                     if test_enabled:
-                        # Try CUDA GPU - XGBoost 2.0+ uses device='cuda' with tree_method='hist'
+                        # Try CUDA GPU - XGBoost 3.1+ uses device='cuda' with tree_method='hist'
+                        # Note: XGBoost 3.1+ removed gpu_id parameter (use device='cuda:0' format if needed)
+                        # Also: gpu_hist is deprecated, only 'hist' with device='cuda' works
                         try:
-                            test_model = xgb.XGBRegressor(tree_method='hist', device='cuda', gpu_id=xgb_gpu_id, n_estimators=test_n_estimators, verbosity=0)
+                            # XGBoost 3.1+: device='cuda' or device='cuda:0' (no gpu_id parameter)
+                            device_str = f'cuda:{xgb_gpu_id}' if xgb_gpu_id != 0 else 'cuda'
+                            test_model = xgb.XGBRegressor(tree_method='hist', device=device_str, n_estimators=test_n_estimators, verbosity=0)
                             test_model.fit(np.random.rand(test_samples, test_features), np.random.rand(test_samples))
-                            gpu_params = {'tree_method': xgb_tree_method, 'device': 'cuda', 'gpu_id': xgb_gpu_id}
+                            gpu_params = {'tree_method': 'hist', 'device': device_str}
                         except Exception:
-                            # Try older API: tree_method='gpu_hist' (no device parameter)
+                            # Try without gpu_id (XGBoost 3.1+ format)
                             try:
-                                test_model = xgb.XGBRegressor(tree_method='gpu_hist', n_estimators=test_n_estimators, verbosity=0)
+                                test_model = xgb.XGBRegressor(tree_method='hist', device='cuda', n_estimators=test_n_estimators, verbosity=0)
                                 test_model.fit(np.random.rand(test_samples, test_features), np.random.rand(test_samples))
-                                gpu_params = {'tree_method': 'gpu_hist'}  # Older API doesn't use device parameter
+                                gpu_params = {'tree_method': 'hist', 'device': 'cuda'}
                             except Exception:
                                 pass  # Fallback to CPU silently
                     else:
-                        # Skip test, use config values directly
-                        gpu_params = {'tree_method': xgb_tree_method, 'device': 'cuda', 'gpu_id': xgb_gpu_id}
+                        # Skip test, use config values directly (XGBoost 3.1+ format)
+                        device_str = f'cuda:{xgb_gpu_id}' if xgb_gpu_id != 0 else 'cuda'
+                        gpu_params = {'tree_method': 'hist', 'device': device_str}
             except Exception:
                 pass  # Fallback to CPU silently
             
             # Remove early stopping params (requires eval_set) - feature selection doesn't need it
             # XGBoost 2.x requires eval_set if early_stopping_rounds is set, so we must remove it
-            # Also remove tree_method and device if present (we set these from GPU config)
+            # Also remove tree_method, device, and gpu_id if present (we set these from GPU config)
+            # Note: XGBoost 3.1+ removed gpu_id parameter, use device='cuda:0' format instead
             xgb_config = model_config.copy()
             xgb_config.pop('early_stopping_rounds', None)
             xgb_config.pop('early_stopping_round', None)  # Alternative name
@@ -1082,7 +1088,7 @@ def train_model_and_get_importance(
             xgb_config.pop('eval_metric', None)  # Often paired with early stopping
             xgb_config.pop('tree_method', None)
             xgb_config.pop('device', None)
-            xgb_config.pop('gpu_id', None)
+            xgb_config.pop('gpu_id', None)  # Removed in XGBoost 3.1+, but remove for compatibility
             
             # Determine estimator class
             est_cls = xgb.XGBClassifier if (is_binary or is_multiclass) else xgb.XGBRegressor
