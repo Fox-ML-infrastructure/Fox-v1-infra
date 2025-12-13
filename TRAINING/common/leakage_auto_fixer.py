@@ -840,11 +840,9 @@ class LeakageAutoFixer:
     def _get_git_commit_hash(self) -> Optional[str]:
         """Get current git commit hash if available."""
         try:
-            import subprocess
-            result = subprocess.run(
+            from TRAINING.common.subprocess_utils import safe_subprocess_run
+            result = safe_subprocess_run(
                 ['git', 'rev-parse', '--short', 'HEAD'],
-                capture_output=True,
-                text=True,
                 timeout=2,
                 cwd=_REPO_ROOT
             )

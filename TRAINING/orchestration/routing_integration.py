@@ -22,7 +22,6 @@ Integration functions to call routing system from existing pipeline.
 """
 
 import logging
-import subprocess
 from pathlib import Path
 from typing import List, Optional, Dict, Any
 import yaml
@@ -76,10 +75,9 @@ def generate_routing_plan_after_feature_selection(
         # Get git commit
         git_commit = None
         try:
-            result = subprocess.run(
+            from TRAINING.common.subprocess_utils import safe_subprocess_run
+            result = safe_subprocess_run(
                 ["git", "rev-parse", "--short", "HEAD"],
-                capture_output=True,
-                text=True,
                 check=True
             )
             git_commit = result.stdout.strip()

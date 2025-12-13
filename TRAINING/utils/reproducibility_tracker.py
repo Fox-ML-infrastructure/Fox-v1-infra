@@ -1123,10 +1123,9 @@ class ReproducibilityTracker:
         """Get current git commit hash."""
         try:
             import subprocess
-            result = subprocess.run(
+            from TRAINING.common.subprocess_utils import safe_subprocess_run
+            result = safe_subprocess_run(
                 ['git', 'rev-parse', '--short', 'HEAD'],
-                capture_output=True,
-                text=True,
                 timeout=5
             )
             if result.returncode == 0:
