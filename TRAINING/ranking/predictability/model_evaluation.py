@@ -1898,8 +1898,7 @@ def train_and_evaluate_models(
             high_cardinality_features = []
             if feature_names and len(feature_names) == X.shape[1]:
                 try:
-                    import pandas as pd
-                    # Create temporary DataFrame to check dtypes
+                    # Create temporary DataFrame to check dtypes (pandas already imported at top)
                     X_df = pd.DataFrame(X, columns=feature_names)
                     
                     # Check for object/string dtype columns (potential text features)
