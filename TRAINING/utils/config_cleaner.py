@@ -92,10 +92,21 @@ def clean_config_for_estimator(
     dropped_duplicates = []
     
     # Remove keys that we will pass explicitly (avoid duplicates)
+    # CRITICAL: This prevents "multiple values for argument" errors
     for k in list(config.keys()):
         if k in extra_kwargs:
             config.pop(k, None)
             dropped_duplicates.append(k)
+    
+    # Special case: Remove 'verbose' from config if it exists (common source of double argument errors)
+    # verbose is often set explicitly in code, so remove from config to avoid conflicts
+    # This is a defensive measure - explicit verbose= in code takes precedence
+    if 'verbose' in config and 'verbose' not in extra_kwargs:
+        # Only remove if not in extra_kwargs (if in extra_kwargs, it was already removed above)
+        # But we still want to remove it to prevent conflicts with explicit verbose= in code
+        verbose_val = config.pop('verbose', None)
+        if verbose_val is not None:
+            logger.debug(f"[{family_name}] Removed verbose={verbose_val} from config (will use explicit value if provided)")
     
     # Remove keys the estimator doesn't know about (unknown params)
     if valid_params is not None:

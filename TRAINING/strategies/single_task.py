@@ -307,6 +307,12 @@ class SingleTaskStrategy(BaseTrainingStrategy):
                 'verbose': -1,
             }
             
+            # Remove 'verbose' from model_config if present (to avoid double argument error)
+            # verbose is already set in params above
+            model_config_clean = {k: v for k, v in model_config.items() if k not in params}
+            model_config_clean.pop('verbose', None)  # Explicitly remove verbose if present
+            params.update(model_config_clean)  # Merge remaining config params
+            
             if target_type == 'classification':
                 return lgb.LGBMClassifier(**params)
             else:

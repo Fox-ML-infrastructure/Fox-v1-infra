@@ -145,6 +145,10 @@ class LightGBMTrainer(BaseModelTrainer):
         except ImportError:
             verbose_level = -1  # Default to silent
         
+        # Get lgbm_params but remove 'verbose' if present (to avoid double argument error)
+        lgbm_params = self.config.get("lgbm_params", {}).copy()
+        lgbm_params.pop('verbose', None)  # Remove verbose from params if it exists
+        
         model = lgb.LGBMRegressor(
             objective="regression",
             num_leaves=self.config["num_leaves"],
@@ -166,7 +170,7 @@ class LightGBMTrainer(BaseModelTrainer):
             feature_pre_filter=True,
             bin_construct_sample_cnt=200000,  # limits binning cost
             two_round=True,  # speed up IO
-            **self.config.get("lgbm_params", {})
+            **lgbm_params
         )
         logger.info(f"LightGBM model configured with {threads} threads (n_jobs={threads}, num_threads={threads})")
         return model

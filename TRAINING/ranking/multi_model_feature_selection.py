@@ -953,6 +953,10 @@ def train_model_and_get_importance(
             extra = {"random_seed": model_seed}
             lgb_config = _clean_config_for_estimator(est_cls, lgb_config, extra, "lightgbm")
             
+            # Remove 'verbose' from lgb_config if present (to avoid double argument error)
+            # verbose will be set explicitly if needed, or use default from config_cleaner
+            lgb_config.pop('verbose', None)
+            
             # Instantiate with cleaned config + explicit params
             model = est_cls(**lgb_config, **extra)
             
