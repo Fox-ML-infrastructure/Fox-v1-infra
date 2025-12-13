@@ -51,6 +51,7 @@ First-time users start here. See [00_executive/README.md](00_executive/README.md
 - [Quick Start](00_executive/QUICKSTART.md) - Get running in 5 minutes
 - [Architecture Overview](00_executive/ARCHITECTURE_OVERVIEW.md) - System architecture
 - [Getting Started](00_executive/GETTING_STARTED.md) - Onboarding guide
+- [System Requirements](00_executive/SYSTEM_REQUIREMENTS.md) - Hardware and software requirements (verified stable up to 100 GB RAM)
 - [Audit Reports](00_executive/audits/README.md) - Quality assurance audits, documentation checks, and technical audits (public transparency)
 
 ## Tier B: Tutorials / Walkthroughs

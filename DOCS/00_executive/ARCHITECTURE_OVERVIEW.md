@@ -8,10 +8,12 @@ FoxML Core is a research infrastructure system for ML pipelines, cross-sectional
 
 - Scalable ML workflow design
 - Leakage-safe research architecture
-- High-throughput data processing
+- High-throughput data processing (verified stable with workloads up to 100 GB RAM)
 - Multi-model training systems
 - Hybrid C++/Python infrastructure
 - HPC-compatible orchestration patterns (single-node optimized; distributed HPC planned/WIP)
+
+**System Requirements**: See [System Requirements](SYSTEM_REQUIREMENTS.md) for hardware specifications. Verified stable up to 100 GB RAM; targeted for 1 TB+ institutional deployment.
 
 Cross-sectional ML infrastructure. Provides architecture, not domain-specific applications.
 

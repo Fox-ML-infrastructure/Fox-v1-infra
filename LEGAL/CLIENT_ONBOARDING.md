@@ -17,7 +17,7 @@ It covers setup, configuration, integration, and how to request custom features.
 
 **System Requirements:**
 - Linux (Ubuntu 22.04+ recommended) or macOS
-- Python 3.9+
+- Python 3.11+
 - Git
 - Sufficient disk space for datasets and models
 
@@ -25,10 +25,26 @@ It covers setup, configuration, integration, and how to request custom features.
 - Core dependencies are listed in `requirements.txt` (included in repository)
 - Additional dependencies may be required based on model types used
 
-**Hardware Recommendations:**
-- CPU: Multi-core processor (8+ cores recommended)
-- RAM: 16GB+ (32GB+ for large datasets)
-- GPU: Optional but recommended for deep learning models (CUDA-compatible)
+**Hardware Requirements:**
+
+⚠️ **Important**: FoxML Core requires significant computational resources. This is **not suitable for laptop/desktop deployment** for production workloads.
+
+**Minimum (Development/Testing Only):**
+- CPU: Multi-core processor (8+ cores)
+- RAM: 16 GB minimum (32 GB recommended for development)
+- Storage: 50 GB+ free space
+- GPU: Optional (CUDA 11.8+ if using GPU)
+
+**Production (Recommended):**
+- CPU: Multi-core processor (16+ cores, 32+ cores for large workloads)
+- RAM: 64 GB minimum (128 GB+ recommended)
+- Storage: 500 GB+ SSD (1 TB+ for large datasets)
+- GPU: Recommended (11 GB+ VRAM for optimal performance)
+
+**Verified Stable Range**: Up to **100 GB RAM** (tested and verified stable in continuous operation)  
+**Targeted Capacity**: **1 TB+ RAM** (enterprise deployment, requires production hardware verification)
+
+See [System Requirements](../../DOCS/00_executive/SYSTEM_REQUIREMENTS.md) for complete specifications.
 
 ### 1.2 Access Setup
 

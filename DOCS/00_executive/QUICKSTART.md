@@ -4,9 +4,26 @@ Installation and basic usage.
 
 ## Prerequisites
 
+**⚠️ Important**: FoxML Core requires significant computational resources. This is **not suitable for laptop deployment** for production workloads.
+
+### Minimum Requirements (Development/Testing Only)
+
 - Python 3.11+
-- 8GB+ RAM (16GB+ recommended)
+- **16 GB RAM minimum** (32 GB recommended for development)
 - GPU optional (CUDA 11.8+ if using GPU) - **Recommended for target ranking and feature selection** (10-50x speedup)
+
+**Note**: Minimum configuration is suitable for small-scale testing and development only.
+
+### Production Requirements
+
+- **64 GB RAM minimum** (128 GB+ recommended)
+- Multi-core processor (16+ cores)
+- GPU recommended (11 GB+ VRAM for optimal performance)
+
+**Verified Stable Range**: Up to 100 GB RAM (tested and verified)  
+**Targeted Capacity**: 1 TB+ RAM (enterprise deployment)
+
+See [System Requirements](SYSTEM_REQUIREMENTS.md) for complete specifications.
 
 ## Installation
 

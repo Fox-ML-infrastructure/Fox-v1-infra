@@ -11,6 +11,7 @@ This directory contains executive-level documentation designed for quick underst
 - **[Quick Start](QUICKSTART.md)** - Get running in 5 minutes
 - **[Getting Started](GETTING_STARTED.md)** - Complete onboarding guide with examples
 - **[Architecture Overview](ARCHITECTURE_OVERVIEW.md)** - System architecture at a glance
+- **[System Requirements](SYSTEM_REQUIREMENTS.md)** - Hardware and software requirements (verified stable up to 100 GB RAM)
 - **[Deterministic Training](DETERMINISTIC_TRAINING.md)** - Reproducibility and SST config system
 - **[Audit Reports](audits/README.md)** - Quality assurance audits, documentation accuracy checks, and technical audits (public transparency)
 
