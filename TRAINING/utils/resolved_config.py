@@ -429,5 +429,6 @@ def create_resolved_config(
         features_dropped_nan=features_dropped_nan,
         features_final=features_final,
         view=view,
-        symbol=symbol
+        symbol=symbol,
+        feature_lookback_max_minutes=feature_lookback_max_minutes
     )
