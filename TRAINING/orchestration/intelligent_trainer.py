@@ -158,7 +158,9 @@ class IntelligentTrainer:
         output_dir: Path,
         cache_dir: Optional[Path] = None,
         add_timestamp: bool = True,
-        experiment_config: Optional['ExperimentConfig'] = None  # New typed config (optional)
+        experiment_config: Optional['ExperimentConfig'] = None,  # New typed config (optional)
+        max_rows_per_symbol: Optional[int] = None,  # For output directory binning
+        max_cs_samples: Optional[int] = None  # For output directory binning
     ):
         """
         Initialize the intelligent trainer.
@@ -182,6 +184,10 @@ class IntelligentTrainer:
             self.data_dir = Path(data_dir)
             self.symbols = symbols
             self.experiment_config = None
+        
+        # Store config limits for output directory binning
+        self._max_rows_per_symbol = max_rows_per_symbol
+        self._max_cs_samples = max_cs_samples
         
         # Add timestamp to output directory if requested
         if add_timestamp:
@@ -237,12 +243,43 @@ class IntelligentTrainer:
     
     def _estimate_n_effective_early(self) -> Optional[int]:
         """
-        Try to estimate N_effective early from data files or existing metadata.
+        Try to estimate N_effective early from config limits, existing metadata, or data files.
+        
+        Priority:
+        1. Use configured max_rows_per_symbol * num_symbols (if config limits are set)
+        2. Check existing metadata from previous runs
+        3. Estimate from data files
         
         Returns:
             Estimated N_effective or None if cannot be determined
         """
         logger.info("🔍 Attempting early N_effective estimation...")
+        
+        # Method 0: Use configured limits if available (PREFERRED - reflects actual data limits)
+        if self._max_rows_per_symbol is not None and self._max_rows_per_symbol > 0:
+            # Calculate expected N_effective based on config: max_rows_per_symbol * num_symbols
+            # This reflects the actual data that will be loaded, not the full dataset size
+            expected_n = self._max_rows_per_symbol * len(self.symbols)
+            logger.info(f"🔍 Using configured max_rows_per_symbol={self._max_rows_per_symbol} × {len(self.symbols)} symbols = {expected_n} for output directory binning")
+            return expected_n
+        
+        # Also check experiment config if available
+        if self.experiment_config:
+            try:
+                import yaml
+                exp_name = self.experiment_config.name
+                exp_file = Path("CONFIG/experiments") / f"{exp_name}.yaml"
+                if exp_file.exists():
+                    with open(exp_file, 'r') as f:
+                        exp_yaml = yaml.safe_load(f) or {}
+                    exp_data = exp_yaml.get('data', {})
+                    config_max_rows = exp_data.get('max_rows_per_symbol') or exp_data.get('max_samples_per_symbol')
+                    if config_max_rows is not None and config_max_rows > 0:
+                        expected_n = config_max_rows * len(self.symbols)
+                        logger.info(f"🔍 Using experiment config max_rows_per_symbol={config_max_rows} × {len(self.symbols)} symbols = {expected_n} for output directory binning")
+                        return expected_n
+            except Exception as e:
+                logger.debug(f"Could not read max_rows_per_symbol from experiment config: {e}")
         
         # Method 1: Check if there's existing metadata from a previous run with same symbols/data
         # (This handles the case where you're re-running with same data)
@@ -1797,7 +1834,10 @@ Examples:
             raise
     
     # Load intelligent training config (NEW - allows simple command-line usage)
-    intel_config_file = Path("CONFIG/training_config/intelligent_training_config.yaml")
+    # Try new location first (pipeline/training/), then old (training_config/)
+    intel_config_file = Path("CONFIG/pipeline/training/intelligent.yaml")
+    if not intel_config_file.exists():
+        intel_config_file = Path("CONFIG/training_config/intelligent_training_config.yaml")
     intel_config_data = {}
     if intel_config_file.exists():
         try:
@@ -1830,9 +1870,9 @@ Examples:
     
     # Validate required args (either from CLI, config, or experiment config)
     if not args.data_dir:
-        parser.error("--data-dir is required (or set in CONFIG/training_config/intelligent_training_config.yaml)")
+        parser.error("--data-dir is required (or set in CONFIG/pipeline/training/intelligent.yaml)")
     if not args.symbols:
-        parser.error("--symbols is required (or set in CONFIG/training_config/intelligent_training_config.yaml)")
+        parser.error("--symbols is required (or set in CONFIG/pipeline/training/intelligent.yaml)")
     if not args.output_dir:
         args.output_dir = Path('intelligent_output')
     
@@ -1870,6 +1910,25 @@ Examples:
                     if value is not None:
                         data_cfg[key] = value
                 logger.debug(f"📋 Merged experiment config data into data_cfg: {exp_data_dict}")
+        
+            # Also read data section directly from YAML file to get min_cs, max_cs_samples, max_rows_train
+            # (these aren't in ExperimentConfig object, so read from YAML)
+            try:
+                import yaml
+                exp_name = experiment_config.name
+                exp_file = Path("CONFIG/experiments") / f"{exp_name}.yaml"
+                if exp_file.exists():
+                    with open(exp_file, 'r') as f:
+                        exp_yaml = yaml.safe_load(f) or {}
+                    exp_data_section = exp_yaml.get('data', {})
+                    # Merge ALL data section keys from YAML (experiment config takes priority)
+                    # This includes: min_cs, max_cs_samples, max_rows_train, max_samples_per_symbol, max_rows_per_symbol
+                    for key in ['min_cs', 'max_cs_samples', 'max_rows_train', 'max_samples_per_symbol', 'max_rows_per_symbol']:
+                        if key in exp_data_section:
+                            data_cfg[key] = exp_data_section[key]
+                            logger.debug(f"📋 Loaded {key}={exp_data_section[key]} from experiment config YAML")
+            except Exception as e:
+                logger.debug(f"Could not load data section from experiment config YAML: {e}")
         
         auto_targets = targets_cfg.get('auto_targets', True)
         top_n_targets = targets_cfg.get('top_n_targets', 10)
@@ -2042,13 +2101,194 @@ Examples:
         manual_features = []
         config_families = []
     
+    # ============================================================================
+    # CONFIG TRACE: Comprehensive logging of config loading and precedence
+    # ============================================================================
+    logger.info("=" * 80)
+    logger.info("📋 CONFIG TRACE: Configuration Loading and Precedence")
+    logger.info("=" * 80)
+    
+    # Track loaded files
+    loaded_files = []
+    if intel_config_file.exists():
+        loaded_files.append(("intelligent_training_config.yaml", str(intel_config_file.resolve())))
+    if experiment_config:
+        exp_file = Path("CONFIG/experiments") / f"{experiment_config.name}.yaml"
+        if exp_file.exists():
+            loaded_files.append((f"experiment: {experiment_config.name}.yaml", str(exp_file.resolve())))
+    
+    logger.info(f"📁 Loaded config files (in order):")
+    for i, (name, path) in enumerate(loaded_files, 1):
+        logger.info(f"   {i}. {name}")
+        logger.info(f"      → {path}")
+    
+    # Track config value sources (before CLI overrides)
+    config_trace = {}
+    
+    def trace_value(key: str, value: Any, source: str, section: str = ""):
+        """Track where a config value came from"""
+        full_key = f"{section}.{key}" if section else key
+        if full_key not in config_trace:
+            config_trace[full_key] = []
+        config_trace[full_key].append({
+            'value': value,
+            'source': source
+        })
+    
+    # Trace key config values from intelligent_training_config.yaml
+    if intel_config_data:
+        data_cfg = intel_config_data.get('data', {})
+        targets_cfg = intel_config_data.get('targets', {})
+        features_cfg = intel_config_data.get('features', {})
+        
+        trace_value("min_cs", min_cs, 
+                    f"intelligent_training_config.yaml → data.min_cs = {data_cfg.get('min_cs', 'default=10')}",
+                    "data")
+        trace_value("max_cs_samples", max_cs_samples,
+                    f"intelligent_training_config.yaml → data.max_cs_samples = {data_cfg.get('max_cs_samples', 'default=1000')}",
+                    "data")
+        # Check if experiment config overrode this value
+        exp_max_rows = None
+        if experiment_config:
+            try:
+                import yaml
+                exp_name = experiment_config.name
+                exp_file = Path("CONFIG/experiments") / f"{exp_name}.yaml"
+                if exp_file.exists():
+                    with open(exp_file, 'r') as f:
+                        exp_yaml = yaml.safe_load(f) or {}
+                    exp_data = exp_yaml.get('data', {})
+                    exp_max_rows = exp_data.get('max_rows_per_symbol') or exp_data.get('max_samples_per_symbol')
+            except Exception:
+                pass
+        
+        if exp_max_rows is not None:
+            trace_value("max_rows_per_symbol", max_rows_per_symbol,
+                        f"intelligent_training_config.yaml → data.max_rows_per_symbol = {data_cfg.get('max_rows_per_symbol') or data_cfg.get('max_samples_per_symbol', 'default=None')}",
+                        "data")
+            trace_value("max_rows_per_symbol", exp_max_rows,
+                        f"experiment: {experiment_config.name}.yaml → data.max_rows_per_symbol = {exp_max_rows} (OVERRIDE)",
+                        "data")
+        else:
+            trace_value("max_rows_per_symbol", max_rows_per_symbol,
+                        f"intelligent_training_config.yaml → data.max_rows_per_symbol = {data_cfg.get('max_rows_per_symbol') or data_cfg.get('max_samples_per_symbol', 'default=None')}",
+                        "data")
+        trace_value("max_rows_train", max_rows_train,
+                    f"intelligent_training_config.yaml → data.max_rows_train = {data_cfg.get('max_rows_train', 'default=None')}",
+                    "data")
+        trace_value("auto_targets", auto_targets,
+                    f"intelligent_training_config.yaml → targets.auto_targets = {targets_cfg.get('auto_targets', 'default=True')}",
+                    "targets")
+        trace_value("top_n_targets", top_n_targets,
+                    f"intelligent_training_config.yaml → targets.top_n_targets = {targets_cfg.get('top_n_targets', 'default=10')}",
+                    "targets")
+        trace_value("max_targets_to_evaluate", max_targets_to_evaluate,
+                    f"intelligent_training_config.yaml → targets.max_targets_to_evaluate = {targets_cfg.get('max_targets_to_evaluate', 'default=None')}",
+                    "targets")
+        trace_value("auto_features", auto_features,
+                    f"intelligent_training_config.yaml → features.auto_features = {features_cfg.get('auto_features', 'default=True')}",
+                    "features")
+        trace_value("top_m_features", top_m_features,
+                    f"intelligent_training_config.yaml → features.top_m_features = {features_cfg.get('top_m_features', 'default=100')}",
+                    "features")
+    
+    # Check for experiment config overrides
+    if experiment_config:
+        exp_file = Path("CONFIG/experiments") / f"{experiment_config.name}.yaml"
+        if exp_file.exists():
+            try:
+                import yaml
+                with open(exp_file, 'r') as f:
+                    exp_yaml = yaml.safe_load(f) or {}
+                exp_data = exp_yaml.get('data', {})
+                # Trace all data section keys that exist in experiment config
+                for key in ['min_cs', 'max_cs_samples', 'max_rows_train', 'max_samples_per_symbol', 'max_rows_per_symbol']:
+                    if key in exp_data:
+                        trace_value(key, exp_data[key],
+                                    f"experiment: {experiment_config.name}.yaml → data.{key} = {exp_data[key]} (OVERRIDE)",
+                                    "data")
+            except Exception as e:
+                logger.debug(f"Could not trace experiment config: {e}")
+    
     # CLI overrides (for testing/debugging only - warn user)
     if args.override_max_samples:
         logger.warning("⚠️  Using CLI override for max_samples (testing only - not SST compliant)")
         max_rows_per_symbol = args.override_max_samples
+        trace_value("max_rows_per_symbol", max_rows_per_symbol, 
+                    f"CLI --override-max-samples = {args.override_max_samples} (OVERRIDE)",
+                    "data")
     if args.override_max_rows:
         logger.warning("⚠️  Using CLI override for max_rows (testing only - not SST compliant)")
         max_rows_per_symbol = args.override_max_rows
+        trace_value("max_rows_per_symbol", max_rows_per_symbol,
+                    f"CLI --override-max-rows = {args.override_max_rows} (OVERRIDE)",
+                    "data")
+    if args.targets:
+        trace_value("manual_targets", args.targets, "CLI --targets (OVERRIDE)", "targets")
+    if args.features:
+        trace_value("manual_features", args.features, "CLI --features (OVERRIDE)", "features")
+    if args.families:
+        trace_value("model_families", args.families, "CLI --families (OVERRIDE)", "training")
+    
+    # Log final resolved values with source chain
+    logger.info("")
+    logger.info("🔍 Key Config Values (with source chain):")
+    key_configs = [
+        ("data.min_cs", min_cs),
+        ("data.max_cs_samples", max_cs_samples),
+        ("data.max_rows_per_symbol", max_rows_per_symbol),
+        ("data.max_rows_train", max_rows_train),
+        ("targets.auto_targets", auto_targets),
+        ("targets.top_n_targets", top_n_targets),
+        ("targets.max_targets_to_evaluate", max_targets_to_evaluate),
+        ("features.auto_features", auto_features),
+        ("features.top_m_features", top_m_features),
+    ]
+    
+    for key, final_value in key_configs:
+        if key in config_trace:
+            sources = config_trace[key]
+            logger.info(f"   {key}: {final_value}")
+            for i, source_info in enumerate(sources, 1):
+                arrow = "→" if i < len(sources) else "✓"
+                logger.info(f"      {i}. {arrow} {source_info['source']}")
+        else:
+            logger.info(f"   {key}: {final_value} (no trace - using default or hardcoded)")
+    
+    # Check for conflicts (same key from multiple sources with different values)
+    logger.info("")
+    logger.info("⚠️  Conflict Detection:")
+    conflicts = []
+    for key, sources in config_trace.items():
+        if len(sources) > 1:
+            values = [s['value'] for s in sources]
+            # Check if values are actually different (handle None, int/str conversions)
+            unique_values = set(str(v) if v is not None else 'None' for v in values)
+            if len(unique_values) > 1:
+                conflicts.append((key, sources))
+    
+    if conflicts:
+        logger.warning(f"   Found {len(conflicts)} potential conflicts:")
+        for key, sources in conflicts:
+            logger.warning(f"      {key}:")
+            for source_info in sources:
+                logger.warning(f"         - {source_info['source']}")
+    else:
+        logger.info("   ✅ No conflicts detected (all sources agree or override cleanly)")
+    
+    # Log working directory and config paths
+    logger.info("")
+    logger.info("📂 Environment:")
+    logger.info(f"   Working directory: {os.getcwd()}")
+    logger.info(f"   Project root: {_PROJECT_ROOT}")
+    logger.info(f"   Config directory: {Path('CONFIG').resolve()}")
+    
+    logger.info("=" * 80)
+    logger.info("")
+    
+    # ============================================================================
+    # End of config trace
+    # ============================================================================
     
     # Manual overrides (targets/features/families) - CLI > config > defaults
     targets = args.targets if args.targets else (manual_targets if manual_targets else None)
@@ -2060,12 +2300,15 @@ Examples:
         families = ['lightgbm', 'xgboost', 'random_forest']
     
     # Create orchestrator
+    # Pass config limits for output directory binning (use configured values, not full dataset size)
     trainer = IntelligentTrainer(
         data_dir=args.data_dir,
         symbols=args.symbols,
         output_dir=args.output_dir,
         cache_dir=args.cache_dir,
-        experiment_config=experiment_config  # Pass experiment config if loaded
+        experiment_config=experiment_config,  # Pass experiment config if loaded
+        max_rows_per_symbol=max_rows_per_symbol,  # For output directory binning
+        max_cs_samples=max_cs_samples  # For output directory binning
     )
     
     # Load configs (legacy support)

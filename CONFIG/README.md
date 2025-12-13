@@ -4,64 +4,67 @@ This directory contains all configuration files for the FoxML Core pipeline.
 
 ## Directory Structure
 
-The configuration system uses a modular structure to prevent config "crossing" between pipeline components:
+The configuration system uses a clean, human-usable structure organized by purpose:
 
 ```
 CONFIG/
-├── experiments/              # Experiment-level configs (what are we running?)
-│   ├── e2e_ranking_test.yaml
-│   └── fwd_ret_60m_test.yaml
-├── feature_selection/        # Feature selection module configs
-│   └── multi_model.yaml
-├── target_ranking/           # Target ranking module configs
-│   └── multi_model.yaml
-├── training_config/          # Training pipeline configs (SST: Single Source of Truth)
-│   ├── intelligent_training_config.yaml  # Main intelligent trainer config
-│   ├── decision_policies.yaml            # Decision policy thresholds (NEW)
-│   ├── stability_config.yaml             # Stability analysis thresholds (NEW)
-│   ├── safety_config.yaml                # Safety & temporal configs
-│   ├── system_config.yaml                # System resources
-│   ├── pipeline_config.yaml              # Pipeline behavior
-│   ├── preprocessing_config.yaml         # Data preprocessing
-│   ├── optimizer_config.yaml             # Optimizer settings
-│   ├── gpu_config.yaml                   # GPU settings
-│   ├── memory_config.yaml                # Memory management
-│   ├── threading_config.yaml             # Threading policy
-│   ├── routing_config.yaml               # Target routing
-│   ├── callbacks_config.yaml             # Training callbacks
-│   ├── family_config.yaml                # Model family configs
-│   ├── sequential_config.yaml            # Sequential training
-│   └── first_batch_specs.yaml            # First batch specs
-├── model_config/             # Model-specific hyperparameters
+├── README.md                 # This file
+├── defaults.yaml             # Global defaults (SST)
+├── config_loader.py         # Configuration loader
+├── config_builder.py         # Config builder utilities
+├── config_schemas.py         # Type definitions
+│
+├── core/                     # Core system configs
+│   ├── logging.yaml          # Logging configuration
+│   └── system.yaml           # System resources & paths
+│
+├── data/                     # Data-related configs
+│   ├── feature_registry.yaml      # Feature registry (allowed/excluded)
+│   ├── excluded_features.yaml     # Always-excluded features
+│   ├── feature_target_schema.yaml # Feature-target schema
+│   └── feature_groups.yaml        # Feature groups
+│
+├── experiments/              # Experiment configs (user-created)
+│   ├── README.md
+│   ├── _template.yaml
+│   └── *.yaml                # Individual experiments
+│
+├── models/                   # Model hyperparameters
 │   ├── lightgbm.yaml
 │   ├── xgboost.yaml
-│   ├── neural_network.yaml
 │   └── ... (all model families)
-├── routing/                  # Routing configs
-│   └── default.yaml
-├── logging_config.yaml       # Structured logging configuration
-├── feature_registry.yaml     # Feature registry (allowed/excluded)
-├── excluded_features.yaml    # Always-excluded features
-├── defaults.yaml             # Global defaults (SST)
-└── config_loader.py          # Configuration loader
+│
+├── pipeline/                 # Pipeline execution configs
+│   ├── training/             # Training pipeline
+│   │   ├── intelligent.yaml  # Intelligent training (main)
+│   │   ├── safety.yaml       # Safety & temporal
+│   │   ├── preprocessing.yaml
+│   │   ├── optimizer.yaml
+│   │   ├── callbacks.yaml
+│   │   ├── routing.yaml
+│   │   ├── stability.yaml
+│   │   ├── decisions.yaml
+│   │   ├── families.yaml
+│   │   ├── sequential.yaml
+│   │   └── first_batch.yaml
+│   ├── gpu.yaml              # GPU settings
+│   ├── memory.yaml           # Memory management
+│   ├── threading.yaml        # Threading policy
+│   └── pipeline.yaml         # Main pipeline config
+│
+├── ranking/                  # Ranking & selection configs
+│   ├── targets/              # Target ranking
+│   │   ├── multi_model.yaml
+│   │   └── configs.yaml
+│   └── features/             # Feature selection
+│       ├── multi_model.yaml
+│       └── config.yaml
+│
+└── archive/                  # Archived/deprecated files
+    └── *.yaml                # Legacy configs
 ```
 
-## Config Files Status
-
-### ✅ Active Config Files
-All files in `training_config/`, `model_config/`, `feature_selection/`, `target_ranking/`, and `experiments/` are actively used.
-
-### ⚠️ Potentially Unused Files (Verify Before Removing)
-- `comprehensive_feature_ranking.yaml` - May be legacy
-- `fast_target_ranking.yaml` - May be legacy
-- `feature_selection_config.yaml` - May be legacy
-- `target_configs.yaml` - Referenced in code, verify usage
-- `feature_target_schema.yaml` - Referenced in code, verify usage
-- `feature_groups.yaml` - Verify usage
-- `training/models.yaml` - May be superseded by `model_config/`
-
-### 🗑️ Deprecated Files (Safe to Remove)
-- `multi_model_feature_selection.yaml.deprecated` - Explicitly deprecated, moved to `feature_selection/multi_model.yaml`
+**Note:** Old locations are still supported via symlinks for backward compatibility. See `MIGRATION_GUIDE.md` for details.
 
 ## Quick Start
 
@@ -79,68 +82,68 @@ data:
   symbols: [AAPL, MSFT]
   interval: 5m
   max_samples_per_symbol: 3000
+  min_cs: 10
+  max_cs_samples: 1000
 
-targets:
-  primary: fwd_ret_60m
-
-feature_selection:
-  top_n: 30
-  model_families: [lightgbm, xgboost]
-
-training:
-  model_families: [lightgbm, xgboost]
-  cv_folds: 5
+intelligent_training:
+  auto_targets: true
+  top_n_targets: 5
+  auto_features: true
+  top_m_features: 70
 ```
 
 Then run:
 
 ```bash
-python TRAINING/train.py --experiment-config my_experiment
+python -m TRAINING.orchestration.intelligent_trainer --experiment-config my_experiment
 ```
 
-### Legacy Usage (Still Supported)
+### Editing Configs
 
-You can still use individual config files:
+- **Model configs**: Edit files in `models/` (e.g., `models/lightgbm.yaml`)
+- **Training configs**: Edit files in `pipeline/training/` (e.g., `pipeline/training/intelligent.yaml`)
+- **System configs**: Edit files in `pipeline/` (e.g., `pipeline/gpu.yaml`)
+- **Feature registry**: Edit `data/feature_registry.yaml`
 
-```bash
-python TRAINING/train.py \
-    --data-dir data/data_labeled/interval=5m \
-    --symbols AAPL MSFT \
-    --targets fwd_ret_60m
-```
+## Config Files Status
 
-## Migration Guide
+### ✅ Active Config Files
 
-### Feature Selection Config
+All files in the new structure are actively used:
+- `core/` - Core system configs
+- `data/` - Data-related configs
+- `experiments/` - Experiment configs
+- `models/` - Model hyperparameters
+- `pipeline/` - Pipeline execution configs
+- `ranking/` - Ranking & selection configs
 
-**Old location:** `CONFIG/multi_model_feature_selection.yaml`  
-**New location:** `CONFIG/feature_selection/multi_model.yaml`
+### 🗑️ Archived Files
 
-The config loader automatically checks the new location first, then falls back to legacy. You'll see a deprecation warning if using the old location.
+Unused files have been moved to `archive/`:
+- `comprehensive_feature_ranking.yaml` - Legacy feature ranking
+- `fast_target_ranking.yaml` - Legacy fast ranking
+- `multi_model_feature_selection.yaml.deprecated` - Deprecated feature selection
 
-### Target Ranking Config
+## Migration
 
-**Old location:** Uses feature selection config  
-**New location:** `CONFIG/target_ranking/multi_model.yaml`
+The config structure has been reorganized for better usability. All old locations are still supported via symlinks.
 
-### Training Config
-
-**Old location:** Various files in `CONFIG/training_config/`  
-**New location:** `CONFIG/training/models.yaml` (for model families)
-
-Training still uses `CONFIG/training_config/` for pipeline, GPU, memory, etc. settings.
+- **Migration complete**: Files moved to new locations
+- **Backward compatible**: Old paths still work
+- **See**: `MIGRATION_GUIDE.md` for details
 
 ## Documentation
 
 - **Configuration Reference:** See `DOCS/02_reference/configuration/`
 - **Experiment Configs:** See `CONFIG/experiments/README.md`
-- **Feature Selection:** See `CONFIG/feature_selection/README.md`
+- **Migration Guide:** See `CONFIG/MIGRATION_GUIDE.md`
+- **Cleanup Plan:** See `CONFIG/CLEANUP_PLAN.md`
 
 ## Backward Compatibility
 
-All legacy config locations are still supported with deprecation warnings. The system will:
+All legacy config locations are still supported:
 1. Check new location first
 2. Fall back to legacy location if new doesn't exist
-3. Show deprecation warning when using legacy location
+3. Show debug message when using legacy location
 
 This ensures existing code continues to work while encouraging migration to the new structure.

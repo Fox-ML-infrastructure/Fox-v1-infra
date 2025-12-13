@@ -1,0 +1,97 @@
+# Threading Configuration
+# Settings for thread allocation, OpenMP, MKL, and per-family policies
+
+threading:
+  # Default Thread Counts
+  defaults:
+    default_threads: null  # null = calculated as max(1, cpu_count() - 1)
+    mkl_threads: 1  # Default MKL threads
+    openblas_threads: 1  # Default OpenBLAS threads
+    numexpr_threads: 1  # Default NumExpr threads
+    polars_max_threads: null  # null = use DEFAULT_THREADS
+  
+  # Thread Policies
+  policies:
+    omp_heavy:
+      description: "High OpenMP parallelism for tree-based models"
+      # OMP and MKL set dynamically based on available cores
+      # No fixed values - calculated at runtime
+    
+    cpu_blas_only:
+      description: "Single-threaded BLAS to avoid MKL segfaults"
+      OMP_NUM_THREADS: 1
+      MKL_NUM_THREADS: 1
+      OPENBLAS_NUM_THREADS: 1
+      NUMEXPR_NUM_THREADS: 1
+      MKL_THREADING_LAYER: "SEQUENTIAL"
+      KMP_AFFINITY: "disabled"
+      KMP_INIT_AT_FORK: "FALSE"
+    
+    tf_cpu:
+      description: "TensorFlow CPU-only (no GPU warnings)"
+      CUDA_VISIBLE_DEVICES: "-1"
+      OMP_NUM_THREADS: 1
+      MKL_NUM_THREADS: 1
+      OPENBLAS_NUM_THREADS: 1
+      NUMEXPR_NUM_THREADS: 1
+      TF_CPP_MIN_LOG_LEVEL: "2"
+    
+    tf_gpu:
+      description: "TensorFlow with GPU support"
+      # CUDA_VISIBLE_DEVICES set from TRAINER_GPU_IDS
+      OMP_NUM_THREADS: 1
+      MKL_NUM_THREADS: 1
+      OPENBLAS_NUM_THREADS: 1
+      NUMEXPR_NUM_THREADS: 1
+      TF_FORCE_GPU_ALLOW_GROWTH: "true"
+      TF_CPP_MIN_LOG_LEVEL: "1"
+    
+    torch_gpu:
+      description: "PyTorch with GPU support"
+      # CUDA_VISIBLE_DEVICES set from TRAINER_GPU_IDS
+      OMP_NUM_THREADS: 2
+      MKL_NUM_THREADS: 1
+      OPENBLAS_NUM_THREADS: 1
+      NUMEXPR_NUM_THREADS: 1
+  
+  # OpenMP Settings
+  openmp:
+    OMP_DYNAMIC: "false"
+    OMP_PROC_BIND: "FALSE"
+    GOMP_CPU_AFFINITY: null  # null = auto, or set CPU affinity string
+    KMP_BLOCKTIME: "0"
+  
+  # MKL Settings
+  mkl:
+    MKL_THREADING_LAYER: "GNU"  # Use GNU OpenMP to avoid conflicts
+    MKL_NUM_THREADS: null  # null = use policy default, or set value
+  
+  # Per-Family Thread Allocation
+  family_allocation:
+    # Special cases for families with custom thread allocation
+    ChangePoint:
+      blas_threads: null  # null = max(12, n_threads - 2)
+    
+    QuantileLightGBM:
+      thread_clamp: [4, 8]  # Clamp threads to 4-8 range
+    
+    Ensemble:
+      hgb_omp: null  # null = all threads
+      rf_jobs: null  # null = all threads
+      rf_omp: 1  # No OpenMP in RF to avoid oversubscription
+  
+  # Thread Planning
+  planning:
+    reserve_threads: 1  # Reserve threads for system (used in calculations)
+    min_threads: 1  # Minimum threads to allocate
+    max_threads: null  # null = no limit, or set maximum
+  
+  # Parallel Execution (Task-Level Parallelization)
+  parallel:
+    # Max workers for ProcessPoolExecutor (CPU-bound tasks like target evaluation)
+    max_workers_process: null  # null = auto (cpu_count - 1), or set value
+    # Max workers for ThreadPoolExecutor (I/O-bound tasks like symbol-specific evaluation)
+    max_workers_thread: null  # null = auto (cpu_count - 1), or set value
+    # Enable parallel execution by default (can be overridden per-task)
+    enabled: true  # Set to false to disable all parallel execution
+

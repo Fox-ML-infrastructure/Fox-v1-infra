@@ -1,0 +1,139 @@
+# Training Pipeline Configuration
+# Main settings for the training pipeline orchestration
+
+pipeline:
+  # Timeouts
+  isolation_timeout_seconds: 7200  # 2 hours default for isolated child processes
+  
+  # Family-specific timeouts (in seconds)
+  # Families that may need longer timeouts can be specified here
+  family_timeouts:
+    LSTM: 10800  # 3 hours for LSTM (can be slow with long sequences)
+    Transformer: 10800  # 3 hours for Transformer (can be slow with long sequences)
+    # Add more family-specific timeouts as needed
+  
+  # Data Processing Limits
+  data_limits:
+    max_samples_per_symbol: null  # None = no limit, or set to integer (e.g., 20 for testing)
+    min_cross_sectional_samples: 10  # Minimum cross-sectional samples required
+    max_cross_sectional_samples: null  # None = no limit, falls back to 1000 if not specified
+    max_rows_train: null  # Maximum training rows (None = no limit)
+    min_cs: 1  # Minimum cross-sectional samples
+    default_max_samples_ranking: 10000  # Default max samples for ranking pipeline
+    default_max_samples_feature_selection: 50000  # Default max samples for feature selection
+    max_cs_samples: 1000  # Maximum cross-sectional samples per timestamp
+    default_max_rows_per_symbol_ranking: 50000  # Default max rows per symbol for ranking
+  
+  # Sequential Model Settings
+  sequential:
+    default_lookback: 64  # Default lookback window for sequential models
+    backend: "torch"  # "torch" or "tf" for sequential models
+  
+  # Leakage Detection Settings
+  leakage:
+    purge_buffer_bars: 5  # Safety buffer for purging (bars)
+    purge_time_minutes: 85  # Fallback purge time (minutes)
+    data_interval_default: 5  # Default data interval (minutes)
+  
+  # Data Interval Detection
+  data_interval:
+    max_reasonable_minutes: 1440.0  # Maximum reasonable interval (1 day in minutes)
+  
+  # Test Configuration
+  test:
+    max_samples_per_symbol: 20  # Reduced for testing
+    epochs: 10  # Reduced for testing
+    targets:  # Test targets
+      - "fwd_ret_5m"
+      - "fwd_ret_15m"
+      - "mdd_5m_0.001"
+      - "will_peak_5m"
+  
+  # Production Defaults
+  production:
+    epochs: 50  # Default epochs (can be overridden via CLI)
+    max_samples_per_symbol: null  # No limit in production
+  
+  # Paths
+  paths:
+    data_dir: "data/data_labeled/interval=5m"  # Default data directory
+    output_dir_pattern: "test_output_*"  # Output directory pattern
+    joblib_temp: null  # null = use default (~/trainer_tmp/joblib), or set custom path
+  
+  # Polars Settings
+  polars:
+    enabled: true  # Use Polars for data processing
+    max_threads: null  # null = use DEFAULT_THREADS, or set custom value
+    cross_sectional_align_mode: "union"  # "union" or "intersection"
+  
+  # Determinism
+  determinism:
+    python_hash_seed: "42"
+    tf_deterministic_ops: "1"
+    base_seed: 42  # Base random seed
+    random_state: 42  # Default random_state for train_test_split
+  
+  # Model Family Lists
+  families:
+    sequential:
+      - "CNN1D"
+      - "LSTM"
+      - "Transformer"
+      - "TabCNN"
+      - "TabLSTM"
+      - "TabTransformer"
+    
+    cross_sectional:
+      - "LightGBM"
+      - "QuantileLightGBM"
+      - "XGBoost"
+      - "NGBoost"
+      - "Ensemble"
+      - "MLP"
+      - "VAE"
+      - "GAN"
+      - "MetaLearning"
+      - "MultiTask"
+      - "RewardBased"
+      - "ChangePoint"
+      - "GMMRegime"
+      - "FTRLProximal"
+  
+  # Family Capabilities (for reference, may remain code-based)
+  # See train_with_strategies.py for full FAMILY_CAPS dictionary
+
+# Intelligent Training Settings
+# These settings control the intelligent training orchestrator behavior
+intelligent_training:
+  # Target selection
+  auto_targets: true  # Automatically rank and select targets
+  top_n_targets: 5  # Number of top targets to select (if auto_targets=true)
+  max_targets_to_evaluate: null  # Limit number of targets to evaluate (null = evaluate all)
+  
+  # Feature selection
+  auto_features: true  # Automatically select features per target
+  top_m_features: 100  # Number of top features per target (if auto_features=true)
+  
+  # Training strategy
+  strategy: "single_task"  # "single_task", "multi_task", or "cascade"
+  
+  # Data limits (can be overridden by experiment config)
+  min_cs: 10  # Minimum cross-sectional samples required
+  max_rows_per_symbol: null  # Maximum rows to load per symbol (null = no limit)
+  max_rows_train: null  # Maximum training rows (null = no limit)
+  max_cs_samples: null  # Maximum cross-sectional samples per timestamp (null = use pipeline.data_limits.max_cs_samples)
+  
+  # Diagnostics
+  run_leakage_diagnostics: false  # Run leakage sentinel tests after training
+
+# Test Configuration (for E2E testing)
+# Override intelligent_training settings for faster testing
+test:
+  intelligent_training:
+    top_n_targets: 23
+    max_targets_to_evaluate: 23
+    top_m_features: 50
+    min_cs: 3
+    max_rows_per_symbol: 5000
+    max_rows_train: 10000
+

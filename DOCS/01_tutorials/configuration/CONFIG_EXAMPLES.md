@@ -12,7 +12,7 @@ Example configurations for common use cases.
 
 The system automatically detects test mode when your `--output-dir` contains "test" (case-insensitive) and uses test-friendly settings.
 
-**1. Edit test config** (`CONFIG/training_config/pipeline_config.yaml`):
+**1. Edit test config** (`CONFIG/pipeline/pipeline.yaml` or `CONFIG/training_config/pipeline_config.yaml` for backward compatibility):
 ```yaml
 # Test Configuration (for E2E testing)
 test:
@@ -42,7 +42,7 @@ python -m TRAINING.orchestration.intelligent_trainer \
 
 Edit the default config for production settings:
 
-**1. Edit default config** (`CONFIG/training_config/pipeline_config.yaml`):
+**1. Edit default config** (`CONFIG/pipeline/pipeline.yaml` or `CONFIG/training_config/pipeline_config.yaml` for backward compatibility):
 ```yaml
 intelligent_training:
   auto_targets: true

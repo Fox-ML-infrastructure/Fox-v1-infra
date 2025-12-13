@@ -73,7 +73,7 @@ test_e2e_20251211_130342/
 
 ## Customizing Test Settings
 
-Edit `CONFIG/training_config/pipeline_config.yaml`:
+Edit `CONFIG/pipeline/pipeline.yaml` (or `CONFIG/training_config/pipeline_config.yaml` for backward compatibility):
 
 ```yaml
 test:

@@ -19,7 +19,7 @@ python -m TRAINING.orchestration.intelligent_trainer \
 When you use `--output-dir "test_e2e_ranking_unified"`, the system:
 
 1. **Detects "test" in output-dir** → automatically uses `test.intelligent_training` config
-2. **Applies test settings** from `CONFIG/training_config/pipeline_config.yaml`:
+2. **Applies test settings** from `CONFIG/pipeline/pipeline.yaml` (or `CONFIG/training_config/pipeline_config.yaml` for backward compatibility):
    - `top_n_targets: 23`
    - `max_targets_to_evaluate: 23`
    - `top_m_features: 50`
@@ -31,7 +31,7 @@ When you use `--output-dir "test_e2e_ranking_unified"`, the system:
 
 ## Customizing Test Settings
 
-Edit `CONFIG/training_config/pipeline_config.yaml`:
+Edit `CONFIG/pipeline/pipeline.yaml` (or `CONFIG/training_config/pipeline_config.yaml` for backward compatibility):
 
 ```yaml
 test:

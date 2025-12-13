@@ -147,11 +147,17 @@ def evaluate_target_predictability(
             max_cs_samples = 1000
     
     if max_rows_per_symbol is None:
-        try:
-            from CONFIG.config_loader import get_cfg
-            max_rows_per_symbol = int(get_cfg("pipeline.data_limits.default_max_rows_per_symbol_ranking", default=50000, config_name="pipeline_config"))
-        except Exception:
-            max_rows_per_symbol = 50000
+        # First check experiment config if available
+        if experiment_config and hasattr(experiment_config, 'max_samples_per_symbol'):
+            max_rows_per_symbol = experiment_config.max_samples_per_symbol
+            logger.debug(f"Using max_rows_per_symbol={max_rows_per_symbol} from experiment config")
+        else:
+            # Fallback to pipeline config
+            try:
+                from CONFIG.config_loader import get_cfg
+                max_rows_per_symbol = int(get_cfg("pipeline.data_limits.default_max_rows_per_symbol_ranking", default=50000, config_name="pipeline_config"))
+            except Exception:
+                max_rows_per_symbol = 50000
     
     return _evaluate_target_predictability(
         target_name=target_name,
@@ -239,27 +245,69 @@ def rank_targets(
     Returns:
         List of TargetPredictabilityScore objects, sorted by composite_score (descending)
     """
-    # Load from config if not provided
+    # Load from config if not provided - check experiment config first
     if min_cs is None:
-        try:
-            from CONFIG.config_loader import get_cfg
-            min_cs = int(get_cfg("pipeline.data_limits.min_cross_sectional_samples", default=10, config_name="pipeline_config"))
-        except Exception:
-            min_cs = 10
+        # First check experiment config if available (read from YAML data section)
+        if experiment_config:
+            try:
+                import yaml
+                exp_name = experiment_config.name
+                exp_file = Path("CONFIG/experiments") / f"{exp_name}.yaml"
+                if exp_file.exists():
+                    with open(exp_file, 'r') as f:
+                        exp_yaml = yaml.safe_load(f) or {}
+                    exp_data = exp_yaml.get('data', {})
+                    if 'min_cs' in exp_data:
+                        min_cs = exp_data['min_cs']
+                        logger.debug(f"Using min_cs={min_cs} from experiment config")
+            except Exception:
+                pass
+        
+        # Fallback to pipeline config
+        if min_cs is None:
+            try:
+                from CONFIG.config_loader import get_cfg
+                min_cs = int(get_cfg("pipeline.data_limits.min_cross_sectional_samples", default=10, config_name="pipeline_config"))
+            except Exception:
+                min_cs = 10
     
     if max_cs_samples is None:
-        try:
-            from CONFIG.config_loader import get_cfg
-            max_cs_samples = int(get_cfg("pipeline.data_limits.max_cs_samples", default=1000, config_name="pipeline_config"))
-        except Exception:
-            max_cs_samples = 1000
+        # First check experiment config if available (read from YAML data section)
+        if experiment_config:
+            try:
+                import yaml
+                exp_name = experiment_config.name
+                exp_file = Path("CONFIG/experiments") / f"{exp_name}.yaml"
+                if exp_file.exists():
+                    with open(exp_file, 'r') as f:
+                        exp_yaml = yaml.safe_load(f) or {}
+                    exp_data = exp_yaml.get('data', {})
+                    if 'max_cs_samples' in exp_data:
+                        max_cs_samples = exp_data['max_cs_samples']
+                        logger.debug(f"Using max_cs_samples={max_cs_samples} from experiment config")
+            except Exception:
+                pass
+        
+        # Fallback to pipeline config
+        if max_cs_samples is None:
+            try:
+                from CONFIG.config_loader import get_cfg
+                max_cs_samples = int(get_cfg("pipeline.data_limits.max_cs_samples", default=1000, config_name="pipeline_config"))
+            except Exception:
+                max_cs_samples = 1000
     
     if max_rows_per_symbol is None:
-        try:
-            from CONFIG.config_loader import get_cfg
-            max_rows_per_symbol = int(get_cfg("pipeline.data_limits.default_max_rows_per_symbol_ranking", default=50000, config_name="pipeline_config"))
-        except Exception:
-            max_rows_per_symbol = 50000
+        # First check experiment config if available
+        if experiment_config and hasattr(experiment_config, 'max_samples_per_symbol'):
+            max_rows_per_symbol = experiment_config.max_samples_per_symbol
+            logger.debug(f"Using max_rows_per_symbol={max_rows_per_symbol} from experiment config")
+        else:
+            # Fallback to pipeline config
+            try:
+                from CONFIG.config_loader import get_cfg
+                max_rows_per_symbol = int(get_cfg("pipeline.data_limits.default_max_rows_per_symbol_ranking", default=50000, config_name="pipeline_config"))
+            except Exception:
+                max_rows_per_symbol = 50000
     
     # Results storage: separate by view
     results_cs = []  # Cross-sectional results

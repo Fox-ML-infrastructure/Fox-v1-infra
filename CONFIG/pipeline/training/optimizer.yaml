@@ -1,0 +1,58 @@
+# Optimizer Configuration
+# Settings for optimizers used across different model families
+
+optimizers:
+  # Adam Optimizer (TensorFlow/Keras)
+  adam:
+    learning_rate: 1e-3  # Default learning rate
+    beta_1: 0.9  # Exponential decay rate for first moment estimates
+    beta_2: 0.999  # Exponential decay rate for second moment estimates
+    epsilon: 1e-7  # Small constant for numerical stability
+    amsgrad: false  # Whether to apply AMSGrad variant
+    clipnorm: 1.0  # Gradient norm clipping
+  
+  # AdamW Optimizer (PyTorch)
+  adamw:
+    learning_rate: 1e-3  # Default learning rate
+    weight_decay: 0.0  # Weight decay (L2 penalty)
+    betas: [0.9, 0.999]  # Beta parameters
+    eps: 1e-8  # Epsilon for numerical stability
+    amsgrad: false
+  
+  # SGD Optimizer
+  sgd:
+    learning_rate: 0.01  # Default learning rate
+    momentum: 0.0  # Momentum factor
+    nesterov: false  # Whether to use Nesterov momentum
+    clipnorm: 1.0  # Gradient norm clipping
+  
+  # RMSprop Optimizer
+  rmsprop:
+    learning_rate: 1e-3  # Default learning rate
+    rho: 0.9  # Discounting factor for gradient
+    epsilon: 1e-7  # Small constant
+    momentum: 0.0  # Momentum factor
+    clipnorm: 1.0
+  
+  # Per-Model Learning Rate Overrides
+  model_lr_overrides:
+    MultiTask:
+      learning_rate: 3e-4  # MultiTask uses 3e-4 (1e-4 to 5e-4 range)
+    default:
+      learning_rate: 1e-3  # Default for most models
+
+# Training profiles for different use cases
+training_profiles:
+  default:
+    batch_size: 256
+    max_epochs: 50
+  debug:
+    batch_size: 32
+    max_epochs: 5
+  throughput_optimized:
+    batch_size: 512
+    max_epochs: 100
+
+# Active training profile (can be overridden via CLI/env)
+active_profile: "default"
+

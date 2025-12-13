@@ -2909,15 +2909,101 @@ def evaluate_target_predictability(
     else:
         log_cfg = _DummyLoggingConfig()
     
+    # ============================================================================
+    # CONFIG TRACE: Data loading limits (with provenance)
+    # ============================================================================
+    import os
+    config_provenance = {}
+    
     # Load default max_rows_per_symbol from config if not provided
     if max_rows_per_symbol is None:
-        if _CONFIG_AVAILABLE:
-            try:
-                max_rows_per_symbol = int(get_cfg("pipeline.data_limits.default_max_rows_per_symbol_ranking", default=50000, config_name="pipeline_config"))
-            except Exception:
-                max_rows_per_symbol = 50000
+        # First check experiment config if available
+        if experiment_config and hasattr(experiment_config, 'max_samples_per_symbol'):
+            max_rows_per_symbol = experiment_config.max_samples_per_symbol
+            config_provenance['max_rows_per_symbol'] = f"experiment_config.max_samples_per_symbol = {max_rows_per_symbol}"
+            logger.debug(f"Using max_rows_per_symbol={max_rows_per_symbol} from experiment config")
         else:
-            max_rows_per_symbol = 50000
+            # Try reading from experiment config YAML directly
+            if experiment_config:
+                try:
+                    import yaml
+                    exp_name = experiment_config.name
+                    exp_file = Path("CONFIG/experiments") / f"{exp_name}.yaml"
+                    if exp_file.exists():
+                        with open(exp_file, 'r') as f:
+                            exp_yaml = yaml.safe_load(f) or {}
+                        exp_data = exp_yaml.get('data', {})
+                        if 'max_samples_per_symbol' in exp_data:
+                            max_rows_per_symbol = exp_data['max_samples_per_symbol']
+                            config_provenance['max_rows_per_symbol'] = f"experiment YAML data.max_samples_per_symbol = {max_rows_per_symbol}"
+                            logger.debug(f"Using max_rows_per_symbol={max_rows_per_symbol} from experiment config YAML")
+                except Exception:
+                    pass
+            
+            # Fallback to pipeline config
+            if max_rows_per_symbol is None:
+                if _CONFIG_AVAILABLE:
+                    try:
+                        max_rows_per_symbol = int(get_cfg("pipeline.data_limits.default_max_rows_per_symbol_ranking", default=50000, config_name="pipeline_config"))
+                        config_provenance['max_rows_per_symbol'] = f"pipeline_config.pipeline.data_limits.default_max_rows_per_symbol_ranking = {max_rows_per_symbol} (default=50000)"
+                    except Exception:
+                        max_rows_per_symbol = 50000
+                        config_provenance['max_rows_per_symbol'] = f"hardcoded default = 50000"
+                else:
+                    max_rows_per_symbol = 50000
+                    config_provenance['max_rows_per_symbol'] = f"hardcoded default = 50000 (config unavailable)"
+    else:
+        config_provenance['max_rows_per_symbol'] = f"passed as parameter = {max_rows_per_symbol}"
+    
+    # Trace max_cs_samples
+    if max_cs_samples is None:
+        # First check experiment config YAML
+        if experiment_config:
+            try:
+                import yaml
+                exp_name = experiment_config.name
+                exp_file = Path("CONFIG/experiments") / f"{exp_name}.yaml"
+                if exp_file.exists():
+                    with open(exp_file, 'r') as f:
+                        exp_yaml = yaml.safe_load(f) or {}
+                    exp_data = exp_yaml.get('data', {})
+                    if 'max_cs_samples' in exp_data:
+                        max_cs_samples = exp_data['max_cs_samples']
+                        config_provenance['max_cs_samples'] = f"experiment YAML data.max_cs_samples = {max_cs_samples}"
+                        logger.debug(f"Using max_cs_samples={max_cs_samples} from experiment config YAML")
+            except Exception:
+                pass
+        
+        # Fallback to pipeline config
+        if max_cs_samples is None:
+            if _CONFIG_AVAILABLE:
+                try:
+                    max_cs_samples = int(get_cfg("pipeline.data_limits.max_cs_samples", default=1000, config_name="pipeline_config"))
+                    config_provenance['max_cs_samples'] = f"pipeline_config.pipeline.data_limits.max_cs_samples = {max_cs_samples} (default=1000)"
+                except Exception:
+                    max_cs_samples = 1000
+                    config_provenance['max_cs_samples'] = f"hardcoded default = 1000"
+            else:
+                max_cs_samples = 1000
+                config_provenance['max_cs_samples'] = f"hardcoded default = 1000 (config unavailable)"
+    else:
+        config_provenance['max_cs_samples'] = f"passed as parameter = {max_cs_samples}"
+    
+    # Log config trace
+    logger.info("=" * 80)
+    logger.info("📋 CONFIG TRACE: Data Loading Limits (with provenance)")
+    logger.info("=" * 80)
+    logger.info(f"   Working directory: {os.getcwd()}")
+    logger.info(f"   Experiment config: {experiment_config.name if experiment_config else 'None'}")
+    logger.info("")
+    logger.info("   🔍 Resolved values:")
+    logger.info(f"      max_rows_per_symbol: {max_rows_per_symbol}")
+    logger.info(f"         Source: {config_provenance.get('max_rows_per_symbol', 'unknown')}")
+    logger.info(f"      max_cs_samples: {max_cs_samples}")
+    logger.info(f"         Source: {config_provenance.get('max_cs_samples', 'unknown')}")
+    logger.info(f"      min_cs: {min_cs}")
+    logger.info("=" * 80)
+    logger.info("")
     
     # Convert dict config to TargetConfig if needed
     if isinstance(target_config, dict):

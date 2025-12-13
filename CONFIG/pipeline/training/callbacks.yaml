@@ -1,0 +1,56 @@
+# Callbacks and Training Loop Configuration
+# Settings for early stopping, learning rate scheduling, and training callbacks
+
+callbacks:
+  # Early Stopping
+  early_stopping:
+    enabled: true
+    monitor: "val_loss"  # Metric to monitor
+    patience: 10  # Default patience (can be overridden per model)
+    restore_best_weights: true  # Restore best weights after training
+    min_delta: 0.0  # Minimum change to qualify as improvement
+    mode: "min"  # "min" for loss, "max" for accuracy
+    
+    # Per-model patience overrides
+    model_patience:
+      LSTM: 5  # Reduced patience for LSTM
+      default: 10  # Default patience
+  
+  # Learning Rate Reduction
+  lr_reduction:
+    enabled: true
+    monitor: "val_loss"
+    patience: 5  # Patience for LR reduction
+    factor: 0.5  # Factor to reduce LR by
+    min_lr: 0.000001  # Minimum learning rate (1e-6 as float to avoid YAML string parsing)
+    mode: "min"
+    cooldown: 0  # Cooldown period after reduction
+    min_delta: 0.0
+  
+  # Model Checkpointing
+  checkpointing:
+    enabled: false  # Disabled by default (use early stopping restore)
+    save_best_only: true
+    monitor: "val_loss"
+    mode: "min"
+    save_weights_only: false
+    period: 1  # Save every N epochs
+  
+  # TensorBoard Logging
+  tensorboard:
+    enabled: false  # Disabled by default
+    log_dir: null  # null = no logging, or set directory path
+    histogram_freq: 0  # Frequency for histogram logging
+    write_graph: false  # Write computation graph
+    write_images: false  # Write images
+  
+  # CSV Logging
+  csv_logging:
+    enabled: false  # Disabled by default
+    filename: null  # null = no logging, or set filename
+  
+  # Progress Bar
+  progress_bar:
+    enabled: true  # Enable progress bar during training
+    verbose: 1  # Verbosity level (0=silent, 1=progress bar, 2=one line per epoch)
+

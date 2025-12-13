@@ -203,8 +203,14 @@ def load_model_config(
     if model_family_lower in aliases:
         model_family_lower = aliases[model_family_lower]
     
-    # Construct config file path
-    config_file = CONFIG_DIR / "model_config" / f"{model_family_lower}.yaml"
+    # Try new location first (models/), then fallback to old (model_config/)
+    config_file = CONFIG_DIR / "models" / f"{model_family_lower}.yaml"
+    old_config_file = CONFIG_DIR / "model_config" / f"{model_family_lower}.yaml"
+    
+    # Use old location if new doesn't exist
+    if not config_file.exists() and old_config_file.exists():
+        config_file = old_config_file
+        logger.debug(f"Using legacy location: model_config/{model_family_lower}.yaml (consider migrating to models/{model_family_lower}.yaml)")
     
     # Initialize result dict (will be populated from file or defaults)
     result = {}
@@ -253,6 +259,8 @@ def load_training_config(config_name: str) -> Dict[str, Any]:
     """
     Load training workflow configuration.
     
+    Checks new location first (pipeline/training/), then falls back to old location (training_config/).
+    
     Args:
         config_name: Config file name (without .yaml extension)
         
@@ -263,22 +271,70 @@ def load_training_config(config_name: str) -> Dict[str, Any]:
         >>> config = load_training_config("first_batch_specs")
         >>> config = load_training_config("sequential_config")
     """
-    config_file = CONFIG_DIR / "training_config" / f"{config_name}.yaml"
+    # Map old config names to new names
+    name_mapping = {
+        "intelligent_training_config": "intelligent",
+        "safety_config": "safety",
+        "preprocessing_config": "preprocessing",
+        "optimizer_config": "optimizer",
+        "callbacks_config": "callbacks",
+        "routing_config": "routing",
+        "stability_config": "stability",
+        "decision_policies": "decisions",
+        "family_config": "families",
+        "sequential_config": "sequential",
+        "first_batch_specs": "first_batch",
+        "gpu_config": "gpu",
+        "memory_config": "memory",
+        "threading_config": "threading",
+        "pipeline_config": "pipeline",
+    }
     
-    if not config_file.exists():
-        logger.warning(f"Training config not found: {config_file}")
-        return {}
+    # Try new location first (pipeline/training/ or pipeline/)
+    new_name = name_mapping.get(config_name, config_name)
     
-    try:
-        with open(config_file, 'r') as f:
-            config = yaml.safe_load(f)
-        if config is None:
-            logger.warning(f"Training config {config_file} is empty or invalid YAML, using empty config")
+    # Determine if it's a training-specific config or pipeline-level config
+    training_configs = {"intelligent", "safety", "preprocessing", "optimizer", "callbacks", 
+                       "routing", "stability", "decisions", "families", "sequential", "first_batch"}
+    
+    if new_name in training_configs:
+        # Training-specific configs go in pipeline/training/
+        config_file = CONFIG_DIR / "pipeline" / "training" / f"{new_name}.yaml"
+    else:
+        # Pipeline-level configs go in pipeline/
+        config_file = CONFIG_DIR / "pipeline" / f"{new_name}.yaml"
+    
+    # Try new location first
+    if config_file.exists():
+        try:
+            with open(config_file, 'r') as f:
+                config = yaml.safe_load(f)
+            if config is None:
+                logger.warning(f"Training config {config_file} is empty or invalid YAML, using empty config")
+                return {}
+            return config
+        except Exception as e:
+            logger.error(f"Failed to load training config {config_file}: {e}")
+            # Fall through to old location
+    
+    # Fallback to old location (training_config/)
+    old_config_file = CONFIG_DIR / "training_config" / f"{config_name}.yaml"
+    if old_config_file.exists():
+        logger.debug(f"Using legacy location: {old_config_file} (consider migrating to {config_file.relative_to(CONFIG_DIR)})")
+        try:
+            with open(old_config_file, 'r') as f:
+                config = yaml.safe_load(f)
+            if config is None:
+                logger.warning(f"Training config {old_config_file} is empty or invalid YAML, using empty config")
+                return {}
+            return config
+        except Exception as e:
+            logger.error(f"Failed to load training config {old_config_file}: {e}")
             return {}
-        return config
-    except Exception as e:
-        logger.error(f"Failed to load training config {config_file}: {e}")
-        return {}
+    
+    # Not found in either location
+    logger.debug(f"Training config not found: {config_name} (checked {config_file.relative_to(CONFIG_DIR)} and {old_config_file.relative_to(CONFIG_DIR)})")
+    return {}
 
 
 def get_variant_from_env(model_family: str, default: str = "balanced") -> str:
@@ -393,7 +449,23 @@ def get_cfg(path: str, default: Any = None, config_name: str = "pipeline_config"
         >>> timeout = get_cfg("pipeline.isolation_timeout_seconds", default=7200)
         >>> batch_size = get_cfg("preprocessing.validation.test_size", default=0.2)
     """
+    # Handle legacy "training_config" name - fallback to intelligent_training_config or pipeline_config
+    fallback_configs = []
+    if config_name == "training_config":
+        # "training_config" is a legacy name - try intelligent_training_config first, then pipeline_config
+        fallback_configs = ["intelligent_training_config", "pipeline_config"]
+        config_name = "intelligent_training_config"  # Try this first
+    
     config = load_training_config(config_name)
+    
+    # If config not found and we have fallbacks, try them
+    if not config and fallback_configs:
+        for fallback_name in fallback_configs:
+            config = load_training_config(fallback_name)
+            if config:
+                logger.debug(f"Config '{config_name}' not found, using fallback '{fallback_name}'")
+                break
+    
     if not config:
         return default
     
@@ -466,6 +538,85 @@ def get_optimizer_config() -> Dict[str, Any]:
 def get_system_config() -> Dict[str, Any]:
     """Load system configuration"""
     return load_training_config("system_config")
+
+
+def get_config_path(config_name: str) -> Path:
+    """
+    Get the path to a config file, checking new locations first, then falling back to old.
+    
+    This provides a centralized way to resolve config file paths after the migration.
+    
+    Args:
+        config_name: Name of config file (e.g., "excluded_features", "feature_registry", 
+                    "intelligent_training_config", "lightgbm")
+    
+    Returns:
+        Path to config file (may not exist - caller should check)
+    
+    Examples:
+        >>> get_config_path("excluded_features")  # Returns CONFIG/data/excluded_features.yaml
+        >>> get_config_path("lightgbm")  # Returns CONFIG/models/lightgbm.yaml
+        >>> get_config_path("intelligent_training_config")  # Returns CONFIG/pipeline/training/intelligent.yaml
+    """
+    # Map of config names to (new_path, old_path) tuples
+    config_mappings = {
+        # Core configs
+        "logging_config": ("core/logging.yaml", "logging_config.yaml"),
+        "system_config": ("core/system.yaml", "training_config/system_config.yaml"),
+        
+        # Data configs
+        "excluded_features": ("data/excluded_features.yaml", "excluded_features.yaml"),
+        "feature_registry": ("data/feature_registry.yaml", "feature_registry.yaml"),
+        "feature_target_schema": ("data/feature_target_schema.yaml", "feature_target_schema.yaml"),
+        "feature_groups": ("data/feature_groups.yaml", "feature_groups.yaml"),
+        
+        # Training configs
+        "intelligent_training_config": ("pipeline/training/intelligent.yaml", "training_config/intelligent_training_config.yaml"),
+        "safety_config": ("pipeline/training/safety.yaml", "training_config/safety_config.yaml"),
+        "preprocessing_config": ("pipeline/training/preprocessing.yaml", "training_config/preprocessing_config.yaml"),
+        "optimizer_config": ("pipeline/training/optimizer.yaml", "training_config/optimizer_config.yaml"),
+        "callbacks_config": ("pipeline/training/callbacks.yaml", "training_config/callbacks_config.yaml"),
+        "routing_config": ("pipeline/training/routing.yaml", "training_config/routing_config.yaml"),
+        "stability_config": ("pipeline/training/stability.yaml", "training_config/stability_config.yaml"),
+        "decision_policies": ("pipeline/training/decisions.yaml", "training_config/decision_policies.yaml"),
+        "family_config": ("pipeline/training/families.yaml", "training_config/family_config.yaml"),
+        "sequential_config": ("pipeline/training/sequential.yaml", "training_config/sequential_config.yaml"),
+        "first_batch_specs": ("pipeline/training/first_batch.yaml", "training_config/first_batch_specs.yaml"),
+        
+        # Pipeline configs
+        "gpu_config": ("pipeline/gpu.yaml", "training_config/gpu_config.yaml"),
+        "memory_config": ("pipeline/memory.yaml", "training_config/memory_config.yaml"),
+        "threading_config": ("pipeline/threading.yaml", "training_config/threading_config.yaml"),
+        "pipeline_config": ("pipeline/pipeline.yaml", "training_config/pipeline_config.yaml"),
+        
+        # Ranking configs
+        "target_ranking_multi_model": ("ranking/targets/multi_model.yaml", "target_ranking/multi_model.yaml"),
+        "target_configs": ("ranking/targets/configs.yaml", "target_configs.yaml"),
+        "feature_selection_multi_model": ("ranking/features/multi_model.yaml", "feature_selection/multi_model.yaml"),
+        "feature_selection_config": ("ranking/features/config.yaml", "feature_selection_config.yaml"),
+    }
+    
+    # Check if we have a mapping
+    if config_name in config_mappings:
+        new_path, old_path = config_mappings[config_name]
+        # Try new location first
+        new_file = CONFIG_DIR / new_path
+        if new_file.exists():
+            return new_file
+        # Fallback to old location
+        old_file = CONFIG_DIR / old_path
+        return old_file
+    
+    # For model configs, check models/ first, then model_config/
+    model_file = CONFIG_DIR / "models" / f"{config_name}.yaml"
+    if model_file.exists():
+        return model_file
+    old_model_file = CONFIG_DIR / "model_config" / f"{config_name}.yaml"
+    if old_model_file.exists():
+        return old_model_file
+    
+    # Default: assume it's in the root or use the name directly
+    return CONFIG_DIR / f"{config_name}.yaml"
 
 
 def get_family_timeout(family: str, default: int = 7200) -> int:

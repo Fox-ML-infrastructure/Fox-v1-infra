@@ -1,0 +1,15 @@
+# Stability Analysis Configuration
+# Thresholds for feature importance stability analysis
+
+importance_diff:
+  # Absolute difference threshold
+  diff_threshold: 0.1  # Minimum absolute difference to flag
+  
+  # Relative difference threshold
+  relative_diff_threshold: 0.5  # Minimum relative difference (50%) to flag
+  
+  # Minimum importance threshold
+  min_importance_full: 0.01  # Minimum importance in full set to consider
+  
+  # Top N features to analyze
+  top_n: 10  # Number of top features to compare

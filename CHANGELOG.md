@@ -14,6 +14,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Highlights
 
+#### Config Path Consolidation & Config Trace System (2025-12-13) – **NEW**
+- **Config Reorganization**: Major restructure of `CONFIG/` directory into modular structure (`core/`, `data/`, `models/`, `pipeline/`, `ranking/`)
+- **Backward Compatible**: All old paths work via symlinks and fallback logic
+- **Config Trace**: Comprehensive logging shows where each config value comes from (file, source chain, conflicts)
+- **Max Samples Fix**: Fixed experiment config `max_samples_per_symbol` not being read from YAML
+- **Output Directory Binning**: Now uses configured `max_rows_per_symbol` instead of full dataset size
+- **Helper Function**: `get_config_path()` for dynamic path resolution
+- **Documentation**: Complete migration guide and path consolidation status
+- See [Config Migration Guide](CONFIG/MIGRATION_GUIDE.md) for details
+
+### Highlights
+
 #### License & Commercial Use Banner (2025-12-12) – **NEW**
 - **Terminal Billboard**: Professional startup banner prints licensing information on every run
 - **30-Day Evaluation Period**: Banner now includes 30-day evaluation period for commercial organizations

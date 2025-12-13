@@ -559,22 +559,29 @@ def boruta_to_importance(
 def load_multi_model_config(config_path: Path = None) -> Dict[str, Any]:
     """Load multi-model feature selection configuration
     
-    Checks new location first (CONFIG/feature_selection/multi_model.yaml),
+    Checks new location first (CONFIG/ranking/features/multi_model.yaml),
+    then old location (CONFIG/feature_selection/multi_model.yaml),
     then falls back to legacy location (CONFIG/multi_model_feature_selection.yaml).
     """
     if config_path is None:
-        # Try new location first
-        new_path = _REPO_ROOT / "CONFIG" / "feature_selection" / "multi_model.yaml"
+        # Try newest location first (ranking/features/)
+        newest_path = _REPO_ROOT / "CONFIG" / "ranking" / "features" / "multi_model.yaml"
+        # Then old location (feature_selection/)
+        old_path = _REPO_ROOT / "CONFIG" / "feature_selection" / "multi_model.yaml"
+        # Finally legacy location (root)
         legacy_path = _REPO_ROOT / "CONFIG" / "multi_model_feature_selection.yaml"
         
-        if new_path.exists():
-            config_path = new_path
+        if newest_path.exists():
+            config_path = newest_path
             logger.debug(f"Using new config location: {config_path}")
+        elif old_path.exists():
+            config_path = old_path
+            logger.debug(f"Using old config location: {config_path} (consider migrating to ranking/features/)")
         elif legacy_path.exists():
             config_path = legacy_path
             logger.warning(
                 f"⚠️  DEPRECATED: Using legacy config location: {legacy_path}\n"
-                f"   Please migrate to: CONFIG/feature_selection/multi_model.yaml"
+                f"   Please migrate to: CONFIG/ranking/features/multi_model.yaml"
             )
         else:
             logger.warning(f"Config not found in new ({new_path}) or legacy ({legacy_path}) locations, using defaults")

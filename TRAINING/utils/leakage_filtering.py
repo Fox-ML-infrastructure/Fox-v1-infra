@@ -66,13 +66,20 @@ def _load_schema_config(force_reload: bool = False) -> Dict[str, Any]:
                 config_dir = config_path.get('config_dir', 'CONFIG')
                 script_file = Path(__file__).resolve()
                 repo_root = script_file.parents[2]
-                schema_path = repo_root / config_dir / "feature_target_schema.yaml"
+                # Try new location first (data/), then old (root)
+                schema_path = repo_root / config_dir / "data" / "feature_target_schema.yaml"
+                if not schema_path.exists():
+                    schema_path = repo_root / config_dir / "feature_target_schema.yaml"
         except Exception:
             pass  # Fall through to default
     
-    # Fallback to default location
+    # Fallback to default location - try new location first (data/), then old (root)
     if schema_path is None or not schema_path.exists():
-        schema_path = _find_config_path().parent / "feature_target_schema.yaml"
+        excluded_path = _find_config_path()
+        # Try data/ subdirectory first
+        schema_path = excluded_path.parent / "data" / "feature_target_schema.yaml"
+        if not schema_path.exists():
+            schema_path = excluded_path.parent / "feature_target_schema.yaml"
     
     # Use cache if available and path matches
     if not force_reload and _SCHEMA_CONFIG is not None and _SCHEMA_CONFIG_PATH_CACHE == schema_path:
@@ -326,7 +333,10 @@ def _find_config_path() -> Path:
                 config_dir = config_path.get('config_dir', 'CONFIG')
                 script_file = Path(__file__).resolve()
                 repo_root = script_file.parents[2]
-                config_file = repo_root / config_dir / "excluded_features.yaml"
+                # Try new location first (data/), then old (root)
+                config_file = repo_root / config_dir / "data" / "excluded_features.yaml"
+                if not config_file.exists():
+                    config_file = repo_root / config_dir / "excluded_features.yaml"
                 if config_file.exists():
                     return config_file
         except Exception:
@@ -335,12 +345,17 @@ def _find_config_path() -> Path:
     # Strategy 1: Relative to this file (TRAINING/utils/leakage_filtering.py -> repo root)
     # Go up: TRAINING/utils/ -> TRAINING/ -> repo_root/
     script_file = Path(__file__).resolve()
-    repo_root_via_script = script_file.parents[2] / "CONFIG" / "excluded_features.yaml"
+    # Try new location first (data/), then old (root)
+    repo_root_via_script = script_file.parents[2] / "CONFIG" / "data" / "excluded_features.yaml"
+    if not repo_root_via_script.exists():
+        repo_root_via_script = script_file.parents[2] / "CONFIG" / "excluded_features.yaml"
     if repo_root_via_script.exists():
         return repo_root_via_script
     
     # Strategy 2: Look for CONFIG directory in current working directory
-    cwd_config = Path.cwd() / "CONFIG" / "excluded_features.yaml"
+    cwd_config = Path.cwd() / "CONFIG" / "data" / "excluded_features.yaml"
+    if not cwd_config.exists():
+        cwd_config = Path.cwd() / "CONFIG" / "excluded_features.yaml"
     if cwd_config.exists():
         return cwd_config
     

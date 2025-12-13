@@ -387,14 +387,23 @@ def load_multi_model_config(config_path: Path = None) -> Dict[str, Any]:
     then falls back to feature_selection config, then legacy location.
     """
     if config_path is None:
-        # Try new target_ranking location first
-        new_path = _REPO_ROOT / "CONFIG" / "target_ranking" / "multi_model.yaml"
-        feature_selection_path = _REPO_ROOT / "CONFIG" / "feature_selection" / "multi_model.yaml"
+        # Try newest location first (ranking/targets/)
+        newest_path = _REPO_ROOT / "CONFIG" / "ranking" / "targets" / "multi_model.yaml"
+        # Then old location (target_ranking/)
+        old_path = _REPO_ROOT / "CONFIG" / "target_ranking" / "multi_model.yaml"
+        # Then feature_selection as fallback (try new location first)
+        feature_selection_path = _REPO_ROOT / "CONFIG" / "ranking" / "features" / "multi_model.yaml"
+        if not feature_selection_path.exists():
+            feature_selection_path = _REPO_ROOT / "CONFIG" / "feature_selection" / "multi_model.yaml"
+        # Finally legacy location (root)
         legacy_path = _REPO_ROOT / "CONFIG" / "multi_model_feature_selection.yaml"
         
-        if new_path.exists():
-            config_path = new_path
-            logger.debug(f"Using target ranking config: {config_path}")
+        if newest_path.exists():
+            config_path = newest_path
+            logger.debug(f"Using new config location: {config_path}")
+        elif old_path.exists():
+            config_path = old_path
+            logger.debug(f"Using old config location: {config_path} (consider migrating to ranking/targets/)")
         elif feature_selection_path.exists():
             config_path = feature_selection_path
             logger.debug(f"Using feature selection config (shared): {config_path}")
@@ -402,7 +411,7 @@ def load_multi_model_config(config_path: Path = None) -> Dict[str, Any]:
             config_path = legacy_path
             logger.warning(
                 f"⚠️  DEPRECATED: Using legacy config location: {legacy_path}\n"
-                f"   Please migrate to: CONFIG/target_ranking/multi_model.yaml"
+                f"   Please migrate to: CONFIG/ranking/targets/multi_model.yaml"
             )
         else:
             logger.debug(f"Multi-model config not found in any location, using defaults")

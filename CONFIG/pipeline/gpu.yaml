@@ -1,0 +1,94 @@
+# GPU and CUDA Configuration
+# Settings for GPU acceleration and CUDA management
+
+gpu:
+  # Device Selection
+  cuda_visible_devices: "0"  # GPU IDs to use (comma-separated, "-1" to hide GPU)
+  tf_visible_device_list: null  # null = mirrors CUDA_VISIBLE_DEVICES
+  
+  # TensorFlow GPU Settings
+  tensorflow:
+    allocator: "cuda_malloc_async"  # GPU memory allocator
+    force_gpu_allow_growth: true  # Allow GPU memory growth
+    num_intraop_threads: 1  # Intra-op parallelism
+    num_interop_threads: 1  # Inter-op parallelism
+    cpp_min_log_level: "1"  # "1"=warnings, "2"=errors, "3"=fatal
+    enable_onednn_opts: null  # null = default, "0" to disable
+    deterministic_ops: "1"  # Enable deterministic operations
+  
+  # VRAM Management
+  vram:
+    # Per-family VRAM caps (in MB)
+    caps:
+      MLP: 4096
+      VAE: 4096
+      GAN: 4096
+      MetaLearning: 4096
+      MultiTask: 4096
+      CNN1D: 4096
+      LSTM: 4096
+      Transformer: 4096
+      TabCNN: 4096
+      TabLSTM: 4096
+      TabTransformer: 4096
+      default: 4096  # Default cap for GPU families
+  
+  # Mixed Precision
+  mixed_precision:
+    enabled: true  # Enable mixed precision for Ampere+ GPUs
+    policy: "mixed_float16"  # Mixed precision policy
+    compute_capability_threshold: 8.6  # Minimum compute capability (Ampere+)
+  
+  # GPU Detection
+  detection:
+    check_on_startup: true  # Check GPU availability on startup
+    log_gpu_info: true  # Log GPU information
+  
+  # CUDA Library Paths
+  cuda:
+    # Auto-detect from CONDA_PREFIX if available
+    conda_prefix: null  # null = use CONDA_PREFIX env var
+    library_paths:
+      - "{conda_prefix}/lib"  # Conda CUDA libraries
+      - "{conda_prefix}/targets/x86_64-linux/lib"  # Conda CUDA target libraries
+  
+  # XGBoost GPU Settings
+  xgboost:
+    device: "cuda"  # "cuda" or "cpu" (XGBoost 3.1+ removed gpu_id, use device='cuda:0' format if needed)
+    tree_method: "hist"  # Use "hist" with device="cuda" (XGBoost 3.x), or "gpu_hist" for legacy (< 2.0)
+    # Note: gpu_id removed in XGBoost 3.1+, use device='cuda:0' format to specify GPU ID
+    # GPU Detection Settings
+    test_enabled: true  # Enable GPU test before use
+    test_n_estimators: 1  # Number of estimators for test model
+    test_samples: 10  # Number of samples for test model
+    test_features: 5  # Number of features for test model
+  
+  # LightGBM GPU Settings
+  lightgbm:
+    device: "cuda"  # "cuda" (CUDA) or "gpu" (OpenCL) or "cpu"
+    gpu_device_id: 0  # GPU device ID for CUDA
+    gpu_platform_id: 0  # GPU platform ID for OpenCL
+    # GPU Detection Settings
+    test_enabled: true  # Enable GPU test before use
+    test_n_estimators: 1  # Number of estimators for test model
+    test_samples: 10  # Number of samples for test model
+    test_features: 5  # Number of features for test model
+    try_cuda_first: true  # Try CUDA before OpenCL
+  
+  # CatBoost GPU Settings
+  catboost:
+    task_type: "GPU"  # "GPU" or "CPU"
+    devices: "0"  # GPU device IDs (comma-separated, or "0" for single GPU)
+    thread_count: 8  # CPU threads for data preparation/quantization (leave headroom for OS/GPU driver, default: 8)
+    # GPU Detection Settings
+    test_enabled: true  # Enable GPU test before use
+    test_iterations: 1  # Number of iterations for test model
+    test_samples: 10  # Number of samples for test model
+    test_features: 5  # Number of features for test model
+  
+  # PyTorch GPU Settings
+  pytorch:
+    device: "cuda"  # "cuda" or "cpu"
+    cudnn_benchmark: false  # Disable for deterministic behavior
+    cudnn_deterministic: true  # Enable deterministic cuDNN
+

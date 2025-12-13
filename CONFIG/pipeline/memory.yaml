@@ -1,0 +1,33 @@
+# Memory Management Configuration
+# Settings for memory monitoring, cleanup, and limits
+
+memory:
+  # Memory Thresholds
+  thresholds:
+    system_memory_warning: 0.90  # 90% system memory usage triggers warning
+    process_rss_warning_gb: 50  # 50GB process RSS triggers warning
+    memory_threshold: 0.80  # 80% memory usage threshold for cleanup
+    high_memory_warning: 0.90  # 90% memory usage for high warning
+  
+  # Chunking
+  chunking:
+    chunk_size: 1000000  # 1M rows per chunk for batch processing
+    aggressive_cleanup: true  # Enable aggressive memory cleanup
+  
+  # Memory Caps (for child processes)
+  caps:
+    child_process_gb: 0  # 0 = disabled, or set GB limit (e.g., 16)
+    disable_cap_check: false  # Set to true to disable cap checking
+  
+  # Cleanup Settings
+  cleanup:
+    aggressive: true  # Enable aggressive cleanup
+    cleanup_interval: null  # null = cleanup on demand, or set seconds
+    gc_collect: true  # Run garbage collection during cleanup
+  
+  # Monitoring
+  monitoring:
+    enabled: true  # Enable memory monitoring
+    log_interval: null  # null = log on threshold, or set seconds
+    log_on_cleanup: true  # Log when cleanup is triggered
+

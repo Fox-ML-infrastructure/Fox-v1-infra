@@ -60,6 +60,20 @@ def load_yaml(path: Path) -> Dict[str, Any]:
         return {}
 
 
+def _load_config_with_fallback(new_path: str, old_path: str) -> Dict[str, Any]:
+    """Load config from new location, fallback to old location."""
+    new_file = CONFIG_DIR / new_path
+    old_file = CONFIG_DIR / old_path
+    
+    if new_file.exists():
+        return load_yaml(new_file)
+    elif old_file.exists():
+        logger.debug(f"Using legacy config: {old_path} (consider migrating to {new_path})")
+        return load_yaml(old_file)
+    else:
+        return {}
+
+
 def load_experiment_config(experiment_name: str) -> ExperimentConfig:
     """
     Load experiment configuration from YAML file.
@@ -218,18 +232,22 @@ def build_feature_selection_config(
     Raises:
         ValueError: If config validation fails
     """
-    # Load module config
+    # Load module config - try new location first (ranking/features/), then old (feature_selection/)
     if module_cfg_path is None:
-        module_cfg_path = CONFIG_DIR / "feature_selection" / "multi_model.yaml"
+        # Try new location first
+        module_cfg_path = CONFIG_DIR / "ranking" / "features" / "multi_model.yaml"
+        if not module_cfg_path.exists():
+            # Fallback to old location
+            module_cfg_path = CONFIG_DIR / "feature_selection" / "multi_model.yaml"
     
     # Fallback to legacy location if new doesn't exist
     if not module_cfg_path.exists():
         legacy_path = CONFIG_DIR / "multi_model_feature_selection.yaml"
         if legacy_path.exists():
-            logger.warning(f"Using legacy config: {legacy_path}")
+            logger.debug(f"Using legacy config: {legacy_path}")
             module_data = load_yaml(legacy_path)
         else:
-            logger.warning(f"Module config not found: {module_cfg_path}, using defaults")
+            logger.debug(f"Module config not found: {module_cfg_path}, using defaults")
             module_data = {}
     else:
         module_data = load_yaml(module_cfg_path)
@@ -307,9 +325,13 @@ def build_target_ranking_config(
     Returns:
         TargetRankingConfig object
     """
-    # Load module config (if it exists)
+    # Load module config - try new location first (ranking/targets/), then old (target_ranking/)
     if module_cfg_path is None:
-        module_cfg_path = CONFIG_DIR / "target_ranking" / "multi_model.yaml"
+        # Try new location first
+        module_cfg_path = CONFIG_DIR / "ranking" / "targets" / "multi_model.yaml"
+        if not module_cfg_path.exists():
+            # Fallback to old location
+            module_cfg_path = CONFIG_DIR / "target_ranking" / "multi_model.yaml"
     
     module_data = load_yaml(module_cfg_path) if module_cfg_path.exists() else {}
     
@@ -379,10 +401,13 @@ def build_training_config(
     Returns:
         TrainingConfig object
     """
-    # Load module configs
+    # Load module configs - try new locations first
     if module_cfg_path is None:
         models_path = CONFIG_DIR / "training" / "models.yaml"
-        pipeline_path = CONFIG_DIR / "training_config" / "pipeline_config.yaml"
+        # Try new location first (pipeline/), then old (training_config/)
+        pipeline_path = CONFIG_DIR / "pipeline" / "pipeline.yaml"
+        if not pipeline_path.exists():
+            pipeline_path = CONFIG_DIR / "training_config" / "pipeline_config.yaml"
     else:
         models_path = module_cfg_path
         pipeline_path = None
@@ -393,7 +418,10 @@ def build_training_config(
     # For training, model_families might come from feature_selection config (shared)
     # Try to load from feature_selection config as fallback
     if not models_data.get('model_families'):
-        feature_selection_path = CONFIG_DIR / "feature_selection" / "multi_model.yaml"
+        # Try new location first (ranking/features/), then old (feature_selection/)
+        feature_selection_path = CONFIG_DIR / "ranking" / "features" / "multi_model.yaml"
+        if not feature_selection_path.exists():
+            feature_selection_path = CONFIG_DIR / "feature_selection" / "multi_model.yaml"
         legacy_path = CONFIG_DIR / "multi_model_feature_selection.yaml"
         
         if feature_selection_path.exists():
@@ -423,12 +451,12 @@ def build_training_config(
             model_families=models_data.get('model_families', {}),
             cv_folds=experiment_cfg.training_overrides.get('cv_folds', pipeline_data.get('pipeline', {}).get('cv_folds', 5)),
             pipeline=pipeline_data,
-            gpu=load_yaml(CONFIG_DIR / "training_config" / "gpu_config.yaml"),
-            memory=load_yaml(CONFIG_DIR / "training_config" / "memory_config.yaml"),
-            preprocessing=load_yaml(CONFIG_DIR / "training_config" / "preprocessing_config.yaml"),
-            threading=load_yaml(CONFIG_DIR / "training_config" / "threading_config.yaml"),
-            callbacks=load_yaml(CONFIG_DIR / "training_config" / "callbacks_config.yaml"),
-            optimizer=load_yaml(CONFIG_DIR / "training_config" / "optimizer_config.yaml"),
+            gpu=_load_config_with_fallback("pipeline/gpu.yaml", "training_config/gpu_config.yaml"),
+            memory=_load_config_with_fallback("pipeline/memory.yaml", "training_config/memory_config.yaml"),
+            preprocessing=_load_config_with_fallback("pipeline/training/preprocessing.yaml", "training_config/preprocessing_config.yaml"),
+            threading=_load_config_with_fallback("pipeline/threading.yaml", "training_config/threading_config.yaml"),
+            callbacks=_load_config_with_fallback("pipeline/training/callbacks.yaml", "training_config/callbacks_config.yaml"),
+            optimizer=_load_config_with_fallback("pipeline/training/optimizer.yaml", "training_config/optimizer_config.yaml"),
             target=experiment_cfg.target,
             data_dir=experiment_cfg.data_dir,
             symbols=experiment_cfg.symbols,
@@ -450,7 +478,10 @@ def build_leakage_config(module_cfg_path: Optional[Path] = None) -> LeakageConfi
         LeakageConfig object
     """
     if module_cfg_path is None:
-        module_cfg_path = CONFIG_DIR / "training_config" / "safety_config.yaml"
+        # Try new location first (pipeline/training/), then old (training_config/)
+        module_cfg_path = CONFIG_DIR / "pipeline" / "training" / "safety.yaml"
+        if not module_cfg_path.exists():
+            module_cfg_path = CONFIG_DIR / "training_config" / "safety_config.yaml"
     
     data = load_yaml(module_cfg_path)
     
@@ -474,7 +505,10 @@ def build_system_config(module_cfg_path: Optional[Path] = None) -> SystemConfig:
         SystemConfig object
     """
     if module_cfg_path is None:
-        module_cfg_path = CONFIG_DIR / "training_config" / "system_config.yaml"
+        # Try new location first (core/), then old (training_config/)
+        module_cfg_path = CONFIG_DIR / "core" / "system.yaml"
+        if not module_cfg_path.exists():
+            module_cfg_path = CONFIG_DIR / "training_config" / "system_config.yaml"
     
     data = load_yaml(module_cfg_path)
     
