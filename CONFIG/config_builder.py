@@ -314,12 +314,32 @@ def build_target_ranking_config(
     module_data = load_yaml(module_cfg_path) if module_cfg_path.exists() else {}
     
     # Apply experiment overrides
+    # Priority: target_ranking_overrides > training_overrides (for model configs) > module config > defaults
     if experiment_cfg.target_ranking_overrides:
         for key, value in experiment_cfg.target_ranking_overrides.items():
             if key in module_data and isinstance(module_data[key], dict) and isinstance(value, dict):
                 module_data[key].update(value)
             else:
                 module_data[key] = value
+    
+    # Also apply training_overrides.model_families if provided (allows experiment config to override model configs)
+    # This allows users to override CatBoost/XGBoost/etc configs in training section of experiment config
+    if experiment_cfg.training_overrides and 'model_families' in experiment_cfg.training_overrides:
+        training_model_families = experiment_cfg.training_overrides['model_families']
+        if isinstance(training_model_families, dict):
+            # Deep merge model family configs from training_overrides into target_ranking model_families
+            if 'model_families' not in module_data:
+                module_data['model_families'] = {}
+            for family_name, family_config in training_model_families.items():
+                if family_name in module_data['model_families']:
+                    # Deep merge: update nested config dict
+                    if isinstance(module_data['model_families'][family_name], dict) and isinstance(family_config, dict):
+                        module_data['model_families'][family_name].update(family_config)
+                    else:
+                        module_data['model_families'][family_name] = family_config
+                else:
+                    # Add new family config
+                    module_data['model_families'][family_name] = family_config
     
     # Build config (validation happens in __post_init__)
     try:
