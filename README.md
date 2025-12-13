@@ -177,4 +177,6 @@ For commercial licensing or organizational engagements:
 
 If you appreciate this work and want to support ongoing development, you can contribute here: [Support Development](https://www.paypal.com/ncp/payment/75FQ39PTAUNFQ)
 
+![Coffee Fund QR Code](DOCS/images/coffee_fund_qrcode.png)
+
 Contributions are voluntary and provided as-is. They do not confer ownership, governance rights, priority support, or any implied agreement beyond appreciation for the work.
