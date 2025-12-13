@@ -1184,11 +1184,41 @@ def train_model_and_get_importance(
                 for v in unique_vals
             )
             
+            # GPU settings (will fallback to CPU if GPU not available)
+            gpu_params = {}
+            try:
+                from CONFIG.config_loader import get_cfg
+                # SST: All values from config, no hardcoded defaults
+                task_type = get_cfg('gpu.catboost.task_type', default='CPU', config_name='gpu_config')
+                devices = get_cfg('gpu.catboost.devices', default='0', config_name='gpu_config')
+                test_enabled = get_cfg('gpu.catboost.test_enabled', default=True, config_name='gpu_config')
+                test_iterations = get_cfg('gpu.catboost.test_iterations', default=1, config_name='gpu_config')
+                test_samples = get_cfg('gpu.catboost.test_samples', default=10, config_name='gpu_config')
+                test_features = get_cfg('gpu.catboost.test_features', default=5, config_name='gpu_config')
+                
+                if task_type == 'GPU':
+                    if test_enabled:
+                        # Try GPU (CatBoost uses task_type='GPU' or devices parameter)
+                        try:
+                            test_model = cb.CatBoostRegressor(task_type='GPU', devices=devices, iterations=test_iterations, verbose=False)
+                            test_model.fit(np.random.rand(test_samples, test_features), np.random.rand(test_samples))
+                            gpu_params = {'task_type': 'GPU', 'devices': devices}
+                        except Exception:
+                            pass  # Fallback to CPU silently
+                    else:
+                        # Skip test, use config values directly
+                        gpu_params = {'task_type': 'GPU', 'devices': devices}
+            except Exception:
+                pass  # Fallback to CPU silently
+            
             # Remove task-specific params (CatBoost uses thread_count, not n_jobs)
+            # Also remove task_type and devices if present (we set these from GPU config)
             cb_config = model_config.copy()
             cb_config.pop('verbose', None)
             cb_config.pop('loss_function', None)
             cb_config.pop('n_jobs', None)
+            cb_config.pop('task_type', None)
+            cb_config.pop('devices', None)
             
             # CRITICAL: CatBoost only accepts ONE of iterations/n_estimators/num_boost_round/num_trees
             # Prefer 'iterations' (CatBoost's native param), remove ALL synonyms
