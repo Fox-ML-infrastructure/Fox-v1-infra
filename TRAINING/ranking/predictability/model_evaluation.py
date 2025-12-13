@@ -763,7 +763,7 @@ def train_and_evaluate_models(
         if log_cfg.cv_detail:
             logger.info(f"  ✅ Resolved config created: purge={resolved_config.purge_minutes:.1f}m, embargo={resolved_config.embargo_minutes:.1f}m")
     
-    # Get CV config (with fallback if multi_model_config is None)
+    # Get CV config (with fallback if multi_model_config is None or cross_validation is None)
     if multi_model_config is None:
         cv_config = {}
         # Try to load from config if multi_model_config not provided
@@ -776,6 +776,9 @@ def train_and_evaluate_models(
             cv_n_jobs = 1
     else:
         cv_config = multi_model_config.get('cross_validation', {})
+        # Ensure cv_config is never None (handle case where key exists but value is None)
+        if cv_config is None:
+            cv_config = {}
         cv_folds = cv_config.get('cv_folds', 3)
         cv_n_jobs = cv_config.get('n_jobs', 1)
     

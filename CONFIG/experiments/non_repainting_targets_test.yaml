@@ -10,21 +10,78 @@ data:
   symbols: [AAPL, MSFT, GOOGL, TSLA, NVDA]
   interval: 5m
   max_samples_per_symbol: 50000
+  max_rows_per_symbol: 50000
+  max_rows_train: 100000
+  min_cs: 10
+
+# Intelligent training settings
+intelligent_training:
+  auto_targets: true
+  top_n_targets: 5
+  max_targets_to_evaluate: 5
+  auto_features: true
+  top_m_features: 50
+  strategy: single_task
+  run_leakage_diagnostics: false
 
 targets:
   primary: fwd_ret_60m
 
-# Module-specific overrides
+# Feature selection model families
 feature_selection:
-  top_n: 50
-  model_families: [lightgbm, random_forest, neural_network]
+  model_families:
+    - lightgbm
+    - xgboost
+    - random_forest
+    - catboost
+    - neural_network
+    - lasso
+    - mutual_information
+    - univariate_selection
 
-target_ranking:
-  min_samples: 100
-  cross_sectional:
-    min_cs: 10
-    max_cs_samples: 1000
-
+# Training model families (same as feature selection for consistency)
 training:
-  model_families: [lightgbm, random_forest, neural_network]
-  cv_folds: 5
+  model_families:
+    - lightgbm
+    - xgboost
+    - random_forest
+    - catboost
+    - neural_network
+    - lasso
+    - mutual_information
+    - univariate_selection
+
+# Decision configuration (SST: all values config-driven)
+decisions:
+  apply_mode: "dry_run"
+  min_level_to_apply: 2
+  use_bayesian: false
+  bayesian:
+    min_runs_for_learning: 3
+    p_improve_threshold: 0.8
+    min_expected_gain: 0.01
+    reward_metric: "cs_auc"
+    recency_decay: 0.95
+    level_3_threshold: 0.8
+    level_3_gain: 0.01
+    level_2_threshold: 0.6
+    level_2_gain: 0.005
+    level_1_threshold: 0.4
+    baseline_window: 10
+
+# Parallel execution configuration
+multi_target:
+  parallel_targets: true
+  skip_on_error: true
+  save_summary: true
+
+# Feature selection parallel execution
+multi_model_feature_selection:
+  parallel_symbols: true
+
+# Threading/parallel worker configuration
+threading:
+  parallel:
+    max_workers_process: 4
+    max_workers_thread: 4
+    enabled: true
