@@ -82,6 +82,8 @@ def sanitize_filename(path: Path) -> str:
 
 def preprocess_markdown(content: str) -> str:
     """Preprocess markdown to handle Unicode characters for LaTeX."""
+    import re
+    
     # Replace common emojis with text equivalents
     replacements = {
         "⚠️": "[WARNING]",
@@ -98,6 +100,11 @@ def preprocess_markdown(content: str) -> str:
     
     for emoji, replacement in replacements.items():
         content = content.replace(emoji, replacement)
+    
+    # Remove any remaining Unicode characters that might cause issues
+    # Keep basic ASCII and common punctuation
+    # This is a fallback - try to preserve most content
+    content = re.sub(r'[^\x00-\x7F]+', '[UNICODE]', content)
     
     return content
 
@@ -123,34 +130,40 @@ def convert_to_pdf(md_file: Path, output_dir: Path, verbose: bool = False) -> bo
             print(f"  ✗ Error reading {md_file.name}: {e}", file=sys.stderr)
         return False
     
-    # Pandoc command with Unicode support
-    cmd = [
-        "pandoc",
-        tmp_path,
-        "-o", str(pdf_path),
-        "--pdf-engine=xelatex",  # Use xelatex for better Unicode support
-        "-V", "geometry:margin=1in",
-        "-V", "documentclass=article",
-        "-V", "fontsize=11pt",
-    ]
+    # Try multiple PDF engines in order of preference
+    engines = ["pdflatex", "xelatex", "lualatex"]
+    success = False
     
-    if verbose:
-        print(f"Converting: {md_file.name} -> {pdf_name}")
-        print(f"  Command: {' '.join(cmd)}")
+    for engine in engines:
+        cmd = [
+            "pandoc",
+            tmp_path,
+            "-o", str(pdf_path),
+            f"--pdf-engine={engine}",
+            "-V", "geometry:margin=1in",
+            "-V", "documentclass=article",
+            "-V", "fontsize=11pt",
+        ]
+        
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                check=True,
+                timeout=60  # 60 second timeout per file
+            )
+            success = True
+            break
+        except subprocess.TimeoutExpired:
+            if verbose:
+                print(f"  Timeout with {engine}, trying next...")
+            continue
+        except subprocess.CalledProcessError:
+            # Try next engine
+            continue
     
-    try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        # Clean up temp file
-        os.unlink(tmp_path)
-        if verbose:
-            print(f"  ✓ Success: {pdf_name}")
-        return True
-    except subprocess.CalledProcessError as e:
+    if not success:
         # Clean up temp file
         if 'tmp_path' in locals():
             try:
@@ -158,11 +171,29 @@ def convert_to_pdf(md_file: Path, output_dir: Path, verbose: bool = False) -> bo
             except:
                 pass
         if verbose:
-            print(f"  ✗ Error converting {md_file.name}: {e.stderr}", file=sys.stderr)
+            print(f"  ✗ Error converting {md_file.name}: All PDF engines failed", file=sys.stderr)
         else:
             print(f"  ✗ Error converting {md_file.name}", file=sys.stderr)
         return False
-    except FileNotFoundError:
+    
+    # Clean up temp file
+    try:
+        os.unlink(tmp_path)
+    except:
+        pass
+    
+    if verbose:
+        print(f"  ✓ Success: {pdf_name}")
+    return True
+    
+    if verbose:
+        print(f"Converting: {md_file.name} -> {pdf_name}")
+        print(f"  Command: {' '.join(cmd)}")
+    
+    # FileNotFoundError check
+    try:
+        subprocess.run(["pandoc", "--version"], capture_output=True, check=True)
+    except (FileNotFoundError, subprocess.CalledProcessError):
         # Clean up temp file
         if 'tmp_path' in locals():
             try:
