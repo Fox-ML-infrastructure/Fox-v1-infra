@@ -1,0 +1,55 @@
+cff-version: 1.2.0
+message: "If you use FoxML Core in research, industry, or derivatives of this work, please cite it using this metadata."
+title: "FoxML Core"
+type: software
+
+authors:
+  - family-names: "Lewis"
+    given-names: "Jennifer"
+
+# Repository homepage URL
+url: "https://github.com/Fox-ML-infrastructure/FoxML_Core"
+
+# Abstract describing the software
+abstract: >
+  FoxML Core is a machine-learning infrastructure stack for cross-sectional and panel data,
+  providing config-driven ML pipeline architecture with leakage detection, reproducibility tracking,
+  and multi-model training systems. Designed for ML infrastructure teams, data scientists, and researchers
+  working with temporal panel data.
+
+keywords:
+  - machine learning
+  - ml infrastructure
+  - cross-sectional modeling
+  - panel data
+  - time series
+  - reproducibility
+  - feature engineering
+  - quantitative finance
+  - config-driven pipelines
+  - leakage detection
+
+license: "AGPL-3.0-only"
+
+# Version and release date
+# Note: Project is under active development
+version: "0.1.0"
+date-released: "2025-12-13"
+
+repository-code: "https://github.com/Fox-ML-infrastructure/FoxML_Core"
+# Documentation available at: https://github.com/Fox-ML-infrastructure/FoxML_Core/tree/main/DOCS
+
+# If you mint a DOI (Zenodo), add it here:
+# doi: "10.5281/zenodo.XXXXXXX"
+
+# Preferred citation format
+preferred-citation:
+  type: software
+  authors:
+    - family-names: "Lewis"
+      given-names: "Jennifer"
+  title: "FoxML Core"
+  year: 2025
+  url: "https://github.com/Fox-ML-infrastructure/FoxML_Core"
+  version: "0.1.0"
+  license: "AGPL-3.0-only"
