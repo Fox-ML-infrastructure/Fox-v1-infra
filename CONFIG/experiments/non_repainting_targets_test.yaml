@@ -16,16 +16,17 @@ data:
 
 # Intelligent training settings
 intelligent_training:
-  auto_targets: true
-  top_n_targets: 5
-  max_targets_to_evaluate: 5
+  auto_targets: false  # Disable auto-discovery - use manual target list below
+  top_n_targets: 3
+  max_targets_to_evaluate: 3
   auto_features: true
   top_m_features: 50
   strategy: single_task
   run_leakage_diagnostics: false
+  manual_targets: [fwd_ret_60m, fwd_ret_30m, fwd_ret_120m]  # Test multiple forward return horizons
 
 targets:
-  primary: fwd_ret_60m
+  primary: fwd_ret_60m  # Primary target (for reference)
 
 # Feature selection model families
 feature_selection:
