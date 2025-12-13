@@ -139,10 +139,15 @@ model_families:
     config:
       iterations: 300
       learning_rate: 0.05
-      depth: 6
+      depth: 6  # Keep ≤ 8 to avoid exponential complexity (2^d)
       loss_function: "RMSE"
       verbose: false
+      metric_period: 50  # Calculate metrics every 50 trees (reduces evaluation overhead)
       # random_seed: auto-injected from global.random_state (or pipeline.determinism.base_seed)
+      # Note: If training is slow (>20min for 50k samples), check for:
+      #   - Text features (add text_features=['col_name'] if present)
+      #   - High cardinality categoricals (drop ID columns like User_ID)
+      #   - Depth > 8 (reduce to 6-8)
   
   lasso:
     enabled: true  # ✅ ENABLED - Explicit sparse feature selection

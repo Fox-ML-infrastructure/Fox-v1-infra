@@ -74,6 +74,35 @@ This document tracks features that are **not yet fully functional**, have **know
   5. **Increase batch size**: If using data loaders, increase batch size to give GPU more work per iteration
 - **When to use GPU**: GPU acceleration is most beneficial for datasets > 100k-200k rows where the computation time exceeds the overhead
 
+**CatBoost Slow Training (20+ minutes for 50k samples):**
+- **Symptom**: CatBoost training takes 20+ minutes for 50k samples (should take seconds to a few minutes)
+- **Most Likely Causes** (ordered by probability):
+  1. **Text Features**: Raw text columns passed to CatBoost without `text_features` parameter
+     - **Problem**: CatBoost treats text as categorical with unique values per row, exploding computation
+     - **Fix**: Explicitly specify text columns: `text_features=['description_column', 'comments_column']`
+     - **Check**: Look for columns with string/object dtype that aren't explicitly marked as text
+  2. **High Cardinality Categoricals**: Categorical columns with thousands of unique values (e.g., `User_ID`, `IP_Address`)
+     - **Problem**: One-hot encoding on 10k unique values creates 10k feature columns
+     - **Fix**: Drop ID-like columns that don't generalize, or let CatBoost use default target encoding
+     - **Check**: Identify columns with >1000 unique values that might be IDs
+  3. **Tree Depth Too High**: Depth > 8 causes exponential complexity ($2^d$)
+     - **Problem**: Default depth is 6, but if set to 10+ training time explodes
+     - **Fix**: Keep `depth: 6` (default) or `depth: 8` maximum
+     - **Check**: Verify `depth` in CatBoost config is ≤ 8
+  4. **Evaluation Overhead**: Calculating metrics after every tree is expensive
+     - **Problem**: With `eval_set` and many trees, metric calculation happens every iteration
+     - **Fix**: Set `metric_period=50` or `100` to calculate metrics every 50-100 trees instead of every tree
+     - **Check**: If using early stopping with `eval_set`, add `metric_period` to `.fit()` call
+  5. **Hardware Mismatch**: GPU overhead for small datasets, or CPU thread restrictions
+     - **Problem**: GPU transfer overhead for small datasets, or CatBoost using only 1 thread on CPU
+     - **Fix**: For <50k rows, use CPU with `thread_count=-1` (all cores), or switch to CPU entirely
+- **Diagnostic Checklist**:
+  1. Drop ID columns (`User_ID`, `Row_ID`, etc.)
+  2. Define text features explicitly: `text_features=['col_name']`
+  3. Check depth: Ensure `depth ≤ 8` (preferably 6)
+  4. Add `metric_period=100` to `.fit()` call if using `eval_set`
+  5. For small datasets (<50k), consider CPU instead of GPU
+
 **General GPU Issues:**
 - If GPU isn't being used, check logs for:
   - `✅ Using GPU (CUDA) for [Model]` - GPU is active

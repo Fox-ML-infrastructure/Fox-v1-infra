@@ -80,12 +80,16 @@ Recent improvements:
 ### GPU Acceleration
 - **XGBoost 3.1+**: If you see `gpu_id has been removed since 3.1` errors, ensure you're using the latest code (fixed 2025-12-12)
 - **CatBoost GPU**: CatBoost requires `task_type='GPU'` explicitly set. Check logs for `✅ CatBoost GPU verified` to confirm GPU is being used
-- **CatBoost CPU Bottleneck** ⚠️ **UNDER INVESTIGATION** (2025-12-12):
-  - **Issue**: CPU at 100% usage, GPU at low utilization (30-40%) during CatBoost GPU training, especially on small datasets (<100k rows)
-  - **Cause**: CPU data preparation/quantization overhead exceeds GPU computation time for small datasets
-  - **Current Fix**: `thread_count` limiting added (default: 8 threads) via `gpu.catboost.thread_count` in `gpu_config.yaml`
-  - **Status**: Being actively investigated. For small datasets (<50k rows), consider using CPU instead of GPU
-  - **Workaround**: Set `gpu.catboost.thread_count: 8` (or lower) in `gpu_config.yaml` to reduce CPU bottleneck
+- **CatBoost Performance Issues** ⚠️ **UNDER INVESTIGATION** (2025-12-12):
+  - **CPU Bottleneck**: CPU at 100% usage, GPU at low utilization (30-40%) during CatBoost GPU training, especially on small datasets (<100k rows)
+    - **Cause**: CPU data preparation/quantization overhead exceeds GPU computation time for small datasets
+    - **Current Fix**: `thread_count` limiting added (default: 8 threads) via `gpu.catboost.thread_count` in `gpu_config.yaml`
+    - **Workaround**: Set `gpu.catboost.thread_count: 8` (or lower) in `gpu_config.yaml` to reduce CPU bottleneck
+  - **Slow Training (20+ minutes for 50k samples)**: CatBoost training abnormally slow despite being generally fast
+    - **Most Likely Causes**: Text features without `text_features` parameter, high cardinality categoricals (ID columns), depth > 8, or evaluation overhead
+    - **Fixes Applied**: Added `metric_period: 50` to configs to reduce evaluation overhead
+    - **Checklist**: Drop ID columns, define text features explicitly, keep depth ≤ 8, use `metric_period` if using eval_set
+    - **Status**: Being actively investigated. See [Known Issues](DOCS/02_reference/KNOWN_ISSUES.md) for detailed troubleshooting
 - **GPU Detection**: If GPU isn't being used, check logs for `⚠️ [Model] GPU test failed` messages and verify CUDA drivers are installed
 - See [GPU Setup Guide](DOCS/01_tutorials/setup/GPU_SETUP.md) and [Known Issues](DOCS/02_reference/KNOWN_ISSUES.md) for detailed troubleshooting
 
