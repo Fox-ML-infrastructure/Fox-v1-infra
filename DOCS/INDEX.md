@@ -73,6 +73,7 @@ Step-by-step guides for common tasks.
 - [Experiment Config Guide](01_tutorials/configuration/EXPERIMENT_CONFIG_GUIDE.md) - **NEW**: Complete guide to experiment configuration files
 - [Config Examples](01_tutorials/configuration/CONFIG_EXAMPLES.md) - Example configs
 - [Advanced Config](01_tutorials/configuration/ADVANCED_CONFIG.md) - Advanced configuration
+- [Config Audit](02_reference/configuration/CONFIG_AUDIT.md) - **NEW**: Config folder audit, hardcoded values tracking, and organization plan
 
 ## Tier C: Core Reference Docs
 

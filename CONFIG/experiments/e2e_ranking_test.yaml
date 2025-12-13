@@ -17,10 +17,10 @@ data:
 # Intelligent training settings
 intelligent_training:
   auto_targets: true
-  top_n_targets: 23
+  top_n_targets: 5
   max_targets_to_evaluate: 23  # Limit evaluation for faster testing
   auto_features: true
-  top_m_features: 50
+  top_m_features: 70
   strategy: single_task
   run_leakage_diagnostics: false
 

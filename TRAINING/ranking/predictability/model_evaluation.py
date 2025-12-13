@@ -1807,6 +1807,13 @@ def train_and_evaluate_models(
             else:
                 model = cb.CatBoostRegressor(**params)
             
+            # Log GPU usage if available (controlled by config)
+            if 'task_type' in gpu_params and gpu_params.get('task_type') == 'GPU' and log_cfg.gpu_detail:
+                logger.info(f"  🚀 Training CatBoost on GPU (devices={gpu_params.get('devices', '0')})")
+                logger.info(f"  📊 Dataset size: {len(X)} samples, {X.shape[1]} features")
+                if log_cfg.edu_hints:
+                    logger.info(f"  💡 Note: GPU is most efficient for large datasets (>100k samples)")
+            
             try:
                 scores = cross_val_score(model, X, y, cv=tscv, scoring=scoring, n_jobs=cv_n_jobs, error_score=np.nan)
                 valid_scores = scores[~np.isnan(scores)]

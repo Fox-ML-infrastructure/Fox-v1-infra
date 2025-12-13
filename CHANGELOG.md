@@ -14,6 +14,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Highlights
 
+#### GPU Acceleration for Target Ranking & Feature Selection (2025-12-12) – **NEW**
+- **GPU support**: XGBoost, CatBoost, and LightGBM now use GPU acceleration when available
+- **Automatic detection**: Gracefully falls back to CPU if GPU unavailable
+- **Config-driven**: All GPU settings from `gpu_config.yaml` (SST)
+- **Performance**: Significantly faster on large datasets (>100k samples)
+- See [GPU Setup Guide](DOCS/01_tutorials/setup/GPU_SETUP.md) for configuration
+
+#### Critical Bug Fixes (2025-12-12) – **FIXED**
+- **Mutual Information**: Fixed `random_state` SST compliance (no more KeyError)
+- **Audit violations**: Fixed false violations when Final Gatekeeper drops features
+- **CatBoost**: Fixed feature importance calculation (requires training dataset)
+- All fixes maintain SST compliance (no hardcoded values)
+
 #### Experiment Configuration System (2025-12-12) – **NEW**
 - **Experiment configs**: Create reusable experiment configurations in `CONFIG/experiments/*.yaml`
 - **Auto target discovery**: Automatically discover and rank all targets from your dataset
