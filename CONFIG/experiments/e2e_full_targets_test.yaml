@@ -1,0 +1,144 @@
+# Full E2E Test Configuration
+# Comprehensive test across all available targets
+# This tests the entire pipeline with all targets discovered from data
+
+experiment:
+  name: e2e_full_targets_test
+  description: "Full E2E test: All targets, comprehensive feature selection, reduced data limits for speed"
+
+# ============================================================================
+# DATA CONFIGURATION
+# ============================================================================
+data:
+  # Data directory (relative to repo root or absolute path)
+  data_dir: data/data_labeled_v2/interval=5m
+  
+  # List of symbols to use (5 symbols for comprehensive testing)
+  symbols: [AAPL, MSFT, GOOGL, TSLA, NVDA]
+  
+  # Bar interval
+  interval: 5m
+  
+  # Reduced limits for faster testing (increase for production)
+  max_samples_per_symbol: 10000  # Reduced from 50000 for faster testing
+  max_rows_per_symbol: 10000      # Reduced from 50000 for faster testing
+  max_rows_train: 20000          # Reduced from 100000 for faster testing
+  min_cs: 3                       # Reduced from 10 for faster testing
+
+# ============================================================================
+# INTELLIGENT TRAINING CONFIGURATION
+# ============================================================================
+intelligent_training:
+  # Auto-discover ALL targets from data
+  auto_targets: true
+  
+  # Evaluate all discovered targets (no limit)
+  top_n_targets: 100  # High limit to get all targets
+  
+  # Maximum targets to evaluate (set high for comprehensive test)
+  max_targets_to_evaluate: 100  # Will evaluate all valid targets
+  
+  # Auto-discover features
+  auto_features: true
+  
+  # Number of top features to select (reduced for faster testing)
+  top_m_features: 30  # Reduced from 50 for faster testing
+  
+  # Training strategy
+  strategy: single_task
+  
+  # Skip leakage diagnostics for faster testing
+  run_leakage_diagnostics: false
+
+# ============================================================================
+# TARGET CONFIGURATION (Legacy/Reference)
+# ============================================================================
+targets:
+  # Primary target (fallback if manual_targets not specified)
+  primary: fwd_ret_60m
+
+# ============================================================================
+# FEATURE SELECTION CONFIGURATION
+# ============================================================================
+feature_selection:
+  # Model families to use for feature selection (comprehensive set)
+  model_families:
+    - lightgbm
+    - xgboost
+    - random_forest
+    - catboost
+    - neural_network
+    - lasso
+    - mutual_information
+    - univariate_selection
+
+# ============================================================================
+# TRAINING CONFIGURATION
+# ============================================================================
+training:
+  # Model families to train (same as feature selection for consistency)
+  model_families:
+    - lightgbm
+    - xgboost
+    - random_forest
+    - catboost
+    - neural_network
+    - lasso
+    - mutual_information
+    - univariate_selection
+
+# ============================================================================
+# DECISION CONFIGURATION (Auto-Config Application)
+# ============================================================================
+decisions:
+  # Application mode: "off" (assist mode only), "dry_run" (show patch), "apply" (auto-apply)
+  apply_mode: "off"  # Disabled for comprehensive testing (focus on evaluation)
+  
+  # Minimum decision level to apply
+  min_level_to_apply: 2
+  
+  # Bayesian patch policy (disabled for comprehensive test)
+  use_bayesian: false  # Disabled to focus on raw evaluation
+
+# ============================================================================
+# PARALLEL EXECUTION CONFIGURATION
+# ============================================================================
+# Multi-target parallel execution (ENABLED for faster comprehensive testing)
+multi_target:
+  # Enable parallel target evaluation (ProcessPoolExecutor)
+  parallel_targets: true
+  
+  # Continue to next target if one fails (important for comprehensive test)
+  skip_on_error: true
+  
+  # Save multi_target_summary.json
+  save_summary: true
+
+# Feature selection parallel execution (ENABLED for faster testing)
+multi_model_feature_selection:
+  # Enable parallel symbol processing (ProcessPoolExecutor)
+  parallel_symbols: true
+
+# Threading/parallel worker configuration
+threading:
+  parallel:
+    # Max workers for ProcessPoolExecutor (CPU-bound tasks)
+    # Set to 8 for comprehensive test (utilize all cores)
+    max_workers_process: 8  # Increased for comprehensive test
+    
+    # Max workers for ThreadPoolExecutor (I/O-bound tasks)
+    max_workers_thread: 8   # Increased for comprehensive test
+    
+    # Master switch for parallel execution
+    enabled: true
+
+# ============================================================================
+# NOTES
+# ============================================================================
+# - This config tests ALL discovered targets from the data
+# - Parallel execution is enabled for faster testing
+# - Data limits are reduced for speed (increase for production)
+# - This will generate comprehensive rankings across all targets
+# - Expect longer runtime but complete coverage of all targets
+# - Results will show which targets are most predictable
+# - Compare scores: honest baseline (~0.52-0.54) vs repainting targets (~0.70+)
