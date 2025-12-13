@@ -148,6 +148,23 @@ For model training, reduce VRAM usage in model configs:
 
 If GPU fails, the system automatically falls back to CPU. Check logs for specific error messages explaining why GPU failed.
 
+### XGBoost 3.1+ Compatibility
+
+**Important**: XGBoost 3.1+ removed the `gpu_id` parameter. The system now uses:
+- `device='cuda'` with `tree_method='hist'` (new API)
+- Automatic fallback to `tree_method='gpu_hist'` for older XGBoost versions
+
+No configuration changes needed - the system handles both APIs automatically.
+
+### CatBoost GPU Requirements
+
+**Critical**: CatBoost requires `task_type='GPU'` to actually use GPU. The system:
+- Explicitly sets `task_type='GPU'` and `devices` from config
+- Verifies GPU params are present before model instantiation
+- Logs GPU status clearly (look for `✅ CatBoost GPU verified`)
+
+**Note**: CatBoost does quantization on CPU first (can take 20+ seconds), then trains on GPU. Watch GPU memory allocation, not just utilization %, to verify GPU usage.
+
 ## Future: ROCm Support
 
 ROCm (AMD GPU) support is planned for future development once the major architecture is solidified. This will enable:
