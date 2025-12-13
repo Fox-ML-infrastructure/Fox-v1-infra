@@ -5,14 +5,7 @@
 
 > **📝 See [CHANGELOG.md](CHANGELOG.md) for recent technical and compliance changes.**
 
-FoxML Core is:
-
-- A leakage-safe ML infrastructure stack for cross-sectional and panel data for any machine learning applications
-- A reference architecture for high-throughput, config-driven ML pipelines
-- Designed for ML infra teams, data scientists, and researchers (architecture, not alpha)
-
-FoxML Core is a high-performance research and machine learning infrastructure stack.  
-It provides a reference-grade architecture for ML pipelines, quantitative workflows, reproducible experiments, and performance-optimized engineering (single-node HPC optimized; distributed HPC planned) without exposing proprietary signals or production-ready trading systems.
+FoxML Core is an ML infrastructure stack for cross-sectional and panel data for any machine learning applications. It provides a config-driven ML pipeline architecture designed for ML infra teams, data scientists, and researchers.
 
 **⚠️ Development Status:** This project is under **heavy active development**. Breaking changes may occur without notice. See [ROADMAP.md](ROADMAP.md) for current status, known issues, and planned fixes.
 
@@ -21,53 +14,33 @@ It provides a reference-grade architecture for ML pipelines, quantitative workfl
 Developed and maintained by **Jennifer Lewis**  
 Independent Contractor • ML Engineering • Cross-Sectional ML Systems • Systems Architecture
 
----------------------------------------------------------------------
+---
 
-## Overview
+## Quick Overview
 
-FoxML Core demonstrates:
+FoxML Core provides:
 
 - **Intelligent training pipeline** with automated target ranking and feature selection
-- **GPU acceleration** (NEW 2025-12-12): Target ranking and feature selection automatically use GPU (LightGBM, XGBoost, CatBoost) when available
-- **Dual-view target ranking** (NEW): Cross-sectional and symbol-specific evaluation views with automatic routing decisions
-- **Config-based simple usage** (NEW): Run full pipeline with minimal command-line arguments using configuration files
-- **ResolvedConfig system** (NEW): Centralized configuration resolution ensures consistent logging and correct purge/embargo calculation
-- **Training routing & planning system** (NEW - currently being tested): Config-driven routing decisions, automatic training plan generation, 2-stage training pipeline (CPU → GPU), one-command end-to-end flow
-- **Leakage-safe research architecture** with pre-training leak detection and auto-fix
-- **Scalable ML workflow design** with complete Single Source of Truth (SST) config system - all 52+ model trainers use config-driven hyperparameters for full reproducibility
-- **High-throughput data processing** with Polars-optimized pipelines
+- **GPU acceleration** for target ranking, feature selection, and model training (LightGBM, XGBoost, CatBoost)
+- **Config-based usage** with minimal command-line arguments
+- **Leakage detection system** with pre-training leak detection and auto-fix
+- **Single Source of Truth (SST)** config system - all 20 model families use config-driven hyperparameters
 - **Multi-model training systems** with 20+ model families (GPU-accelerated)
-- **HPC-compatible orchestration patterns** (single-node optimized; distributed HPC planned/WIP)
+- **Reproducibility tracking** with end-to-end reproducibility verification
 
-This is a **cross-sectional ML infrastructure system** designed for panel data and time-series workflows for any machine learning applications.
+**For detailed capabilities:** See [Architecture Overview](DOCS/00_executive/ARCHITECTURE_OVERVIEW.md)
 
----------------------------------------------------------------------
+---
 
-## Domain Focus & Extensibility
+## Domain Focus
 
-FoxML Core is **general-purpose ML cross-sectional infrastructure** optimized for panel data and time-series workflows. The architecture provides domain-agnostic primitives with built-in safeguards (leakage detection, temporal validation, feature registry systems).
+FoxML Core is **general-purpose ML cross-sectional infrastructure** for panel data and time-series workflows. The architecture provides domain-agnostic primitives with built-in safeguards (leakage detection, temporal validation, feature registry systems).
 
-**Core Capabilities:**
-- Config-driven orchestration
-- Automated target ranking and feature selection (with dual-view support)
-- Simplified config-based pipeline usage (minimal command-line arguments)
-- Leakage-safe validation frameworks
-- Multi-model training systems
-- Time-series-aware cross-validation
-- Cross-sectional data processing
+**Domain Applications:** Financial time series, IoT sensor data, healthcare, clickstream analytics, and any panel data with temporal structure.
 
-**Development Approach:** The system is currently developed and tested using financial time series data, but the architecture is **domain-agnostic by design**. The vision is to provide general-purpose cross-sectional ML infrastructure that works across any domain.
+**For detailed domain information:** See [Architecture Overview](DOCS/00_executive/ARCHITECTURE_OVERVIEW.md)
 
-**Domain Applications:** The system is designed for cross-sectional and panel data across multiple domains:
-- **Financial time series** (market data, price/volume features) — *currently used for development*
-- **IoT sensor data** (device metrics, time-series sensors)
-- **Healthcare** (patient records, longitudinal studies)
-- **Clickstream analytics** (user behavior, event sequences)
-- **Any panel data** with temporal structure
-
-**Extensibility:** Custom data loaders, feature engineering blocks, domain-specific target definitions, and appropriate leakage rules can be configured for any domain. The architecture is domain-agnostic by design.
-
----------------------------------------------------------------------
+---
 
 ## Intended Use
 
@@ -84,7 +57,7 @@ FoxML Core is **general-purpose ML cross-sectional infrastructure** optimized fo
 
 **FoxML Core provides ML infrastructure and architecture, not domain-specific applications or pre-built solutions.**
 
----------------------------------------------------------------------
+---
 
 ## Licensing & Commercial Use
 
@@ -92,105 +65,33 @@ FoxML Core is **general-purpose ML cross-sectional infrastructure** optimized fo
 >
 > - If you're running this inside a company or fund, you almost certainly need a commercial license.
 > - Non-commercial academic / personal research is allowed under AGPL-3.0 (see `LICENSE`).
-> - Full details and pricing: `LEGAL/SUBSCRIPTIONS.md`.
+> - Full details and pricing: [`LEGAL/SUBSCRIPTIONS.md`](LEGAL/SUBSCRIPTIONS.md).
 
 FoxML Core is released under the **AGPL-3.0** license. Personal / academic research uses AGPL. Organizations using FoxML Core in production or revenue-generating environments should obtain a commercial license.
 
-That means:
+**If you are using FoxML Core inside any business or organization, assume you need a commercial license.**
 
-- Individual developers, students, and researchers can use FoxML Core under AGPL-3.0 for **personal and academic research, evaluation, and experimentation** (see `LEGAL/SUBSCRIPTIONS.md` for full definition).
-- Organizations that want to use FoxML Core in **production, revenue-generating, or internal research environments** will almost always want a **commercial license** to avoid AGPL copyleft obligations and to get clear commercial terms.
-
-**If you are using FoxML Core inside any business or organization, assume you need a commercial license.** See `LEGAL/SUBSCRIPTIONS.md` for details.
-
-### Commercial License (Recommended for Organizations)
+### Commercial License
 
 Commercial licensing gives your organization the right to:
-
 - Use FoxML Core for **commercial and internal production use**
 - Integrate FoxML into proprietary systems without AGPL disclosure obligations
-- Get access to **enterprise-focused terms** and optional support / integration work
+- Get access to **commercial license terms** and optional support / integration work
 
 **Indicative annual pricing** starts in the low six figures for small teams and scales to multi-million-dollar enterprise agreements for large institutions.
 
-See [`LEGAL/SUBSCRIPTIONS.md`](LEGAL/SUBSCRIPTIONS.md) for detailed tiers and examples.
+**To begin the licensing process:**
+📧 **jenn.lewis5789@gmail.com**  
+Subject: `FoxML Core Commercial Licensing`
 
-To begin the licensing process, email:
+**For complete licensing information:**
+- [`LEGAL/SUBSCRIPTIONS.md`](LEGAL/SUBSCRIPTIONS.md) - Detailed tiers and pricing
+- [`LEGAL/COMMERCIAL_USE.md`](LEGAL/COMMERCIAL_USE.md) - Commercial license terms
+- [`COMMERCIAL_LICENSE.md`](COMMERCIAL_LICENSE.md) - Full commercial license text
 
-> 📧 **jenn.lewis5789@gmail.com**  
-> Subject: `FoxML Core Commercial Licensing`
+---
 
-Please include:
-
-- Your name and role
-- Organization name + website or LinkedIn
-- Organization size
-- Primary use case (1–3 sentences)
-- Desired start timeline
-
-### Optional Add-Ons
-
-For ML teams and infra teams that need more than a license, optional services are available, including:
-
-- **Dedicated support retainers** (priority fixes, direct maintainer access)
-- **Custom integration projects** (fit FoxML into your existing infra and data)
-- **Onboarding & deployment assistance**
-- **Private Slack / direct founder access**
-
-See:
-
-- [`LEGAL/COMMERCIAL_USE.md`](LEGAL/COMMERCIAL_USE.md) for commercial license terms
-- [`LEGAL/SUBSCRIPTIONS.md`](LEGAL/SUBSCRIPTIONS.md) for detailed pricing and add-ons
-- [`COMMERCIAL_LICENSE.md`](COMMERCIAL_LICENSE.md) for the full FoxML Core Commercial License text
-
----------------------------------------------------------------------
-
-## Enterprise Partnerships
-
-FoxML Core is available for enterprise licensing and custom development partnerships for organizations requiring specialized ML, quantitative, or HPC systems.
-
-For full policies and contracting information, see the [`LEGAL/`](LEGAL/) directory in this repository. 
-
-### Core Expertise
-
-#### Machine Learning Infrastructure
-- **Intelligent training pipeline** with automated target ranking and selection
-- **Automated leakage detection** with pre-training scans and auto-fix system
-- **Config-driven orchestration** with 9 centralized config files
-- End-to-end pipeline architecture with leakage-safe validation
-- Configurable model zoos (20+ families: LightGBM, XGBoost, Random Forest, Neural Networks, etc.)
-- GPU-optimized training with CUDA support
-
-#### Cross-Sectional ML Engineering
-- **Automated target predictability assessment** with multi-model evaluation
-- **Feature/target schema system** with ranking vs. training mode rules
-- Walk-forward analysis frameworks with time-purged cross-validation
-- Strict leakage auditing with sentinel tests (shifted-target, entity-holdout, randomized-time)
-- Research-oriented data pipelines with Polars optimization
-- Feature engineering at scale with registry-based temporal rules  
-
-#### High-Performance Computing
-- Multi-node and GPU workflows  
-- **NVLink-ready architecture** (planned: device group abstraction, multi-GPU scheduling)
-- System-level throughput optimization  
-- Parallel experiment execution
-- GPU topology detection and logging  
-
-#### Systems Architecture
-- Complete Single Source of Truth (SST) - reproducible, config-driven workflows with zero hardcoded values  
-- Enterprise deployment patterns  
-- Code correctness and architecture review  
-
-### Engagement Model
-- Remote contract work  
-- Hourly, project-based, or retainer  
-- SOW-defined milestones  
-- Professional communication  
-- Full documentation with deliverables  
-
----------------------------------------------------------------------
-
-## Documentation
+## Getting Started
 
 **New users start here:**
 - **[Quick Start](DOCS/00_executive/QUICKSTART.md)** - Get running in 5 minutes
@@ -203,16 +104,9 @@ For full policies and contracting information, see the [`LEGAL/`](LEGAL/) direct
 - **[Reference Docs](DOCS/02_reference/)** - Technical reference
 - **[Technical Appendices](DOCS/03_technical/)** - Deep technical topics
 
-**Documentation structure:**
-- **[Architecture](DOCS/ARCHITECTURE.md)** - Documentation organization
-- **Style Guide** - Writing guidelines (see [Documentation Architecture](DOCS/ARCHITECTURE.md) for documentation structure)
-- **[Migration Plan](DOCS/MIGRATION_PLAN.md)** - Migration status  
-
----------------------------------------------------------------------
+---
 
 ## Repository Structure
-
-FoxML Core repository structure:
 
 ```
 FoxML_Core/
@@ -223,22 +117,30 @@ FoxML_Core/
 └── SCRIPTS/               (Utilities & tools)
 ```
 
-**Note:** The codebase is Python-based with optimized data processing pipelines.
+**For detailed structure:** See [Architecture Overview](DOCS/00_executive/ARCHITECTURE_OVERVIEW.md)
 
----------------------------------------------------------------------
+---
 
-## Professional Standards
+## Enterprise Partnerships
 
-- Defined scopes and clear communication  
-- NDA-compliant handling of client datasets  
-- High-quality, reproducible engineering with complete config centralization (SST) ensuring same config → same results  
-- Minimal onboarding overhead for teams  
-- SOW-structured engagements  
+FoxML Core is available for commercial licensing and custom development partnerships for organizations requiring ML, quantitative, or HPC systems.
 
----------------------------------------------------------------------
+**Core Expertise:**
+- Machine Learning Infrastructure
+- Cross-Sectional ML Engineering
+- High-Performance Computing
+- Systems Architecture
 
-## Contact
-linkedin: https://www.linkedin.com/in/jennifer-lewis-3434b3315/
+**For full policies and contracting information:** See the [`LEGAL/`](LEGAL/) directory in this repository.
 
-For enterprise licensing or organizational engagements:  
+---
+
+## Reporting Issues
+
+For bug reports, feature requests, or technical issues:
+
+- **GitHub Issues**: [Open an issue](https://github.com/Fox-ML-infrastructure/FoxML_Core/issues) (preferred for bug reports and feature requests)
+- **Email**: jenn.lewis5789@gmail.com (for security issues, sensitive bugs, or private inquiries)
+
+For commercial licensing or organizational engagements:  
 **jenn.lewis5789@gmail.com**

@@ -4,9 +4,9 @@ Learn the fundamentals of FoxML Core configuration.
 
 ## Overview
 
-FoxML Core uses centralized YAML configuration files for all models and training workflows. **All 52+ model trainers and specialized models** auto-load configs from the `CONFIG/model_config/` directory.
+FoxML Core uses centralized YAML configuration files for all models and training workflows. **All 20 model families** auto-load configs from the `CONFIG/models/` directory (or `CONFIG/model_config/` for backward compatibility).
 
-**✅ Complete Single Source of Truth (SST)**: As of 2025-12-10, **ALL** hardcoded configuration values have been removed from the TRAINING pipeline. Every hyperparameter, test split size, and random seed now loads from centralized config files, ensuring complete reproducibility: same config → same results across all pipeline stages.
+**✅ Single Source of Truth (SST)**: As of 2025-12-10, all training parameters in the TRAINING pipeline load from centralized config files. Every hyperparameter, test split size, and random seed loads from configs (with fallback defaults for edge cases), ensuring reproducibility: same config → same results across all pipeline stages.
 
 > **Note:** These SST improvements were internal changes. Your existing code and configs continue to work unchanged - no migration required. The system automatically uses config-driven parameters and deterministic seeds.
 

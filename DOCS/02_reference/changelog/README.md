@@ -20,6 +20,17 @@ This directory contains detailed per-day changelogs for FoxML Core. For the ligh
 
 ---
 
+## Documentation Audits
+
+Quality assurance audits and accuracy checks:
+
+- **[Documentation Accuracy Check](../audits/DOCS_ACCURACY_CHECK.md)** - Accuracy audit results and fixes (2025-12-13)
+- **[Unverified Claims Analysis](../audits/DOCS_UNVERIFIED_CLAIMS.md)** - Claims without verified test coverage (2025-12-13)
+- **[Marketing Language Removal](../audits/MARKETING_LANGUAGE_REMOVED.md)** - Marketing terms removed for accuracy (2025-12-13)
+- **[Dishonest Statements Fixed](../audits/DISHONEST_STATEMENTS_FIXED.md)** - Final pass fixing contradictions and overselling (2025-12-13)
+
+---
+
 ## Navigation
 
 - [Root Changelog](../../../CHANGELOG.md) - Executive summary

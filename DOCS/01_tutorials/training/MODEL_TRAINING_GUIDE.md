@@ -4,7 +4,7 @@ Complete guide to training machine learning models on labeled data.
 
 > **New**: For automated target ranking and feature selection, see the [Intelligent Training Tutorial](INTELLIGENT_TRAINING_TUTORIAL.md). This guide covers the manual training workflow.
 
-> **✅ Complete Single Source of Truth (SST)**: As of 2025-12-10, all model trainers use config-driven hyperparameters. Same config → same results. Full reproducibility guaranteed.
+> **✅ Single Source of Truth (SST)**: As of 2025-12-10, all model trainers use config-driven hyperparameters. Same config → same results (reproducibility ensured when using proper configs).
 
 ## Overview
 

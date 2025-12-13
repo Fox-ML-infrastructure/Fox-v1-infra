@@ -4,7 +4,7 @@ Complete guide to configuring model hyperparameters in FoxML Core.
 
 ## Overview
 
-Each model family has its own YAML configuration file in `model_config/` with hyperparameters organized by variant (default, conservative, aggressive).
+Each model family has its own YAML configuration file in `CONFIG/models/` (or `CONFIG/model_config/` for backward compatibility) with hyperparameters organized by variant (default, conservative, aggressive).
 
 ## Supported Models (17 total)
 
@@ -103,7 +103,7 @@ config = load_model_config(
 
 1. **Edit model config file:**
 ```yaml
-# In model_config/lightgbm.yaml
+# In CONFIG/models/lightgbm.yaml (or CONFIG/model_config/lightgbm.yaml for backward compatibility)
 my_custom_variant:
   n_estimators: 1000
   learning_rate: 0.01

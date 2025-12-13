@@ -2,7 +2,7 @@
 
 Example configurations for common use cases.
 
-> **✅ Complete Single Source of Truth (SST)**: All model trainers use config-driven hyperparameters. Full reproducibility: same config → same results.
+> **✅ Single Source of Truth (SST)**: All model trainers use config-driven hyperparameters. Reproducibility: same config → same results.
 
 > **📚 For comprehensive configuration documentation, see the [Configuration Reference](../../02_reference/configuration/README.md).**
 
@@ -159,7 +159,7 @@ for name, config in models.items():
 ## Feature Selection Config
 
 ```yaml
-# CONFIG/feature_selection_config.yaml
+# CONFIG/ranking/features/config.yaml (or CONFIG/feature_selection_config.yaml symlink)
 lightgbm:
   device: "cpu"  # or "gpu"
   max_depth: 8

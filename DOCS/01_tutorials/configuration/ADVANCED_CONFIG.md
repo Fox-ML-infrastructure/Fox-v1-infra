@@ -2,7 +2,7 @@
 
 Advanced configuration techniques and patterns.
 
-> **✅ Complete Single Source of Truth (SST)**: As of 2025-12-10, all 52+ model trainers use config-driven hyperparameters. Zero hardcoded values remain. Same config → same results across all pipeline stages.
+> **✅ Single Source of Truth (SST)**: As of 2025-12-10, all 20 model families use config-driven hyperparameters. All training parameters load from configs (with fallback defaults for edge cases). Same config → same results across all pipeline stages.
 
 > **📚 For comprehensive configuration documentation, see the [Configuration Reference](../../02_reference/configuration/README.md).**
 

@@ -389,9 +389,11 @@ See [Intelligent Training Tutorial](../../01_tutorials/training/INTELLIGENT_TRAI
 
 ---
 
-### `feature_selection_config.yaml`
+### `feature_selection_config.yaml` (or `ranking/features/config.yaml`)
 
 **Purpose:** General feature selection settings.
+
+**Location:** Now in `CONFIG/ranking/features/config.yaml` (symlink at `CONFIG/feature_selection_config.yaml` for backward compatibility).
 
 **When to use:** When adjusting feature selection criteria or methods.
 
@@ -410,13 +412,15 @@ See [Intelligent Training Tutorial](../../01_tutorials/training/INTELLIGENT_TRAI
 
 ---
 
-### `comprehensive_feature_ranking.yaml` & `fast_target_ranking.yaml`
+### `comprehensive_feature_ranking.yaml` & `fast_target_ranking.yaml` (ARCHIVED)
 
-**Purpose:** Alternative ranking configurations for different use cases.
+**Purpose:** Alternative ranking configurations for different use cases (legacy - archived).
 
-**When to use:**
-- `comprehensive_feature_ranking.yaml` - Full ranking with all models
-- `fast_target_ranking.yaml` - Faster ranking with fewer models
+**Status:** Moved to `CONFIG/archive/` - no longer in active use. Prefer experiment configs instead.
+
+**When to use (if using archived versions):**
+- `archive/comprehensive_feature_ranking.yaml` - Full ranking with all models
+- `archive/fast_target_ranking.yaml` - Faster ranking with fewer models
 
 ---
 

@@ -1,0 +1,40 @@
+# Implementation Documentation
+
+Detailed implementation guides and execution order documentation.
+
+## Contents
+
+### Core Systems
+- **[Feature Selection Guide](FEATURE_SELECTION_GUIDE.md)** - Feature selection implementation
+- **[Reproducibility Tracking](REPRODUCIBILITY_TRACKING.md)** - Reproducibility system
+- **[Active Sanitization](ACTIVE_SANITIZATION.md)** - Proactive feature quarantine
+- **[Parallel Execution](PARALLEL_EXECUTION.md)** - Parallel execution infrastructure
+
+### Execution Order
+- **[Feature Filtering Execution Order](FEATURE_FILTERING_EXECUTION_ORDER.md)** - Feature filtering hierarchy
+- **[Feature Selection Execution Order](FEATURE_SELECTION_EXECUTION_ORDER.md)** - Feature selection hierarchy
+- **[Feature Pruning Execution Order](FEATURE_PRUNING_EXECUTION_ORDER.md)** - Feature pruning hierarchy
+- **[Data Loading and Preprocessing Execution Order](DATA_LOADING_PREPROCESSING_EXECUTION_ORDER.md)** - Data pipeline hierarchy
+
+### Reproducibility
+- **[Reproducibility API](REPRODUCIBILITY_API.md)** - API reference
+- **[Reproducibility Structure](REPRODUCIBILITY_STRUCTURE.md)** - Directory structure guide
+- **[Cohort-Aware Reproducibility](COHORT_AWARE_REPRODUCIBILITY.md)** - Cohort-aware system
+- **[Trend Analyzer Verification](TREND_ANALYZER_VERIFICATION.md)** - Trend analysis verification
+
+### Decision-Making (EXPERIMENTAL)
+- **[Decision Engine](decisioning/DECISION_ENGINE.md)** - ⚠️ EXPERIMENTAL: Automated decision-making
+- **[Bayesian Policy](decisioning/BAYESIAN_POLICY.md)** - ⚠️ EXPERIMENTAL: Adaptive config tuning
+- **[Verification Checklist](decisioning/VERIFICATION_CHECKLIST.md)** - Decision verification
+
+### Other
+- **[Training Optimization Guide](TRAINING_OPTIMIZATION_GUIDE.md)** - Training optimization
+- **[Adding Proprietary Models](ADDING_PROPRIETARY_MODELS.md)** - Custom model integration
+- **[Performance Optimization](PERFORMANCE_OPTIMIZATION.md)** - Performance work
+- See directory for complete list
+
+## Related Documentation
+
+- [Research Documentation](../research/README.md) - Research findings
+- [Design Documentation](../design/README.md) - Design rationale
+

@@ -57,17 +57,17 @@ Cross-sectional ML infrastructure. Provides architecture, not domain-specific ap
 
 ### 1. CONFIG (Configuration Management)
 
-**Complete Single Source of Truth (SST)**: Centralized, version-controlled configuration with zero hardcoded values.
+**Single Source of Truth (SST)**: Centralized, version-controlled configuration. All training parameters load from configs (with fallback defaults for edge cases).
 
 **Features:**
-- **52+ model trainers** all use config-driven hyperparameters (n_estimators, max_depth, learning_rate, etc.)
+- **20 model families** all use config-driven hyperparameters (n_estimators, max_depth, learning_rate, etc.)
 - **All train/test splits** use `preprocessing.validation.test_size` from config
 - **All random seeds** use `BASE_SEED` from determinism system for full reproducibility
 - **17 model configs** with 3 variants each (conservative/balanced/aggressive)
 - **Runtime overrides** and environment variable support
 - **YAML-based** configuration files
 
-**Reproducibility**: Same config file → identical results across all pipeline stages. Full reproducibility guaranteed.
+**Reproducibility**: Same config file → identical results across all pipeline stages (reproducibility ensured when using proper configs; external factors like library versions may affect results).
 
 **Location:** `CONFIG/`
 
@@ -175,9 +175,9 @@ Trains and validates ML models.
 ## Design Principles
 
 ### 1. Configuration-Driven
-- No hardcoded parameters
-- All settings in YAML configs
+- All training parameters load from YAML configs (with fallback defaults for edge cases)
 - Easy experimentation and reproducibility
+- See `CONFIG/CONFIG_AUDIT.md` for remaining hardcoded thresholds in some modules
 
 ### 2. Leakage-Safe
 - Strict temporal validation

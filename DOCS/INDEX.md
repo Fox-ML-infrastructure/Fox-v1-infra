@@ -5,6 +5,17 @@ Complete navigation guide for FoxML Core documentation.
 **Last Updated**: 2025-12-12  
 **Recent Updates**: Active Sanitization (Ghost Buster) - Proactive feature quarantine system that automatically removes features with excessive lookback before training starts, preventing "ghost feature" discrepancies where audit and auto-fix see different lookback values. Decision-Making System (EXPERIMENTAL) - Automated decision policies with configurable thresholds for feature instability, route instability, feature explosion decline, and class balance drift. Bayesian Patch Policy - Thompson sampling over discrete patch templates for adaptive config tuning. All decision/stability thresholds now config-driven (SST compliance). Sample Size Binning System - RESULTS directory organized by sample size bins (`RESULTS/sample_25k-50k/{run_name}/`) for easy comparison of runs with similar cross-sectional sample sizes. Audit-grade binning with unambiguous boundaries, versioning, and metadata storage. Trend Analysis System - Automated trend analysis across target ranking, feature selection, and cross-sectional ranking with exponential decay weighting and regression detection. Trend metadata stored in `metadata.json` for audit-grade verification. Cohort-Aware Reproducibility System - Runs organized by data cohort with sample-adjusted drift detection. Integrated Config Backups - Backups stored in run directory, organized by sample size bin. Enhanced Metadata - `metadata.json` includes full symbols list, bin info, and data characteristics. Unified Metadata Extractor - Centralized utility for consistent cohort identification across all modules.
 
+## Documentation Structure
+
+FoxML Core documentation is organized into four tiers:
+
+- **[00_executive/](00_executive/)** - High-level overviews and quick-start guides for executives, PMs, and stakeholders
+- **[01_tutorials/](01_tutorials/)** - Step-by-step guides and walkthroughs for common tasks and workflows
+- **[02_reference/](02_reference/)** - Complete technical reference for daily use, API documentation, and system specifications
+- **[03_technical/](03_technical/)** - Deep technical appendices, research notes, design rationale, and advanced topics
+
+See each directory's [README](00_executive/README.md) for detailed contents.
+
 ## Quick Navigation
 
 - [Quick Start](00_executive/QUICKSTART.md) - Get running in 5 minutes
@@ -32,7 +43,7 @@ Complete navigation guide for FoxML Core documentation.
 
 ## Tier A: Executive / High-Level
 
-First-time users start here.
+First-time users start here. See [00_executive/README.md](00_executive/README.md) for complete contents.
 
 - [README](../README.md) - Project overview, licensing, contact
 - [Quick Start](00_executive/QUICKSTART.md) - Get running in 5 minutes
@@ -41,7 +52,7 @@ First-time users start here.
 
 ## Tier B: Tutorials / Walkthroughs
 
-Step-by-step guides for common tasks.
+Step-by-step guides for common tasks. See [01_tutorials/README.md](01_tutorials/README.md) for complete contents.
 
 ### Setup
 - [Installation](01_tutorials/setup/INSTALLATION.md) - System installation
@@ -79,7 +90,7 @@ Step-by-step guides for common tasks.
 
 ## Tier C: Core Reference Docs
 
-Complete technical reference for daily use.
+Complete technical reference for daily use. See [02_reference/README.md](02_reference/README.md) for complete contents.
 
 ### API Reference
 - [Module Reference](02_reference/api/MODULE_REFERENCE.md) - Python API (includes `target_utils.py` and `sklearn_safe.py` utilities)
@@ -136,10 +147,11 @@ Complete technical reference for daily use.
 - [Config Cleaner API](02_reference/configuration/CONFIG_CLEANER_API.md) - **NEW**: Systematic parameter validation to prevent duplicate/unknown parameter errors
 - [Config Overlays](02_reference/configuration/CONFIG_OVERLAYS.md) - Overlay system for environment-specific configs
 - [Environment Variables](02_reference/configuration/ENVIRONMENT_VARIABLES.md) - Environment-based configuration
+- [Config Migration](02_reference/configuration/migration/README.md) - Configuration migration and consolidation documentation
 
 ## Tier D: Deep Technical Appendices
 
-Research notes, design rationale, advanced topics.
+Research notes, design rationale, advanced topics. See [03_technical/README.md](03_technical/README.md) for complete contents.
 
 ### Research
 - [Intelligence Layer Overview](03_technical/research/INTELLIGENCE_LAYER.md) - Complete overview of intelligent training pipeline decision-making and automation

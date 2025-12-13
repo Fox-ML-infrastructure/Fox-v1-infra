@@ -1,0 +1,81 @@
+# Technical Documentation
+
+Deep technical appendices, research notes, design rationale, and advanced topics.
+
+## Purpose
+
+This directory contains detailed technical documentation for developers, researchers, and system architects. These documents cover implementation details, design decisions, research findings, and advanced topics.
+
+## Contents
+
+### Research
+- **[Intelligence Layer Overview](research/INTELLIGENCE_LAYER.md)** - Intelligent training pipeline decision-making
+- **[Leakage Analysis](research/LEAKAGE_ANALYSIS.md)** - Leakage research and prevention
+- **[Feature Importance Methodology](research/FEATURE_IMPORTANCE_METHODOLOGY.md)** - Feature importance research
+- **[Target Discovery](research/TARGET_DISCOVERY.md)** - Target research and discovery
+- **[Validation Methodology](research/VALIDATION_METHODOLOGY.md)** - Validation research
+
+### Implementation
+- **[Feature Selection Guide](implementation/FEATURE_SELECTION_GUIDE.md)** - Feature selection implementation
+- **[Reproducibility Tracking](implementation/REPRODUCIBILITY_TRACKING.md)** - Reproducibility system
+- **[Active Sanitization](implementation/ACTIVE_SANITIZATION.md)** - Proactive feature quarantine
+- **[Parallel Execution](implementation/PARALLEL_EXECUTION.md)** - Parallel execution infrastructure
+- **[Decision Engine](implementation/decisioning/DECISION_ENGINE.md)** - ⚠️ EXPERIMENTAL: Automated decision-making
+- **[Bayesian Policy](implementation/decisioning/BAYESIAN_POLICY.md)** - ⚠️ EXPERIMENTAL: Adaptive config tuning
+- See [implementation/](implementation/) for complete list
+
+### Design
+- **[Architecture Deep Dive](design/ARCHITECTURE_DEEP_DIVE.md)** - System architecture details
+- **[CLI vs Config Separation](design/CLI_CONFIG_SEPARATION.md)** - CLI/Config separation policy
+- See [design/](design/) for complete list
+
+### Benchmarks
+- **[Performance Metrics](benchmarks/PERFORMANCE_METRICS.md)** - Performance data
+- **[Model Comparisons](benchmarks/MODEL_COMPARISONS.md)** - Model benchmarks
+- **[Dataset Sizing](benchmarks/DATASET_SIZING.md)** - Dataset strategies
+
+### Fixes
+- **[Known Issues](fixes/KNOWN_ISSUES.md)** - Current issues and limitations
+- **[Bug Fixes](fixes/BUG_FIXES.md)** - Fix history
+- **[Migration Notes](fixes/MIGRATION_NOTES.md)** - Migration guide
+- See [fixes/](fixes/) for complete list
+
+### Testing
+- **[Testing Plan](testing/TESTING_PLAN.md)** - Test strategy
+- **[Testing Summary](testing/TESTING_SUMMARY.md)** - Test results
+- **[Daily Testing](testing/DAILY_TESTING.md)** - Daily test procedures
+
+### Operations
+- **[Journald Logging](operations/JOURNALD_LOGGING.md)** - Logging setup
+- **[Systemd Deployment](operations/SYSTEMD_DEPLOYMENT.md)** - Deployment guide
+- **[Restore from Logs](operations/RESTORE_FROM_LOGS.md)** - Recovery procedures
+- See [operations/](operations/) for complete list
+
+### Refactoring
+- **[Specialized Models Module](refactoring/SPECIALIZED_MODELS.md)** - `models/specialized/` documentation
+- **[Target Predictability Ranking](refactoring/TARGET_PREDICTABILITY_RANKING.md)** - `ranking/predictability/` documentation
+- **[Training Strategies](refactoring/TRAINING_STRATEGIES.md)** - `training_strategies/` documentation
+
+### Roadmaps
+- **[Alpha Enhancement Roadmap](roadmaps/ALPHA_ENHANCEMENT_ROADMAP.md)** - Enhancement plan
+- **[Future Work](roadmaps/FUTURE_WORK.md)** - Planned features
+
+### Internal
+- **[Mathematical Foundations](internal/MATHEMATICAL_FOUNDATIONS.md)** - Math background
+- **[C++ Integration](internal/C++_INTEGRATION.md)** - C++ components
+- **[SST Compliance](internal/SST_COMPLIANCE_CHECKLIST.md)** - SST compliance checklist
+- See [internal/](internal/) for complete list
+
+## Who Should Read This
+
+- **Developers** - Implementation, Design, Refactoring
+- **Researchers** - Research, Benchmarks
+- **System Architects** - Design, Architecture Deep Dive
+- **QA/Testing** - Testing, Fixes
+
+## Related Documentation
+
+- [Reference Documentation](../02_reference/) - API and configuration reference
+- [Tutorials](../01_tutorials/) - Step-by-step guides
+- [Executive Documentation](../00_executive/) - High-level overviews
+

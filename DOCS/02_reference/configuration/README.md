@@ -16,7 +16,7 @@ Centralized configuration management for FoxML Core training pipeline, model fam
 
 ## Overview
 
-The configuration system provides a **complete Single Source of Truth (SST)** for all training parameters, system settings, model hyperparameters, feature management, and safety controls. **As of 2025-12-12, ALL hardcoded configuration values have been removed from the TRAINING pipeline**, including decision policy thresholds, stability analysis parameters, and temporal safety defaults. All 52+ model trainers and specialized models now load hyperparameters, test splits, and random seeds from centralized config files, ensuring complete reproducibility: same config → same results across all pipeline stages.
+The configuration system provides a **Single Source of Truth (SST)** for all training parameters, system settings, model hyperparameters, feature management, and safety controls. **As of 2025-12-12, all training parameters in the TRAINING pipeline load from centralized config files**, including decision policy thresholds, stability analysis parameters, and temporal safety defaults. All 20 model families load hyperparameters, test splits, and random seeds from configs (with fallback defaults for edge cases), ensuring reproducibility: same config → same results across all pipeline stages.
 
 **NEW (2025-12-12)**: Decision-making, stability analysis, GPU settings, and training parameters are now fully config-driven:
 - **Decision Policies** (`decision_policies.yaml`): All thresholds for feature instability, route instability, feature explosion decline, and class balance drift
@@ -75,14 +75,12 @@ CONFIG/
 │   └── first_batch_specs.yaml    # First batch specifications
 │
 ├── excluded_features.yaml         # Patterns for always-excluded features
-├── feature_registry.yaml          # Feature metadata (lag_bars, allowed_horizons)
-├── feature_target_schema.yaml     # Explicit schema (metadata/targets/features)
-├── feature_groups.yaml            # Feature grouping definitions
-├── feature_selection_config.yaml  # Feature selection settings
-├── multi_model_feature_selection.yaml  # Multi-model consensus config
-├── comprehensive_feature_ranking.yaml  # Comprehensive ranking config
-├── fast_target_ranking.yaml       # Fast ranking config
-├── logging_config.yaml            # Structured logging configuration (NEW)
+├── feature_registry.yaml          # Feature metadata (lag_bars, allowed_horizons) [now in data/]
+├── feature_target_schema.yaml     # Explicit schema (metadata/targets/features) [now in data/]
+├── feature_groups.yaml            # Feature grouping definitions [now in data/]
+├── feature_selection_config.yaml  # Feature selection settings [symlink to ranking/features/config.yaml]
+├── multi_model_feature_selection.yaml  # Multi-model consensus config [now in ranking/features/]
+├── logging_config.yaml            # Structured logging configuration [now in core/]
 │                                 # Global, module-level, and backend verbosity controls
 └── target_configs.yaml            # Target definitions (63 targets)
 ```
@@ -188,8 +186,9 @@ features:
 #### `feature_groups.yaml`
 **Purpose:** Defines feature groups for organization and analysis.
 
-#### `comprehensive_feature_ranking.yaml` & `fast_target_ranking.yaml`
-**Purpose:** Alternative ranking configurations for different use cases (legacy - prefer experiment configs).
+#### `comprehensive_feature_ranking.yaml` & `fast_target_ranking.yaml` (ARCHIVED)
+**Purpose:** Alternative ranking configurations for different use cases (legacy - archived, prefer experiment configs).
+**Status:** Moved to `CONFIG/archive/` - no longer in active use.
 
 #### `logging_config.yaml` (NEW)
 **Purpose:** Structured logging configuration for controlling verbosity across modules and backend libraries.
@@ -499,10 +498,10 @@ config = load_model_config("lightgbm", variant="my_custom_variant")
 - Changing consensus aggregation
 
 **Files:**
-- `multi_model_feature_selection.yaml` - Multi-model consensus
-- `feature_selection_config.yaml` - General selection settings
-- `comprehensive_feature_ranking.yaml` - Comprehensive ranking
-- `fast_target_ranking.yaml` - Fast ranking
+- `ranking/features/multi_model.yaml` - Multi-model consensus (or `feature_selection/multi_model.yaml` for backward compatibility)
+- `ranking/features/config.yaml` - General selection settings (or `feature_selection_config.yaml` symlink)
+- `archive/comprehensive_feature_ranking.yaml` - Archived (legacy)
+- `archive/fast_target_ranking.yaml` - Archived (legacy)
 
 **Example: Adjusting Multi-Model Selection**
 

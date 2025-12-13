@@ -17,7 +17,7 @@ FoxML Core is maintained with an **enterprise reliability mindset**:
 * Documentation and legal compliance are treated as first-class deliverables.
 * Stability always precedes new features.
 * GPU acceleration, orchestration, and model tooling will remain backwards-compatible.
-* **UI integration approach** — UI is intentionally decoupled from the core. FoxML Core provides Python programmatic interfaces and integration points so teams can plug into their existing dashboards, monitoring tools, or UX layers. *As always, priorities are subject to change based upon client demand.*
+* **UI integration approach** — UI is intentionally decoupled from the core. FoxML Core provides Python programmatic interfaces and integration points so teams can plug into their existing dashboards, monitoring tools, or UX layers.
 
 ---
 
@@ -28,18 +28,15 @@ FoxML Core is maintained with an **enterprise reliability mindset**:
 **You can use these capabilities right now:**
 
 * ✅ **Full TRAINING Pipeline** — Complete one-command workflow: target ranking → feature selection → training plan generation → model training
-* ✅ **GPU Acceleration** — Target ranking and feature selection now use GPU for LightGBM, XGBoost, and CatBoost (NEW 2025-12-12)
+* ✅ **GPU Acceleration** — Target ranking, feature selection, and model training use GPU (LightGBM, XGBoost, CatBoost)
 * ✅ **Training Routing & Planning System** — Config-driven routing decisions, automatic training plan generation, 2-stage training pipeline (CPU → GPU)
-* ✅ **GPU-Accelerated Model Training** — Train all 20 model families with GPU acceleration where available
-* ✅ **Centralized YAML Configuration** — Complete Single Source of Truth (SST) system with structured configs for experiments, model families, system parameters, decision policies, stability analysis, and GPU settings (NEW 2025-12-12)
-* ✅ **Experiment Configuration System** — Reusable experiment configs with auto target discovery (NEW 2025-12-12)
-* ✅ **Decision-Making System** — Automated decision policies with configurable thresholds (EXPERIMENTAL)
-* ✅ **Bayesian Patch Policy** — Thompson sampling for adaptive config tuning (EXPERIMENTAL)
+* ✅ **Centralized YAML Configuration** — Single Source of Truth (SST) system with structured configs
+* ✅ **Experiment Configuration System** — Reusable experiment configs with auto target discovery
 * ✅ **Reproducibility Tracking** — End-to-end reproducibility tracking with STABLE/DRIFTING/DIVERGED classification
-* ✅ **Leakage Detection & Auto-Fix** — Pre-training leak detection with automatic feature exclusion and Final Gatekeeper
-* ✅ **Complete Documentation & Legal** — Full 4-tier docs hierarchy + enterprise legal package
+* ✅ **Leakage Detection & Auto-Fix** — Pre-training leak detection with automatic feature exclusion
+* ✅ **Documentation & Legal** — 4-tier docs hierarchy + commercial legal package
 
-**This is production-grade ML infrastructure, not a prototype.**
+**This is research-grade ML infrastructure under active development.**
 
 ---
 
@@ -47,11 +44,10 @@ FoxML Core is maintained with an **enterprise reliability mindset**:
 
 ### ✅ Fully Operational
 
-* **TRAINING Pipeline** — Fully operational. Intelligent training framework integrated and working. End-to-end testing underway.
-* **GPU Acceleration** — Enabled for target ranking and feature selection (LightGBM, XGBoost, CatBoost). All settings config-driven from `gpu_config.yaml`.
-* **Single Source of Truth (SST)** — Complete config centralization. All hyperparameters, seeds, thresholds, and GPU settings load from YAML.
+* **TRAINING Pipeline** — Operational. Intelligent training framework integrated and working.
+* **GPU Acceleration** — Enabled for target ranking, feature selection, and model training. All settings config-driven.
+* **Single Source of Truth (SST)** — Config centralization. All hyperparameters, seeds, thresholds, and GPU settings load from YAML.
 * **Reproducibility Tracking** — End-to-end tracking across ranking, feature selection, and training with trend analysis.
-* **Model Parameter Sanitization** — Shared utility prevents parameter passing errors.
 * **Target Ranking & Selection** — Integrated and operational with auto-discovery support.
 * **Documentation** — 4-tier hierarchy complete with cross-linking.
 

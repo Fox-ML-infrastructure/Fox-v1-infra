@@ -136,8 +136,8 @@ The config structure has been reorganized for better usability. All old location
 
 - **Configuration Reference:** See `DOCS/02_reference/configuration/`
 - **Experiment Configs:** See `CONFIG/experiments/README.md`
-- **Migration Guide:** See `CONFIG/MIGRATION_GUIDE.md`
-- **Cleanup Plan:** See `CONFIG/CLEANUP_PLAN.md`
+- **Migration Guide:** See `DOCS/02_reference/configuration/migration/MIGRATION_GUIDE.md`
+- **Cleanup Plan:** See `DOCS/02_reference/configuration/migration/CLEANUP_PLAN.md`
 
 ## Backward Compatibility
 

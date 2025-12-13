@@ -1,8 +1,8 @@
 # Deterministic Training & Reproducibility
 
-**Enterprise-Grade ML Infrastructure**
+**ML Infrastructure**
 
-This ML research infrastructure system guarantees **deterministic, reproducible training** through a Single Source of Truth (SST) configuration architecture.
+This ML research infrastructure system ensures **deterministic, reproducible training** through a Single Source of Truth (SST) configuration architecture (reproducibility depends on using proper configs and consistent environment).
 
 ---
 

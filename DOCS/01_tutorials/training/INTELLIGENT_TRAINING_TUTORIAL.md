@@ -30,7 +30,7 @@ Trained Models
 - **Cached results**: Rankings/selections cached for faster reruns
 - **Leakage-free**: All existing safeguards preserved
 - **Unified behavior**: Ranking and selection use consistent preprocessing and configuration
-- **Complete reproducibility**: All parameters load from config (Single Source of Truth). Same config → same results across all pipeline stages.
+- **Reproducibility**: All parameters load from config (Single Source of Truth). Same config → same results across all pipeline stages (reproducibility ensured when using proper configs).
 
 **Architecture Note**: The pipeline uses a modular structure internally (`TRAINING/training_strategies/`, `TRAINING/ranking/predictability/`, `TRAINING/models/specialized/`) but maintains 100% backward compatibility. All existing imports and workflows continue to work unchanged - this is purely an internal organization improvement for better maintainability.
 
