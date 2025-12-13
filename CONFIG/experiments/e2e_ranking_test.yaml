@@ -9,9 +9,9 @@ data:
   data_dir: data/data_labeled/interval=5m
   symbols: [AAPL, MSFT, GOOGL, TSLA, NVDA]
   interval: 5m
-  max_samples_per_symbol: 5000  # Reduced for faster testing
-  max_rows_per_symbol: 5000  # Reduced for faster testing
-  max_rows_train: 10000  # Reduced for faster testing
+  max_samples_per_symbol: 1000  # Reduced for faster testing
+  max_rows_per_symbol: 1000  # Reduced for faster testing
+  max_rows_train: 5000  # Reduced for faster testing
   min_cs: 3  # Reduced for faster testing
 
 # Intelligent training settings

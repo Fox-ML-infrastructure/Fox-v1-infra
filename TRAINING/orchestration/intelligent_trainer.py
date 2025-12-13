@@ -1896,7 +1896,8 @@ Examples:
         
         strategy = intel_config_data.get('strategy', 'single_task')
         min_cs = data_cfg.get('min_cs', 10)
-        max_rows_per_symbol = data_cfg.get('max_rows_per_symbol', None)
+        # Support both max_rows_per_symbol and max_samples_per_symbol (backward compatibility)
+        max_rows_per_symbol = data_cfg.get('max_rows_per_symbol') or data_cfg.get('max_samples_per_symbol', None)
         max_rows_train = data_cfg.get('max_rows_train', None)
         max_cs_samples = data_cfg.get('max_cs_samples', 1000)
         run_leakage_diagnostics = advanced_cfg.get('run_leakage_diagnostics', False)

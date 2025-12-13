@@ -168,10 +168,14 @@ def load_experiment_config(experiment_name: str) -> ExperimentConfig:
     # Build DataConfig from data section
     # Support both old format (interval) and new format (bar_interval)
     bar_interval = data_data.get('bar_interval') or data_data.get('interval', '5m')
+    
+    # Support both max_samples_per_symbol and max_rows_per_symbol (backward compatibility)
+    max_samples = data_data.get('max_samples_per_symbol') or data_data.get('max_rows_per_symbol', 50000)
+    
     data_config = DataConfig(
         timestamp_column=data_data.get('timestamp_column', 'ts'),
         bar_interval=bar_interval,
-        max_samples_per_symbol=data_data.get('max_samples_per_symbol', 50000),
+        max_samples_per_symbol=max_samples,
         validation_split=data_data.get('validation_split', 0.2),
         random_state=data_data.get('random_state', 42)
     )
@@ -179,13 +183,17 @@ def load_experiment_config(experiment_name: str) -> ExperimentConfig:
     # Build ExperimentConfig (validation happens in __post_init__)
     # Use targets.primary if available, otherwise use empty string (will be overridden by auto_targets)
     primary_target = targets_data.get('primary', '') if targets_data else ''
+    
+    # Support both max_samples_per_symbol and max_rows_per_symbol for ExperimentConfig too
+    exp_max_samples = data_data.get('max_samples_per_symbol') or data_data.get('max_rows_per_symbol', 5000)
+    
     return ExperimentConfig(
         name=exp_data.get('name', experiment_name),
         data_dir=Path(data_data['data_dir']),
         symbols=data_data['symbols'],
         target=primary_target,
         data=data_config,
-        max_samples_per_symbol=data_data.get('max_samples_per_symbol', 5000),
+        max_samples_per_symbol=exp_max_samples,
         description=exp_data.get('description'),
         feature_selection_overrides=data.get('feature_selection', {}),
         target_ranking_overrides=data.get('target_ranking', {}),
