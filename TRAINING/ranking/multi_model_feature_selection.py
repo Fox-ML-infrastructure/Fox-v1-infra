@@ -1267,11 +1267,34 @@ def train_model_and_get_importance(
                     cb_config.pop(synonym, None)
             
             # Re-add GPU params after cleaning (in case they were removed)
+            # CRITICAL: CatBoost REQUIRES task_type='GPU' to actually use GPU (devices alone is ignored)
             if gpu_params:
                 cb_config.update(gpu_params)
+                # Explicit verification that task_type is set
+                if cb_config.get('task_type') != 'GPU':
+                    logger.warning(f"    catboost: GPU params updated but task_type is '{cb_config.get('task_type')}', expected 'GPU'")
+                else:
+                    logger.debug(f"    catboost: GPU verified: task_type={cb_config.get('task_type')}, devices={cb_config.get('devices')}")
+            elif gpu_params is None or (isinstance(gpu_params, dict) and not gpu_params):
+                # GPU was requested but params are empty - log for debugging
+                logger.debug(f"    catboost: No GPU params to add (gpu_params={gpu_params})")
+            
+            # Log final config for debugging (only if GPU was requested)
+            if gpu_params and gpu_params.get('task_type') == 'GPU':
+                logger.debug(f"    catboost: Final config (sample): task_type={cb_config.get('task_type')}, devices={cb_config.get('devices')}")
             
             # Instantiate with cleaned config + explicit params
             model = est_cls(**cb_config, **extra)
+            
+            # Verify GPU was actually set (post-instantiation check)
+            if gpu_params and gpu_params.get('task_type') == 'GPU':
+                # Check if model has task_type attribute (CatBoost models expose this)
+                if hasattr(model, 'get_params'):
+                    model_params = model.get_params()
+                    if model_params.get('task_type') != 'GPU':
+                        logger.warning(f"    catboost: Model instantiated but task_type is '{model_params.get('task_type')}', expected 'GPU'")
+                    else:
+                        logger.debug(f"    catboost: Model confirmed using GPU (task_type={model_params.get('task_type')})")
             
             try:
                 model.fit(X, y)
