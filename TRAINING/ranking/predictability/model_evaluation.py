@@ -779,8 +779,15 @@ def train_and_evaluate_models(
         # Ensure cv_config is never None (handle case where key exists but value is None)
         if cv_config is None:
             cv_config = {}
-        cv_folds = cv_config.get('cv_folds', 3)
-        cv_n_jobs = cv_config.get('n_jobs', 1)
+        # SST: Try to get from config first, then fallback to cv_config or defaults
+        try:
+            from CONFIG.config_loader import get_cfg
+            cv_folds = int(get_cfg("training.cv_folds", default=cv_config.get('cv_folds', 3), config_name="intelligent_training_config"))
+            cv_n_jobs = int(get_cfg("training.cv_n_jobs", default=cv_config.get('n_jobs', 1), config_name="intelligent_training_config"))
+        except Exception:
+            # Fallback to cv_config or defaults if config loader fails
+            cv_folds = cv_config.get('cv_folds', 3)
+            cv_n_jobs = cv_config.get('n_jobs', 1)
     
     # CRITICAL: Use PurgedTimeSeriesSplit to prevent temporal leakage
     # Standard K-Fold shuffles data randomly, which destroys time patterns
@@ -1979,11 +1986,24 @@ def train_and_evaluate_models(
             # 3. Automatic metric_period injection for eval_set (reduces evaluation overhead)
             # Note: We use cross_val_score which doesn't use eval_set directly, but if params has eval_set,
             # we should add metric_period to reduce overhead
+            # SST: Check config first, then use default
             if 'metric_period' not in params:
-                # Set default metric_period to reduce evaluation overhead
-                params['metric_period'] = cb_config.get('metric_period', 50)
+                # Try to get from config (SST), fallback to default
+                metric_period_default = 50  # Default if not in config
+                try:
+                    from CONFIG.config_loader import get_cfg
+                    # Check if there's a global metric_period setting
+                    metric_period_from_config = get_cfg('training.catboost.metric_period', default=None, config_name='intelligent_training_config')
+                    if metric_period_from_config is not None:
+                        params['metric_period'] = metric_period_from_config
+                    else:
+                        # Fallback to model config or default
+                        params['metric_period'] = cb_config.get('metric_period', metric_period_default)
+                except Exception:
+                    # If config loader fails, use model config or default
+                    params['metric_period'] = cb_config.get('metric_period', metric_period_default)
                 if log_cfg.edu_hints:
-                    logger.debug(f"  CatBoost: Added metric_period={params['metric_period']} to reduce evaluation overhead")
+                    logger.debug(f"  CatBoost: Added metric_period={params['metric_period']} to reduce evaluation overhead (from config or default)")
             
             # Log warnings if any
             if warnings_issued:
