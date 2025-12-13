@@ -894,12 +894,16 @@ class IntelligentTrainer:
         # NEW: Build feature selection config from experiment config if available
         if feature_selection_config is None and self.experiment_config and _NEW_CONFIG_AVAILABLE:
             # Create a temporary experiment config with this target
+            # Copy data config from original (includes bar_interval)
+            from copy import deepcopy
+            temp_data = deepcopy(self.experiment_config.data) if hasattr(self.experiment_config, 'data') and self.experiment_config.data else None
+            
             temp_exp = ExperimentConfig(
                 name=self.experiment_config.name,
                 data_dir=self.experiment_config.data_dir,
                 symbols=self.experiment_config.symbols,
                 target=target,
-                interval=self.experiment_config.interval,
+                data=temp_data,
                 max_samples_per_symbol=self.experiment_config.max_samples_per_symbol,
                 feature_selection_overrides={'top_n': top_m}
             )
