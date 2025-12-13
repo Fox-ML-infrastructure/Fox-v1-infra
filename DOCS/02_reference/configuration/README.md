@@ -12,6 +12,7 @@ Centralized configuration management for FoxML Core training pipeline, model fam
 > - [Config Loader API](CONFIG_LOADER_API.md) - Programmatic config loading
 > - [Config Overlays](CONFIG_OVERLAYS.md) - Overlay system for environment-specific configs
 > - [Environment Variables](ENVIRONMENT_VARIABLES.md) - Environment-based configuration
+> - [Config Audit](CONFIG_AUDIT.md) - **NEW**: Config folder audit, hardcoded values tracking, and organization plan
 
 ## Overview
 

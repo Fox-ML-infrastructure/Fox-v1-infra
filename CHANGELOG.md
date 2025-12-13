@@ -44,7 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **All thresholds configurable**: Decision-making and stability analysis thresholds now load from config
 - **SST compliance**: No hardcoded thresholds remain in decision-making code
 - **Config organization**: Documented which config files are used vs unused
-- See [Config Audit](CONFIG/CONFIG_AUDIT.md) for details
+- See [Config Audit](DOCS/02_reference/configuration/CONFIG_AUDIT.md) for details
 
 #### Critical Horizon Unit Fix (2025-12-12) – **FIXED**
 - **Bug fixed**: Barrier target generation incorrectly used `horizon_minutes` as `horizon_bars`
