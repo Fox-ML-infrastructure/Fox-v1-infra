@@ -7,8 +7,6 @@
 
 FoxML Core is an ML infrastructure stack for cross-sectional and panel data for any machine learning applications. It provides a config-driven ML pipeline architecture designed for ML infra teams, data scientists, and researchers.
 
-**⚠️ Development Status:** This project is under **heavy active development**. Breaking changes may occur without notice. See [ROADMAP.md](ROADMAP.md) for current status, known issues, and planned fixes.
-
 > **Note:** Personal / academic use is AGPL-3.0. **Company / production use requires a commercial license.**
 
 > **📊 Testing & Development:** All testing, validation, and development work is performed using **5-minute interval data**. The software supports various data intervals, but all tests, benchmarks, and development workflows use 5-minute bars as the standard reference.
