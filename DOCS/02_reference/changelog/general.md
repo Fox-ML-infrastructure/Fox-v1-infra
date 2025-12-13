@@ -2,7 +2,7 @@
 
 **Intelligent Training Framework, Leakage Safety Suite, Configuration System, Documentation**
 
-For a quick overview, see the [root changelog](../../../../CHANGELOG.md).  
+For a quick overview, see the [root changelog](../../../CHANGELOG.md).  
 For other dates, see the [changelog index](README.md).
 
 **Note (2025-12-09)**: Large monolithic files have been refactored into modular components for better maintainability. References to `specialized_models.py`, `rank_target_predictability.py`, and `train_with_strategies.py` now refer to thin backward-compatibility wrappers that import from the new modular structure. **All existing imports continue to work unchanged** - this is an internal refactoring with no user-facing API changes. For user-facing documentation, see [Refactoring & Wrappers Guide](../../01_tutorials/REFACTORING_AND_WRAPPERS.md).
@@ -255,7 +255,7 @@ See [`DOCS/03_technical/research/LEAKAGE_ANALYSIS.md`](../../03_technical/resear
 - Added branding clarification (FoxML Core vs Fox ML Infrastructure)
 - Refined wording throughout for external/enterprise consumption
 
-See [`ROADMAP.md`](../../../../ROADMAP.md) for complete roadmap.
+See [`ROADMAP.md`](../../../ROADMAP.md) for complete roadmap.
 
 **Compliance Documentation Suite**
 
@@ -332,7 +332,7 @@ See [`COMMERCIAL_LICENSE.md`](../../../../COMMERCIAL_LICENSE.md) for complete pr
 
 ## Documentation
 
-- Roadmap restructured for external consumption (see [`ROADMAP.md`](../../../../ROADMAP.md))
+- Roadmap restructured for external consumption (see [`ROADMAP.md`](../../../ROADMAP.md))
 - Modular configuration system documentation (see [`DOCS/02_reference/configuration/MODULAR_CONFIG_SYSTEM.md`](../configuration/MODULAR_CONFIG_SYSTEM.md))
 - Documentation cleanup and consolidation — Integrated old folders, fixed cross-references, reorganized structure
 - Comprehensive cross-linking and navigation improvements
@@ -357,6 +357,6 @@ Adaptive intelligence layer design is documented in planning materials.
 ## Related
 
 - [Changelog Index](README.md)
-- [Root Changelog](../../../../CHANGELOG.md)
+- [Root Changelog](../../../CHANGELOG.md)
 - [2025-12-11](2025-12-11.md)
 - [2025-12-10](2025-12-10.md)

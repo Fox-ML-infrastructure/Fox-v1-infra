@@ -20,7 +20,7 @@ This document tracks features that are **not yet fully functional**, have **know
   - Thresholds may need adjustment based on data characteristics
   - Auto-apply mode (`apply_mode: "apply"`) should be used with extreme caution
 - **Recommendation**: Keep `decisions.apply_mode: "off"` or `"dry_run"` until fully validated
-- **See**: [TESTING_NOTICE.md](../../../../TESTING_NOTICE.md) for details
+- **See**: [TESTING_NOTICE.md](../../TESTING_NOTICE.md) for details
 
 ### Stability Analysis ⚠️ EXPERIMENTAL
 - **Status**: Under active testing
@@ -167,9 +167,9 @@ This document tracks features that are **not yet fully functional**, have **know
 
 If you encounter issues not listed here:
 
-1. Check [CHANGELOG.md](../../../../CHANGELOG.md) for recent changes
+1. Check [CHANGELOG.md](../../CHANGELOG.md) for recent changes
 2. Review [Detailed Changelog](changelog/README.md) for technical details
-3. Check [TESTING_NOTICE.md](../../../../TESTING_NOTICE.md) for experimental features
+3. Check [TESTING_NOTICE.md](../../TESTING_NOTICE.md) for experimental features
 4. Report with sufficient detail (config, error messages, environment)
 
 ---

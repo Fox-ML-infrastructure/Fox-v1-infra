@@ -1,6 +1,6 @@
 # Changelog Index
 
-This directory contains detailed per-day changelogs for FoxML Core. For the lightweight root changelog, see [CHANGELOG.md](../../../../CHANGELOG.md).
+This directory contains detailed per-day changelogs for FoxML Core. For the lightweight root changelog, see [CHANGELOG.md](../../../CHANGELOG.md).
 
 ## 2025
 
@@ -22,5 +22,5 @@ This directory contains detailed per-day changelogs for FoxML Core. For the ligh
 
 ## Navigation
 
-- [Root Changelog](../../../../CHANGELOG.md) - Executive summary
+- [Root Changelog](../../../CHANGELOG.md) - Executive summary
 - [Documentation Index](../../INDEX.md) - Complete documentation navigation
