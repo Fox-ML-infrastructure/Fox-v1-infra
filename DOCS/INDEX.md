@@ -70,6 +70,7 @@ Step-by-step guides for common tasks.
 
 ### Configuration
 - [Config Basics](01_tutorials/configuration/CONFIG_BASICS.md) - Configuration fundamentals
+- [Experiment Config Guide](01_tutorials/configuration/EXPERIMENT_CONFIG_GUIDE.md) - **NEW**: Complete guide to experiment configuration files
 - [Config Examples](01_tutorials/configuration/CONFIG_EXAMPLES.md) - Example configs
 - [Advanced Config](01_tutorials/configuration/ADVANCED_CONFIG.md) - Advanced configuration
 
