@@ -266,6 +266,7 @@ class XGBoostTrainer(BaseModelTrainer):
                     return False
             except (FileNotFoundError, subprocess.TimeoutExpired, OSError) as e:
                 # OSError can occur with readline library conflicts (symbol lookup errors)
+                # safe_subprocess_run already logs helpful messages for readline conflicts
                 logger.info(f"[XGBoost] nvidia-smi not available, GPU not accessible: {e}")
                 return False
             
