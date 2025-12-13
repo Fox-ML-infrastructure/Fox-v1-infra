@@ -36,18 +36,33 @@ This document tracks features that are **not yet fully functional**, have **know
 
 ### Current Status
 - **LightGBM**: ✅ Fully functional (CUDA and OpenCL support)
-- **XGBoost**: ✅ Functional (requires XGBoost built with GPU support)
-- **CatBoost**: ✅ Functional (requires CatBoost GPU support)
+- **XGBoost**: ✅ Functional (XGBoost 3.1+ compatible, requires XGBoost built with GPU support)
+- **CatBoost**: ✅ Functional (requires `task_type='GPU'` explicitly set, requires CatBoost GPU support)
 
 ### Known Limitations
 - **GPU Detection**: Test models are created to verify GPU availability, which may add small startup overhead
 - **Fallback Behavior**: If GPU test fails, system falls back to CPU silently (check logs for `⚠️` warnings)
-- **XGBoost Legacy API**: System tries both new API (`device='cuda'`) and legacy API (`tree_method='gpu_hist'`) automatically
+- **XGBoost 3.1+ Compatibility**: `gpu_id` parameter removed in XGBoost 3.1+. System uses `device='cuda'` with `tree_method='hist'` (automatic fallback to legacy API for older versions)
+- **CatBoost Quantization**: CatBoost does quantization on CPU first (20+ seconds for large datasets), then trains on GPU. Watch GPU memory allocation, not just utilization %, to verify GPU usage
 - **Multi-GPU**: Currently configured for single GPU (device 0). Multi-GPU support not yet implemented
 
 ### Troubleshooting
+
+**XGBoost 3.1+ Issues:**
+- **Error**: `gpu_id has been removed since 3.1. Use device instead`
+- **Fix**: System automatically uses `device='cuda'` (no `gpu_id` needed). Ensure `gpu.xgboost.device: "cuda"` in config
+- **Verification**: Check logs for `✅ Using GPU (CUDA) for XGBoost`
+
+**CatBoost Not Using GPU:**
+- **Critical**: CatBoost **requires** `task_type='GPU'` to use GPU (devices alone is ignored)
+- **Check**: Look for `✅ CatBoost GPU verified: task_type=GPU` in logs
+- **Configuration**: Ensure `gpu.catboost.task_type: "GPU"` is set in `gpu_config.yaml`
+- **Verification**: Watch GPU memory allocation with `watch -n 0.1 nvidia-smi` (quantization happens on CPU first)
+
+**General GPU Issues:**
 - If GPU isn't being used, check logs for:
   - `✅ Using GPU (CUDA) for [Model]` - GPU is active
+  - `✅ CatBoost GPU verified: task_type=GPU` - CatBoost GPU confirmed
   - `⚠️ [Model] GPU test failed` - GPU not available, using CPU
 - Verify GPU config in `CONFIG/training_config/gpu_config.yaml`
 - Ensure CUDA drivers and GPU-enabled libraries are installed

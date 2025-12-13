@@ -100,15 +100,26 @@ lightgbm:
 - Look for `⚠️ [Model] GPU test failed` - GPU not available, using CPU
 
 **Common Issues:**
-1. **XGBoost not compiled with GPU support**
+
+1. **XGBoost 3.1+ Compatibility**
+   - **Error**: `gpu_id has been removed since 3.1. Use device instead`
+   - **Fix**: XGBoost 3.1+ removed `gpu_id` parameter. System now uses `device='cuda'` with `tree_method='hist'`
+   - **Note**: System automatically handles both new API (XGBoost 3.1+) and legacy API (XGBoost < 2.0)
+   - **Configuration**: Set `gpu.xgboost.device: "cuda"` in `gpu_config.yaml` (no `gpu_id` needed)
+
+2. **CatBoost Not Using GPU**
+   - **Critical**: CatBoost **requires** `task_type='GPU'` to use GPU (devices alone is ignored)
+   - **Check Logs**: Look for `✅ CatBoost GPU verified: task_type=GPU` to confirm GPU params are set
+   - **Behavior**: CatBoost does quantization on CPU first (20+ seconds for large datasets), then trains on GPU
+   - **Verification**: Watch GPU memory allocation with `watch -n 0.1 nvidia-smi`, not just utilization %
+   - **Configuration**: Ensure `gpu.catboost.task_type: "GPU"` is set in `gpu_config.yaml`
+   - **Installation**: Ensure CatBoost was installed with GPU support: `pip install catboost --upgrade`
+
+3. **XGBoost not compiled with GPU support**
    - Install XGBoost with GPU: `pip install xgboost --upgrade`
    - Or build from source with CUDA support
 
-2. **CatBoost GPU not available**
-   - Ensure CatBoost was installed with GPU support
-   - Check CUDA drivers: `nvidia-smi`
-
-3. **LightGBM GPU not detected**
+4. **LightGBM GPU not detected**
    - Verify CUDA installation: `nvidia-smi`
    - Check OpenCL: `clinfo` (for OpenCL fallback)
    - Reinstall LightGBM with GPU: `pip install lightgbm --install-option=--gpu`
